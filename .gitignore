@@ -39,3 +39,19 @@
 
 # debug information files
 *.dwo
+
+# Docs
+*.pdf
+
+# Folder
+build/
+.vscode/
+checks.json
+
+# Doxygen generated documentation
+docs/
+
+# Individual files
+inc/gen/DoIPConfig.h
+*.log
+test/reports/*
