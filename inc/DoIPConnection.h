@@ -10,6 +10,7 @@
 #include "DoIPDefaultConnection.h"
 #include <arpa/inet.h>
 #include <array>
+#include <atomic>
 #include <iostream>
 #include <net/if.h>
 #include <netinet/in.h>
@@ -104,7 +105,7 @@ class DoIPConnection : public DoIPDefaultConnection {
     // TCP socket-specific members
     int m_tcpSocket;
     std::array<uint8_t, DOIP_MAXIMUM_MTU> m_receiveBuf{};
-    bool m_isClosing{false};  // TODO: Guard against recursive closeConnection calls -> solve this
+    std::atomic<bool> m_isClosing{false};  // Guard against recursive closeConnection calls
     std::optional<DoIPMessage> m_pendingDownstreamRequest;
 
     void closeSocket();
