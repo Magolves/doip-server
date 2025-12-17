@@ -1,0 +1,269 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, dev, develop ]
+  pull_request:
+    branches: [ main, dev, develop ]
+  workflow_dispatch:
+
+env:
+  CMAKE_VERSION: 3.20.0
+  BUILD_TYPE: Release
+
+jobs:
+  # Build and test on multiple platforms and compilers
+  build-and-test:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+              name: "Ubuntu 22.04 GCC 11",
+              os: ubuntu-22.04,
+              cc: "gcc-11",
+              cxx: "g++-11",
+              build_type: "Release"
+            }
+          - {
+              name: "Ubuntu 22.04 GCC 11 Debug",
+              os: ubuntu-22.04,
+              cc: "gcc-11",
+              cxx: "g++-11",
+              build_type: "Debug"
+            }
+          - {
+              name: "Ubuntu 22.04 Clang 14",
+              os: ubuntu-22.04,
+              cc: "clang-14",
+              cxx: "clang++-14",
+              build_type: "Release"
+            }
+          - {
+              name: "Ubuntu 22.04 Clang 14 Debug",
+              os: ubuntu-22.04,
+              cc: "clang-14",
+              cxx: "clang++-14",
+              build_type: "Debug"
+            }
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Linux dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ninja-build libspdlog-dev libcli11-dev
+        if [[ "${{ matrix.config.cxx }}" == "g++-11" ]]; then
+          sudo apt-get install -y gcc-11 g++-11
+        elif [[ "${{ matrix.config.cxx }}" == "g++-9" ]]; then
+          sudo apt-get install -y gcc-9 g++-9
+        elif [[ "${{ matrix.config.cxx }}" == "clang++-14" ]]; then
+          sudo apt-get install -y clang-14
+        fi
+
+    - name: Set up CMake
+      uses: jwlawson/actions-setup-cmake@v1.14
+      with:
+        cmake-version: ${{ env.CMAKE_VERSION }}
+
+    - name: Configure CMake (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_C_COMPILER=${{ matrix.config.cc }} \
+          -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+          -DWITH_UNIT_TEST=ON \
+          -DWARNINGS_AS_ERRORS=ON
+
+    - name: Configure CMake (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cmake -B build -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DWITH_UNIT_TEST=ON -DWARNINGS_AS_ERRORS=OFF
+
+    - name: Build
+      run: cmake --build build --config ${{ matrix.config.build_type }} --parallel 4
+
+    - name: Run tests
+      working-directory: build
+      run: ctest --output-on-failure --parallel 4 -C ${{ matrix.config.build_type }}
+
+    - name: Install
+      run: cmake --install build --prefix install
+
+  # Static analysis job
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install static analysis tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-tidy cppcheck ninja-build libspdlog-dev libcli11-dev gcc-11 g++-11
+
+    - name: Set up CMake
+      uses: jwlawson/actions-setup-cmake@v1.14
+      with:
+        cmake-version: ${{ env.CMAKE_VERSION }}
+
+    - name: Configure with static analysis
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_C_COMPILER=gcc-11 \
+          -DCMAKE_CXX_COMPILER=g++-11 \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DWITH_UNIT_TEST=ON \
+          -DENABLE_STATIC_ANALYSIS=ON \
+          -DWARNINGS_AS_ERRORS=OFF
+
+    - name: Build with static analysis
+      run: cmake --build build --parallel 4
+
+  # Sanitizers job (Debug builds only)
+  sanitizers:
+    name: Address & UB Sanitizers
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ninja-build libspdlog-dev libcli11-dev gcc-11 g++-11
+
+    - name: Set up CMake
+      uses: jwlawson/actions-setup-cmake@v1.14
+      with:
+        cmake-version: ${{ env.CMAKE_VERSION }}
+
+    - name: Configure with sanitizers
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_C_COMPILER=gcc-11 \
+          -DCMAKE_CXX_COMPILER=g++-11 \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DWITH_UNIT_TEST=ON \
+          -DENABLE_SANITIZERS=ON \
+          -DWARNINGS_AS_ERRORS=ON
+
+    - name: Build with sanitizers
+      run: cmake --build build --parallel 4
+
+    - name: Run tests with sanitizers
+      working-directory: build
+      run: ctest --output-on-failure --parallel 2
+      env:
+        ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
+        UBSAN_OPTIONS: halt_on_error=1
+
+  # Documentation generation
+  documentation:
+    name: Generate Documentation
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Doxygen
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen graphviz plantuml default-jre
+
+    - name: Generate documentation
+      run: |
+        doxygen --version
+        # Render PlantUML diagrams to SVG before running Doxygen (so Doxygen can include pre-rendered images)
+        for p in doc/diagrams/*.puml; do
+          if [ -f "$p" ]; then
+            plantuml -tsvg -o doc/diagrams "${p}"
+          fi
+        done
+        doxygen Doxyfile
+      working-directory: ${{ github.workspace }}
+    - name: List generated docs
+      run: ls -lR docs/html || echo "docs/html does not exist"
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/html
+        force_orphan: true
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
+        commit_message: 'Deploy documentation to GitHub Pages'
+
+  # Code coverage (only on main branch)
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ninja-build libspdlog-dev libcli11-dev gcc-11 g++-11 lcov
+
+    - name: Set up CMake
+      uses: jwlawson/actions-setup-cmake@v1.14
+      with:
+        cmake-version: ${{ env.CMAKE_VERSION }}
+
+    - name: Configure with coverage
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_C_COMPILER=gcc-11 \
+          -DCMAKE_CXX_COMPILER=g++-11 \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DWITH_UNIT_TEST=ON \
+          -DCMAKE_CXX_FLAGS="--coverage" \
+          -DCMAKE_C_FLAGS="--coverage" \
+          -DWARNINGS_AS_ERRORS=OFF
+
+    - name: Build with coverage
+      run: cmake --build build --parallel 4
+
+    - name: Run tests for coverage
+      working-directory: build
+      run: ctest --output-on-failure
+
+    - name: Generate coverage report
+      run: |
+        lcov --capture --directory build --output-file coverage.info
+        lcov --remove coverage.info '/usr/*' --output-file coverage.info
+        lcov --remove coverage.info '*/test/*' --output-file coverage.info
+        lcov --remove coverage.info '*/build/*' --output-file coverage.info
+        lcov --list coverage.info
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
