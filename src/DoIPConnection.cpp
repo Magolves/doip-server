@@ -128,13 +128,13 @@ ssize_t DoIPConnection::sendProtocolMessage(const DoIPMessage &msg) {
 }
 
 void DoIPConnection::closeConnection(DoIPCloseReason reason) {
-    // Guard against recursive calls
-    if (m_isClosing) {
+    // Guard against recursive calls using atomic exchange
+    bool expected = false;
+    if (!m_isClosing.compare_exchange_strong(expected, true)) {
         LOG_DOIP_DEBUG("Connection already closing - ignoring recursive call");
         return;
     }
 
-    m_isClosing = true;
     LOG_DOIP_INFO("Closing connection, reason: {}", fmt::streamed(reason));
 
     // Call base class to handle state machine and notification
