@@ -1,7 +1,7 @@
 # doip-server
 
 [![CI/CD Pipeline](https://github.com/Magolves/doip-server/actions/workflows/ci.yml/badge.svg)](https://github.com/Magolves/doip-server/actions/workflows/ci.yml)
-[![Release](https://github.com/Magolves/doip-server/actions/workflows/release.yml/badge.svg)](https://github.com/Magolves/doip-server/actions/workflows/release.yml)
+[![Coverage](https://raw.githubusercontent.com/Magolves/doip-server/badges/coverage-badge.svg)](https://github.com/Magolves/doip-server/actions/workflows/badge.yml)
 [![License](https://img.shields.io/github/license/Magolves/doip-server)](LICENSE)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/std/the-standard)
 [![CMake](https://img.shields.io/badge/CMake-3.15+-blue.svg)](https://cmake.org/)

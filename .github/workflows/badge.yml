@@ -5,6 +5,7 @@ on:
     branches: [ main, dev ]
   pull_request:
     branches: [ main, dev ]
+  workflow_dispatch:
   schedule:
     # Run daily at 02:00 UTC
     - cron: '0 2 * * *'
@@ -13,10 +14,15 @@ jobs:
   status:
     name: Update Status
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup dependencies
       run: |
@@ -53,10 +59,8 @@ jobs:
         echo "CODE_COVERAGE=$PCT" >> $GITHUB_ENV
 
     - name: Generate coverage badge
-      env:
-        PATH: ${{ env.HOME }}/.local/bin:${{ env.PATH }}
       run: |
-        anybadge --value=${CODE_COVERAGE} --file=coverage.svg --label="coverage" --suffix="%" \
+        python3 -m anybadge --value=${CODE_COVERAGE} --file=coverage.svg --label="coverage" --suffix="%" \
           0=red 50=orange 70=yellow 80=yellowgreen 90=green
 
     - name: Upload coverage badge artifact
@@ -64,6 +68,33 @@ jobs:
       with:
         name: coverage-badge
         path: coverage.svg
+
+    - name: Deploy coverage badge to badges branch
+      if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+      run: |
+        # Save badge file to temp location
+        cp coverage.svg /tmp/coverage-badge.svg
+
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Try to fetch badges branch, if it doesn't exist, create orphan
+        if git fetch origin badges 2>/dev/null; then
+          git checkout badges
+        else
+          git checkout --orphan badges
+          git rm -rf . 2>/dev/null || true
+        fi
+
+        # Copy badge file back
+        cp /tmp/coverage-badge.svg coverage-badge.svg
+        git add coverage-badge.svg
+
+        # Commit and push if there are changes
+        if ! git diff --staged --quiet 2>/dev/null || ! git diff --quiet HEAD 2>/dev/null; then
+          git commit -m "Update coverage badge [skip ci]"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git badges
+        fi
 
     - name: Generate badge data
       run: |
