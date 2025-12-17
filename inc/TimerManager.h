@@ -8,8 +8,10 @@
 #include <optional>
 #include <thread>
 #include <vector>
+#include <exception>
 
 #include "DoIPTimes.h"
+#include "Logger.h"
 
 namespace doip {
 
@@ -277,8 +279,10 @@ class TimerManager {
 
                 try {
                     callback(id);
+                } catch (const std::exception& e) {
+                    LOG_DOIP_ERROR("Timer callback {} threw exception: {}", static_cast<int>(id), e.what());
                 } catch (...) {
-                    // Swallow exceptions to prevent thread termination
+                    LOG_DOIP_ERROR("Timer callback {} threw unknown exception", static_cast<int>(id));
                 }
             }
         }
