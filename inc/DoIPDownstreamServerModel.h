@@ -79,8 +79,6 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
 
     std::thread m_worker;
     bool m_running = true;
-    uint16_t m_p2_ms = 1000;
-    uint16_t m_p2star_10ms = 200;
 
 
     void startWorker() {
