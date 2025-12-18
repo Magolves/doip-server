@@ -128,6 +128,7 @@ void DoIPServer::connectionHandlerThread(std::unique_ptr<DoIPConnection> connect
 
 /*
  * Set up a tcp socket, so the socket is ready to accept a connection
+ * TODO: Store model factory for later use when accepting connections
  */
 bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFactory) {
     LOG_DOIP_DEBUG("Setting up TCP socket on port {}", DOIP_SERVER_TCP_PORT);
@@ -164,6 +165,7 @@ bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFacto
 
     // Success - transfer ownership to Socket wrapper
     m_tcp_sock.reset(sock_fd);
+    m_modelFactory = modelFactory;
 
     // Also start TCP acceptor thread so TCP 13400 enters LISTEN state and accepts connections
     m_workerThreads.emplace_back([this, modelFactory]() { tcpListenerThread(modelFactory); });
