@@ -223,9 +223,10 @@ class DoIPServer {
     int getClientPort() const { return m_clientPort; }
 
     protected:
+
     /**
-     * @brief Background TCP listener that accepts connections and spawns handlers.
-     * @param modelFactory Factory callable that returns a `UniqueServerModelPtr` per connection.
+     * @brief Get the model factory callable.
+     * @return std::function<UniqueServerModelPtr()> model factory callable.
      */
     std::function<UniqueServerModelPtr()> getModelFactory() const {
         return m_modelFactory;
