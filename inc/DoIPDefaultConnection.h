@@ -104,7 +104,7 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @brief Constructs a DoIPDefaultConnection
      * @param model The server model to use
      */
-    explicit DoIPDefaultConnection(UniqueServerModelPtr model);
+    explicit DoIPDefaultConnection(UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager);
 
     /**
      * @brief Sends a DoIP protocol message to the client
@@ -276,13 +276,14 @@ class DoIPDefaultConnection : public IConnectionContext {
 
   protected:
     UniqueServerModelPtr m_serverModel;
+    SharedTimerManagerPtr<ConnectionTimers> m_timerManager;
+    
     std::array<StateDescriptor, 7> STATE_DESCRIPTORS;
     DoIPAddress m_routedClientAddress;
 
     bool m_isOpen;
     DoIPCloseReason m_closeReason = DoIPCloseReason::None;
     const StateDescriptor *m_state = nullptr;
-    TimerManager<ConnectionTimers> m_timerManager;
 
     // Alive check retry (not covered by the standard)
     uint8_t m_aliveCheckRetry{0};

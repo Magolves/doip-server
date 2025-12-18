@@ -31,7 +31,8 @@ TEST_SUITE("DoIPAddress") {
 TEST_SUITE("DoIPConnection") {
     TEST_CASE("Connection Initialization") {
 
-        DoIPConnection conn(0, std::make_unique<DefaultDoIPServerModel>());
+        SharedTimerManagerPtr<ConnectionTimers> timerManager = std::make_shared<TimerManager<ConnectionTimers>>();
+        DoIPConnection conn(0, std::make_unique<DefaultDoIPServerModel>(), timerManager);
         CHECK(conn.isSocketActive() == false);
     }
 }

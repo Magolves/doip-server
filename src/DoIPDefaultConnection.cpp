@@ -6,8 +6,9 @@
 
 namespace doip {
 
-DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model)
+DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager)
     : m_serverModel(std::move(model)),
+      m_timerManager(timerManager),
       STATE_DESCRIPTORS{
           StateDescriptor(
               DoIPServerState::SocketInitialized,
@@ -64,7 +65,7 @@ void DoIPDefaultConnection::closeConnection(DoIPCloseReason reason) {
         LOG_DOIP_INFO("Default connection: Closing connection, reason: {}", fmt::streamed(reason));
         transitionTo(DoIPServerState::Closed);
         m_closeReason = reason;
-        m_timerManager.stopAll();
+        m_timerManager->stopAll();
         notifyConnectionClosed(reason);
     } catch (const std::exception &e) {
         LOG_DOIP_ERROR("Error notifying connection closed: {}", e.what());
@@ -147,7 +148,7 @@ void DoIPDefaultConnection::startStateTimer(StateDescriptor const *stateDesc) {
         return;
     }
 
-    m_timerManager.stopAll();
+    m_timerManager->stopAll();
 
     std::chrono::milliseconds duration = getTimerDuration(m_state);
 
@@ -164,7 +165,7 @@ void DoIPDefaultConnection::startStateTimer(StateDescriptor const *stateDesc) {
         timeoutHandler = stateDesc->timeoutHandler;
     }
 
-    auto id = m_timerManager.addTimer(
+    auto id = m_timerManager->addTimer(
         m_state->timer, duration, timeoutHandler, false);
 
     if (id.has_value()) {
@@ -176,7 +177,7 @@ void DoIPDefaultConnection::startStateTimer(StateDescriptor const *stateDesc) {
 
 void DoIPDefaultConnection::restartStateTimer() {
     assert(m_state != nullptr);
-    if (!m_timerManager.restartTimer(m_state->timer)) {
+    if (!m_timerManager->restartTimer(m_state->timer)) {
         LOG_DOIP_ERROR("Failed to restart timer {}", fmt::streamed(m_state->timer));
     }
 }

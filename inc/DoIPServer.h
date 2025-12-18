@@ -231,6 +231,7 @@ class DoIPServer {
     std::string m_clientIp{};
     int m_clientPort{};
     DoIPFurtherAction m_FurtherActionReq = DoIPFurtherAction::NoFurtherAction;
+    SharedTimerManagerPtr<ConnectionTimers> m_TimerManager = std::make_shared<TimerManager<ConnectionTimers>>();
 
     // Automatic mode state
     std::atomic<bool> m_running{false};

@@ -26,7 +26,7 @@ namespace doip {
 class DoIPConnection : public DoIPDefaultConnection {
   public:
 
-    DoIPConnection(int tcpSocket, UniqueServerModelPtr model);
+    DoIPConnection(int tcpSocket, UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager);
 
     int receiveTcpMessage();
     size_t receiveFixedNumberOfBytesFromTCP(uint8_t *receivedData, size_t payloadLength);

@@ -289,4 +289,10 @@ class TimerManager {
     }
 };
 
+template <typename TimerIdType>
+using UniqueTimerManagerPtr = std::unique_ptr<TimerManager<TimerIdType>>;
+
+template <typename TimerIdType>
+using SharedTimerManagerPtr = std::shared_ptr<TimerManager<TimerIdType>>;
+
 } // namespace doip

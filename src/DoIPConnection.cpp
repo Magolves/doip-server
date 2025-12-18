@@ -8,8 +8,8 @@
 
 namespace doip {
 
-DoIPConnection::DoIPConnection(int tcpSocket, UniqueServerModelPtr model)
-    : DoIPDefaultConnection(std::move(model)),
+DoIPConnection::DoIPConnection(int tcpSocket, UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager)
+    : DoIPDefaultConnection(std::move(model), timerManager),
       m_logicalAddress(ZERO_ADDRESS),
       m_tcpSocket(tcpSocket) {
 }
