@@ -473,7 +473,7 @@ std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(UniqueServerMod
         return nullptr;
     }
 
-    return std::unique_ptr<DoIPConnection>(new DoIPConnection(tcpSocket, std::move(model)));
+    return std::unique_ptr<DoIPConnection>(new DoIPConnection(tcpSocket, std::move(model), m_TimerManager));
 }
 
 void DoIPServer::tcpListenerThread(std::function<UniqueServerModelPtr()> modelFactory) {
