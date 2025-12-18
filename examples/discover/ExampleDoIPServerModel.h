@@ -15,9 +15,9 @@
 using namespace doip;
 using namespace doip::uds;
 
-class DoIPServerModel : public DoIPDownstreamServerModel {
+class ExampleDoIPServerModel : public DoIPDownstreamServerModel {
   public:
-    DoIPServerModel() : DoIPDownstreamServerModel("exmod", m_uds) {
+    ExampleDoIPServerModel() : DoIPDownstreamServerModel("exmod", m_uds) {
         // Customize callbacks if needed
 
     }
