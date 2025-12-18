@@ -46,11 +46,17 @@ if (WITH_UNIT_TEST)
     )
     set_tests_properties(Integration_StartSimpleServer PROPERTIES FIXTURES_SETUP demo_server TIMEOUT 20)
 
-    # Integration test: run discover against the running server
+    # Integration test: run discover (udp client) against the running server
     add_test(NAME Integration_DiscoverRuns
        COMMAND $<TARGET_FILE:Discover> --loopback
     )
     set_tests_properties(Integration_DiscoverRuns PROPERTIES FIXTURES_REQUIRED demo_server TIMEOUT 20)
+
+    # Integration test: run tcp client against the running server
+    add_test(NAME Integration_DiagSessionRuns
+       COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/test-local-client.py
+    )
+    set_tests_properties(Integration_DiagSessionRuns PROPERTIES FIXTURES_REQUIRED demo_server TIMEOUT 20)
 
     # Teardown fixture: stop DoIPServer
     add_test(NAME Integration_StopSimpleServer
