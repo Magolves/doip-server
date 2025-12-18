@@ -18,10 +18,12 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
         onOpenConnection = [this](IConnectionContext &ctx) noexcept {
             (void)ctx;
             startWorker();
+            m_provider.start();
         };
         onCloseConnection = [this](IConnectionContext &ctx, DoIPCloseReason reason) noexcept {
             (void)ctx;
             stopWorker();
+            m_provider.stop();
             LOG_DOIP_WARN("Connection closed ({})", fmt::streamed(reason));
         };
 
@@ -63,6 +65,7 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
         };
 
     }
+
     protected:
     virtual void handleDownstreamResponse(const DownstreamResponse &response) {
         m_log->info("Handle downstream response {} [latency {}ms]", fmt::streamed(response.payload), response.latency.count());
