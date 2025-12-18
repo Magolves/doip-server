@@ -8,7 +8,7 @@
 #include "Logger.h"
 
 #include "DoIPServer.h"
-
+#include "ExampleDoIPServerModel.h"
 #include "DoIPServerModel.h"
 #include "cli/ServerConfigCLI.h"
 
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (!server->setupTcpSocket([](){ return std::make_unique<DoIPServerModel>(); })) {
+    if (!server->setupTcpSocket([](){ return std::make_unique<ExampleDoIPServerModel>(); })) {
         LOG_DOIP_CRITICAL("Failed to set up TCP socket");
         return 1;
     }

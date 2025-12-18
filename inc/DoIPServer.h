@@ -25,6 +25,7 @@
 #include "DoIPNegativeAck.h"
 #include "DoIPServerModel.h"
 #include "MacAddress.h"
+#include "Socket.h"
 
 namespace doip {
 
@@ -222,8 +223,8 @@ class DoIPServer {
     int getClientPort() const { return m_clientPort; }
 
   private:
-    int m_tcp_sock{-1};
-    int m_udp_sock{-1};
+    Socket m_tcp_sock;
+    Socket m_udp_sock;
     struct sockaddr_in m_serverAddress{};
     struct sockaddr_in m_clientAddress{};
     ByteArray m_receiveBuf{};

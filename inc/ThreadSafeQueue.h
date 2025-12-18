@@ -14,6 +14,35 @@ private:
     bool stopped_ = false;
 
 public:
+    ThreadSafeQueue() = default;
+    
+    ~ThreadSafeQueue() {
+        stop();
+    }
+    
+    // Disable copy operations
+    ThreadSafeQueue(const ThreadSafeQueue&) = delete;
+    ThreadSafeQueue& operator=(const ThreadSafeQueue&) = delete;
+    
+    // Enable move operations
+    ThreadSafeQueue(ThreadSafeQueue&& other) noexcept {
+        std::lock_guard<std::mutex> lock(other.mutex_);
+        queue_ = std::move(other.queue_);
+        stopped_ = other.stopped_;
+        other.stopped_ = true;
+    }
+    
+    ThreadSafeQueue& operator=(ThreadSafeQueue&& other) noexcept {
+        if (this != &other) {
+            std::scoped_lock lock(mutex_, other.mutex_);
+            queue_ = std::move(other.queue_);
+            stopped_ = other.stopped_;
+            other.stopped_ = true;
+            cv_.notify_all();
+        }
+        return *this;
+    }
+
     void push(T item) {
         {
             std::lock_guard<std::mutex> lock(mutex_);

@@ -87,6 +87,7 @@ jobs:
         fi
 
         # Copy badge file back
+        git pull origin badges || true
         cp /tmp/coverage-badge.svg coverage-badge.svg
         git add coverage-badge.svg
 

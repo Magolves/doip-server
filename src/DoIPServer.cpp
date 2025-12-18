@@ -92,17 +92,17 @@ void DoIPServer::stop() {
     LOG_DOIP_INFO("Stopping DoIP Server...");
     m_running.store(false);
 
-    // Close sockets to unblock any pending accept/recv calls
-    closeUdpSocket();
-    closeTcpSocket();
+    // Wait for all threads to finish BEFORE closing sockets
 
-    // Wait for all threads to finish
     for (auto &thread : m_workerThreads) {
         if (thread.joinable()) {
             thread.join();
         }
     }
     m_workerThreads.clear();
+
+    closeUdpSocket();
+    closeTcpSocket();
 
     LOG_DOIP_INFO("DoIP Server stopped");
 }
@@ -132,15 +132,15 @@ void DoIPServer::connectionHandlerThread(std::unique_ptr<DoIPConnection> connect
 bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFactory) {
     LOG_DOIP_DEBUG("Setting up TCP socket on port {}", DOIP_SERVER_TCP_PORT);
 
-    m_tcp_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (m_tcp_sock < 0) {
+    int sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock_fd < 0) {
         LOG_TCP_ERROR("Failed to create TCP socket: {}", strerror(errno));
         return false;
     }
 
     // Allow socket reuse
     int reuse = 1;
-    if (setsockopt(m_tcp_sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+    if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
         LOG_TCP_WARN("Failed to set SO_REUSEADDR: {}", strerror(errno));
     }
 
@@ -149,16 +149,21 @@ bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFacto
     m_serverAddress.sin_port = htons(DOIP_SERVER_TCP_PORT);
 
     // binds the socket to the address and port number
-    if (bind(m_tcp_sock, reinterpret_cast<const struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress)) < 0) {
+    if (bind(sock_fd, reinterpret_cast<const struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress)) < 0) {
         LOG_TCP_ERROR("Failed to bind TCP socket: {}", strerror(errno));
+        ::close(sock_fd);
         return false;
     }
 
     // Put the socket into listening state so the OS reports LISTEN and accept() can proceed
-    if (listen(m_tcp_sock, 5) < 0) {
+    if (listen(sock_fd, 5) < 0) {
         LOG_TCP_ERROR("Failed to listen on TCP socket: {}", strerror(errno));
+        ::close(sock_fd);
         return false;
     }
+
+    // Success - transfer ownership to Socket wrapper
+    m_tcp_sock.reset(sock_fd);
 
     // Also start TCP acceptor thread so TCP 13400 enters LISTEN state and accepts connections
     m_workerThreads.emplace_back([this, modelFactory]() { tcpListenerThread(modelFactory); });
@@ -171,27 +176,27 @@ bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFacto
  * Closes the socket for this server
  */
 void DoIPServer::closeTcpSocket() {
-    close(m_tcp_sock);
+    m_tcp_sock.close();
 }
 
 bool DoIPServer::setupUdpSocket() {
     LOG_UDP_DEBUG("Setting up UDP socket on port {}", DOIP_UDP_DISCOVERY_PORT);
 
-    m_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (m_udp_sock < 0) {
+    int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock_fd < 0) {
         perror("Failed to create socket");
-        return 1;
+        return false;
     }
 
     // Set socket to non-blocking with timeout
     struct timeval timeout;
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
-    setsockopt(m_udp_sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
     // Enable SO_REUSEADDR
     int reuse = 1;
-    setsockopt(m_udp_sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+    setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
 
     // Bind socket to port 13400
     struct sockaddr_in server_addr;
@@ -200,11 +205,15 @@ bool DoIPServer::setupUdpSocket() {
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons(DOIP_UDP_DISCOVERY_PORT);
 
-    if (bind(m_udp_sock, reinterpret_cast<struct sockaddr *>(&server_addr), sizeof(server_addr)) < 0) {
+    if (bind(sock_fd, reinterpret_cast<struct sockaddr *>(&server_addr), sizeof(server_addr)) < 0) {
         perror("Failed to bind socket");
-        close(m_udp_sock);
-        return 1;
+        ::close(sock_fd);
+        return false;
     }
+
+    // Success - transfer ownership to Socket wrapper
+    m_udp_sock.reset(sock_fd);
+
     // setting the IP DoIPAddress for Multicast/Broadcast
     if (!m_config.loopback) { //
         setMulticastGroup("224.0.0.2");
@@ -214,10 +223,10 @@ bool DoIPServer::setupUdpSocket() {
     }
 
     LOG_UDP_DEBUG(
-        "Socket {} bound to {}:{}",
-        m_udp_sock,
-        inet_ntoa(m_serverAddress.sin_addr),
-        ntohs(m_serverAddress.sin_port));
+        "Socket fd={} bound to {}:{}",
+        m_udp_sock.get(),
+        inet_ntoa(server_addr.sin_addr),
+        ntohs(server_addr.sin_port));
 
     m_running.store(true);
     m_workerThreads.emplace_back([this]() { udpListenerThread(); });
@@ -233,7 +242,7 @@ void DoIPServer::closeUdpSocket() {
             thread.join();
         }
     }
-    close(m_udp_sock);
+    m_udp_sock.close();
 }
 
 bool DoIPServer::setDefaultEid() {
@@ -297,7 +306,7 @@ void DoIPServer::setMulticastGroup(const char *address) const {
     int loop = 1;
 
     // set Option using the same Port for multiple Sockets
-    int setPort = setsockopt(m_udp_sock, SOL_SOCKET, SO_REUSEADDR, &loop, sizeof(loop));
+    int setPort = setsockopt(m_udp_sock.get(), SOL_SOCKET, SO_REUSEADDR, &loop, sizeof(loop));
 
     if (setPort < 0) {
         LOG_UDP_ERROR("Setting Port Error");
@@ -309,7 +318,7 @@ void DoIPServer::setMulticastGroup(const char *address) const {
     mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 
     // set Option to join Multicast Group
-    int setGroup = setsockopt(m_udp_sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<const char *>(&mreq), sizeof(mreq));
+    int setGroup = setsockopt(m_udp_sock.get(), IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<const char *>(&mreq), sizeof(mreq));
 
     if (setGroup < 0) {
         LOG_UDP_ERROR("Setting address failed: {}", strerror(errno));
@@ -329,7 +338,7 @@ void DoIPServer::udpListenerThread() {
     LOG_UDP_INFO("UDP listener thread started");
 
     while (m_running) {
-        ssize_t received = recvfrom(m_udp_sock, m_receiveBuf.data(), sizeof(m_receiveBuf), 0,
+        ssize_t received = recvfrom(m_udp_sock.get(), m_receiveBuf.data(), sizeof(m_receiveBuf), 0,
                                     reinterpret_cast<struct sockaddr *>(&m_clientAddress), &client_len);
 
         if (received < 0) {
@@ -423,10 +432,10 @@ ssize_t DoIPServer::sendVehicleAnnouncement() {
 
         // Enable broadcast
         int broadcast = 1;
-        setsockopt(m_udp_sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
+        setsockopt(m_udp_sock.get(), SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
     }
 
-    ssize_t sentBytes = sendto(m_udp_sock, msg.data(), msg.size(), 0,
+    ssize_t sentBytes = sendto(m_udp_sock.get(), msg.data(), msg.size(), 0,
                                reinterpret_cast<struct sockaddr *>(&dest_addr), sizeof(dest_addr));
 
     LOG_DOIP_INFO("TX {}", fmt::streamed(msg));
@@ -440,7 +449,7 @@ ssize_t DoIPServer::sendVehicleAnnouncement() {
 }
 
 ssize_t DoIPServer::sendUdpResponse(DoIPMessage msg) {
-    auto sentBytes = sendto(m_udp_sock, msg.data(), msg.size(), 0,
+    auto sentBytes = sendto(m_udp_sock.get(), msg.data(), msg.size(), 0,
                             reinterpret_cast<struct sockaddr *>(&m_clientAddress), sizeof(m_clientAddress));
 
     if (sentBytes > 0) {
@@ -455,11 +464,11 @@ ssize_t DoIPServer::sendUdpResponse(DoIPMessage msg) {
 
 std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(UniqueServerModelPtr model) {
     // waits till client approach to make connection
-    if (listen(m_tcp_sock, 5) < 0) {
+    if (listen(m_tcp_sock.get(), 5) < 0) {
         return nullptr;
     }
 
-    int tcpSocket = accept(m_tcp_sock, nullptr, nullptr);
+    int tcpSocket = accept(m_tcp_sock.get(), nullptr, nullptr);
     if (tcpSocket < 0) {
         return nullptr;
     }
