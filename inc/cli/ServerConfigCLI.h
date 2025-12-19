@@ -13,6 +13,17 @@ namespace doip::cli {
 /**
  * Build a CLI11 app configured with options to populate ServerConfig.
  * Call parse_and_build to parse argc/argv and get a filled ServerConfig.
+ * Example:
+ ```cpp
+  doip::ServerConfig cfg;
+    cli::ServerConfigCLI cli;
+    try {
+        cfg = cli.parse_and_build(argc, argv);
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
+  ```
  */
 class ServerConfigCLI {
   public:
