@@ -38,29 +38,47 @@ foreach(demo_source ${DEMO_SOURCES})
 
 endforeach()
 
+# TODO: Move to test CMakeLists.txt
 if (WITH_UNIT_TEST)
-    enable_testing()
+    message(STATUS "Adding integration tests for examples")
+
     # Integration fixture: start DoIPServer as a daemon
     add_test(NAME Integration_StartSimpleServer
         COMMAND $<TARGET_FILE:SimpleServer> --daemonize --loopback
     )
-    set_tests_properties(Integration_StartSimpleServer PROPERTIES FIXTURES_SETUP demo_server TIMEOUT 20)
+    set_tests_properties(Integration_StartSimpleServer PROPERTIES
+        FIXTURES_SETUP demo_server
+        TIMEOUT 20
+        LABELS integration
+    )
 
     # Integration test: run discover (udp client) against the running server
     add_test(NAME Integration_DiscoverRuns
        COMMAND $<TARGET_FILE:Discover> --loopback
     )
-    set_tests_properties(Integration_DiscoverRuns PROPERTIES FIXTURES_REQUIRED demo_server TIMEOUT 20)
+    set_tests_properties(Integration_DiscoverRuns PROPERTIES
+        FIXTURES_REQUIRED demo_server
+        TIMEOUT 20
+        LABELS integration
+    )
 
     # Integration test: run tcp client against the running server
     add_test(NAME Integration_DiagSessionRuns
        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/test-local-client.py
     )
-    set_tests_properties(Integration_DiagSessionRuns PROPERTIES FIXTURES_REQUIRED demo_server TIMEOUT 20)
+    set_tests_properties(Integration_DiagSessionRuns PROPERTIES
+        FIXTURES_REQUIRED demo_server
+        TIMEOUT 20
+        LABELS integration
+    )
 
     # Teardown fixture: stop DoIPServer
     add_test(NAME Integration_StopSimpleServer
-       COMMAND pkill -f DoIPServer
+       COMMAND pkill -f SimpleServer
     )
-    set_tests_properties(Integration_StopSimpleServer PROPERTIES FIXTURES_CLEANUP demo_server TIMEOUT 10)
+    set_tests_properties(Integration_StopSimpleServer PROPERTIES
+        FIXTURES_CLEANUP demo_server
+        TIMEOUT 10
+        LABELS integration
+    )
 endif()

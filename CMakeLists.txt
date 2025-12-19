@@ -149,6 +149,8 @@ include(GNUInstallDirs)
 
 # Add examples subdirectory
 if (WITH_EXAMPLES)
+    message(STATUS "Building examples")
+    enable_testing() # TODO: Remove after migratiion
     add_subdirectory(examples)
 endif()
 
