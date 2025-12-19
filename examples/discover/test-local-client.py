@@ -5,6 +5,7 @@ from udsoncan.client import Client
 from udsoncan.exceptions import *
 from udsoncan.services import *
 from udsoncan import DataIdentifier, AsciiCodec
+from time import sleep
 
 udsoncan.setup_logging()
 
