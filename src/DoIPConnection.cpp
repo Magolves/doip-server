@@ -99,11 +99,6 @@ size_t DoIPConnection::receiveFixedNumberOfBytesFromTCP(uint8_t *receivedData, s
     return payloadPos;
 }
 
-void DoIPConnection::triggerDisconnection() {
-    LOG_DOIP_INFO("Application requested to disconnect Client from Server");
-    closeSocket();
-}
-
 /**
  * Sends a message back to the connected client
  * @param message           contains generic header and payload specific content

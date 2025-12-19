@@ -34,8 +34,6 @@ class DoIPConnection : public DoIPDefaultConnection {
     void sendDiagnosticPayload(const DoIPAddress &sourceAddress, const ByteArray &payload);
     bool isSocketActive() { return m_tcpSocket != 0; };
 
-    void triggerDisconnection();
-
     void sendDiagnosticAck(const DoIPAddress &sourceAddress);
     void sendDiagnosticNegativeAck(const DoIPAddress &sourceAddress, DoIPNegativeDiagnosticAck ackCode);
 
