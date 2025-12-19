@@ -113,7 +113,7 @@ class DoIPServer {
      * @brief Check if the server is currently running
      */
     [[nodiscard]]
-    bool isRunning() const { return m_running.load(); }
+    bool isRunning() const { return m_udpRunning.load(); }
 
     /**
      * @brief Set the number of vehicle announcements to send.
@@ -233,18 +233,23 @@ class DoIPServer {
     }
 
   private:
-    Socket m_tcp_sock;
-    Socket m_udp_sock;
+    std::shared_ptr<spdlog::logger> m_doipLog ;
+    std::shared_ptr<spdlog::logger> m_udpLog ;
+    std::shared_ptr<spdlog::logger> m_tcpLog ;
+    Socket m_tcpSock;
+    Socket m_udpLock;
     struct sockaddr_in m_serverAddress{};
     struct sockaddr_in m_clientAddress{};
-    ByteArray m_receiveBuf{};
+    std::array<uint8_t, DOIP_MAXIMUM_MTU> m_receiveBuf{};
+
     std::string m_clientIp{};
     int m_clientPort{};
     DoIPFurtherAction m_FurtherActionReq = DoIPFurtherAction::NoFurtherAction;
     SharedTimerManagerPtr<ConnectionTimers> m_TimerManager = std::make_shared<TimerManager<ConnectionTimers>>();
 
     // Automatic mode state
-    std::atomic<bool> m_running{false};
+    std::atomic<bool> m_udpRunning{false};
+    std::atomic<bool> m_tcpRunning{false};
     std::vector<std::thread> m_workerThreads;
     std::mutex m_mutex;
 

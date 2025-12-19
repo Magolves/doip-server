@@ -9,7 +9,7 @@ project(libdoip-server
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(MAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Build options
 option(WITH_UNIT_TEST "Build unit tests" OFF)
@@ -141,7 +141,8 @@ if(WITH_TEST_COV)
     # Instrument library for coverage
     message(STATUS "Instrumenting ${DOIP_SERVER_LIB_NAME} for test coverage")
     target_compile_options(${DOIP_SERVER_LIB_NAME} PRIVATE --coverage)
-    target_link_options(${DOIP_SERVER_LIB_NAME} PRIVATE --coverage)
+    # Use PUBLIC link options so coverage libraries propagate to consumers
+    target_link_libraries(${DOIP_SERVER_LIB_NAME} PUBLIC gcov)
 endif()
 
 # Install configuration
@@ -150,7 +151,6 @@ include(GNUInstallDirs)
 # Add examples subdirectory
 if (WITH_EXAMPLES)
     message(STATUS "Building examples")
-    enable_testing() # TODO: Remove after migratiion
     add_subdirectory(examples)
 endif()
 
