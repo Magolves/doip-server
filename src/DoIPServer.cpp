@@ -2,11 +2,11 @@
 #include <cerrno>    // for errno
 #include <cstring>   // for strerror
 #include <fcntl.h>
-#include <fstream>   // for PID file writing
+#include <fstream> // for PID file writing
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#include <syslog.h>
 #include "DoIPConnection.h"
 #include "DoIPMessage.h"
 #include "DoIPServer.h"
@@ -24,75 +24,12 @@ DoIPServer::~DoIPServer() {
 DoIPServer::DoIPServer(const ServerConfig &config)
     : m_config(config) {
 
-    // Daemonize FIRST if requested, before any logging or resource initialization
-    if (m_config.daemonize) {
-        daemonize();
-    }
-
-    // Initialize loggers AFTER daemonization to avoid fork() issues with spdlog
     m_doipLog = Logger::get("doip");
     m_udpLog = Logger::get("udp ");
     m_tcpLog = Logger::get("tcp ");
 
     setLoopbackMode(m_config.loopback);
-}
-
-void DoIPServer::daemonize() {
-    pid_t pid = fork();
-    if (pid < 0) {
-        std::cerr << "First fork failed: " << strerror(errno) << std::endl;
-        return;
-    }
-
-    if (pid > 0) {
-        // Parent process: print child PID and exit
-        std::cout << "Started daemon with PID " << pid << '\n';
-        _exit(0);
-    }
-
-    // Child: create new session and become session leader
-    if (setsid() < 0) {
-        std::cerr << "setsid failed: " << strerror(errno) << std::endl;
-        return;
-    }
-
-    // Second fork to ensure the daemon can't reacquire a tty
-    pid = fork();
-    if (pid < 0) {
-        std::cerr << "Second fork failed: " << strerror(errno) << std::endl;
-        return;
-    }
-    if (pid > 0) {
-        _exit(0);
-    }
-
-    // Final daemon process: get our PID and write to file for test integration
-    pid_t daemon_pid = getpid();
-
-    // Write PID to file for testing/monitoring
-    std::ofstream pid_file("/tmp/doip_server.pid");
-    if (pid_file.is_open()) {
-        pid_file << daemon_pid << std::endl;
-        pid_file.close();
-    }
-
-    // Set file mode creation mask to a safe default
-    umask(0);
-
-    // DON'T change working directory - it breaks relative paths for sockets/files
-    // Production daemons should chdir("/"), but for testing we need access to local resources
-
-    // Close and redirect standard file descriptors to /dev/null
-    int fd = open("/dev/null", O_RDWR);
-    if (fd >= 0) {
-        dup2(fd, STDIN_FILENO);
-        dup2(fd, STDOUT_FILENO);
-        dup2(fd, STDERR_FILENO);
-        if (fd > STDERR_FILENO) {
-            close(fd);
-        }
-    }
-    // Note: can't log here yet as loggers aren't initialized
+    openlog("doipd", LOG_PID | LOG_CONS, LOG_DAEMON);
 }
 
 /*
@@ -451,7 +388,7 @@ ssize_t DoIPServer::sendVehicleAnnouncement() {
     m_doipLog->info("TX {}", fmt::streamed(msg));
     if (sentBytes > 0) {
         m_udpLog->info("Sent Vehicle Announcement: {} bytes to {}:{}",
-                     sentBytes, dest_ip, DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
+                       sentBytes, dest_ip, DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
     } else {
         m_udpLog->error("Failed to send announcement: {}", strerror(errno));
     }
@@ -465,7 +402,7 @@ ssize_t DoIPServer::sendUdpResponse(DoIPMessage msg) {
     if (sentBytes > 0) {
         m_doipLog->info("TX {}", fmt::streamed(msg));
         m_udpLog->info("Sent UDS response: {} bytes to {}:{}",
-                     sentBytes, m_clientIp, ntohs(m_clientAddress.sin_port));
+                       sentBytes, m_clientIp, ntohs(m_clientAddress.sin_port));
     } else {
         m_doipLog->error("Failed to send message: {}", strerror(errno));
     }

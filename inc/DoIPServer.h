@@ -258,8 +258,6 @@ class DoIPServer {
     std::function<UniqueServerModelPtr()> m_modelFactory;
 
     void stop();
-    void daemonize();
-
     void setMulticastGroup(const char *address) const;
 
     ssize_t sendNegativeUdpAck(DoIPNegativeAck ackCode);

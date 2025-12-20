@@ -8,20 +8,28 @@
 #include "Logger.h"
 
 #include "DoIPServer.h"
-#include "ExampleDoIPServerModel.h"
 #include "DoIPServerModel.h"
+#include "ExampleDoIPServerModel.h"
 #include "cli/ServerConfigCLI.h"
+
+#include "util/Daemonize.h"
 
 using namespace doip;
 
 std::unique_ptr<DoIPServer> server;
 
-
-int main() {
+int main(int argc, char *argv[]) {
     ServerConfig cfg;
-    LOG_DOIP_WARN("Loopback/daemon mode forced for testing purposes");
-    cfg.loopback = true; // For testing, use loopback announcements
-    cfg.daemonize = true; // For testing, run as daemon
+    cfg.loopback = true;                                            // For testing, use loopback announcements
+    cfg.daemonize = argc > 1 && std::string(argv[1]) == "--daemon"; // For testing, run as daemon
+
+    Logger::setUseSyslog(cfg.daemonize);
+    if (cfg.daemonize) {
+        if (!doip::daemon::daemonize()) {
+            std::cerr << "Failed to daemonize process" << std::endl;
+            return 1;
+        }
+    }
 
 
     // Configure logging
@@ -38,20 +46,22 @@ int main() {
 
     if (!server->setupUdpSocket()) {
         LOG_DOIP_CRITICAL("Failed to set up UDP socket");
-        server.reset();  // Clean up before exiting
+        server.reset(); // Clean up before exiting
         return 1;
     }
 
-    if (!server->setupTcpSocket([](){ return std::make_unique<ExampleDoIPServerModel>(); })) {
+    if (!server->setupTcpSocket([]() { return std::make_unique<ExampleDoIPServerModel>(); })) {
         LOG_DOIP_CRITICAL("Failed to set up TCP socket");
-            return 1;
+        return 1;
     }
 
     LOG_DOIP_INFO("DoIP Server is running. Waiting for connections...");
 
-    while(server->isRunning()) {
+    while (server->isRunning()) {
         sleep(1);
     }
     LOG_DOIP_INFO("DoIP Server Example terminated");
+    // Cleanly shutdown loggers to avoid sanitizer leak reports
+    doip::Logger::shutdown();
     return 0;
 }

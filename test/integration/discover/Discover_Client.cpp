@@ -40,5 +40,6 @@ int main() {
     // Now start TCP connection for diagnostic communication
     LOG_DOIP_INFO("Discovery complete, closing UDP connections");
     client.closeUdpConnection();
+    doip::Logger::shutdown();
     return 0;
 }

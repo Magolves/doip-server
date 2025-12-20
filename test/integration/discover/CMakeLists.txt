@@ -42,7 +42,7 @@ message(STATUS "Adding integration tests for examples")
 
 # Integration fixture: start DoIPServer as a daemon
 add_test(NAME Integration_StartDiscoverServer
-    COMMAND $<TARGET_FILE:Discover_Server> --daemonize --loopback
+    COMMAND $<TARGET_FILE:Discover_Server> --daemon
 )
 set_tests_properties(Integration_StartDiscoverServer PROPERTIES
     FIXTURES_SETUP demo_server

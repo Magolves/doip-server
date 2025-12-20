@@ -4,11 +4,15 @@
 #include <cstdlib>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/fmt/ostr.h> // For fmt::streamed() support
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/syslog_sink.h>
 #include <spdlog/spdlog.h>
 #include <string>
+#include <unordered_map>
+#include <stdexcept>
 
 #if !defined(FMT_VERSION) || FMT_VERSION < 90000
 #include <optional>
@@ -64,6 +68,8 @@ constexpr const char *DEFAULT_PATTERN = "[%H:%M:%S.%e] [%n] [%^%l%$] %v";
  */
 constexpr const char *SHORT_PATTERN = "[%n] [%^%l%$] %v";
 
+constexpr const char *SYSLOG_PATTERN = "[%n] %v";  // Syslog adds its own timestamp
+
 /**
  * @brief Centralized logger for the DoIP library
  */
@@ -73,15 +79,33 @@ class Logger {
         static std::mutex mutex;
         std::lock_guard<std::mutex> lock(mutex);
 
-        if (auto it = m_loggers.find(name); it != m_loggers.end()) {
+        auto &loggers = m_loggers;
+        if (auto it = loggers.find(name); it != loggers.end()) {
             return it->second;
         }
 
-        auto new_log = spdlog::stdout_color_mt(name);
-        new_log->set_level(level);
-        new_log->set_pattern(DEFAULT_PATTERN);
-        m_loggers.emplace(name, new_log);
-        return new_log;
+        std::shared_ptr<spdlog::logger> new_logger;
+        if (use_syslog) {
+            auto syslog_sink = std::make_shared<spdlog::sinks::syslog_sink_mt>(
+                name,
+                LOG_PID,    // Include PID in log messages
+                LOG_DAEMON, // Facility
+                true        // Enable syslog
+            );
+            new_logger = std::make_shared<spdlog::logger>(name, syslog_sink);
+            new_logger->set_level(level);
+            new_logger->set_pattern(SYSLOG_PATTERN);
+        } else {
+            // Avoid spdlog global registry: build logger manually with console sink
+            auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            console_sink->set_color_mode(spdlog::color_mode::automatic);
+            new_logger = std::make_shared<spdlog::logger>(name, console_sink);
+            new_logger->set_level(level);
+            new_logger->set_pattern(DEFAULT_PATTERN);
+        }
+
+        loggers.emplace(name, new_logger);
+        return new_logger;
     }
 
     static std::shared_ptr<spdlog::logger> getUdp() {
@@ -93,11 +117,16 @@ class Logger {
     }
 
     static void setLevel(spdlog::level::level_enum level) {
-        get()->set_level(level);
+        // Apply to all existing loggers
+        for (auto &pair : m_loggers) {
+            if (pair.second) pair.second->set_level(level);
+        }
     }
 
     static void setPattern(const std::string &pattern) {
-        get()->set_pattern(pattern);
+        for (auto &pair : m_loggers) {
+            if (pair.second) pair.second->set_pattern(pattern);
+        }
     }
 
     static bool colorsSupported() {
@@ -114,7 +143,31 @@ class Logger {
                colorterm != nullptr;
     }
 
+    static bool useSyslog() {
+        return use_syslog;
+    }
+
+    static void setUseSyslog(bool use) {
+        if (!m_loggers.empty()) {
+            throw std::runtime_error("Cannot change syslog setting after loggers have been created");
+        }
+        use_syslog = use;
+    }
+
+    // Explicit shutdown to avoid sanitizer leak reports and ensure safe teardown
+    static void shutdown() {
+        for (auto &pair : m_loggers) {
+            if (pair.second) {
+                pair.second->flush();
+            }
+        }
+        m_loggers.clear();
+        // Also shutdown spdlog registry resources (safe even if unused)
+        spdlog::shutdown();
+    }
+
   private:
+    static bool use_syslog;
     static std::unordered_map<std::string, std::shared_ptr<spdlog::logger>> m_loggers;
 };
 

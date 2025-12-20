@@ -93,14 +93,15 @@ set(DOIP_SERVER_LIB_NAME doip-server CACHE STRING "DoIP library name")
 
 
 set(SOURCES
+    src/cli/ServerConfigCLI.cpp
     src/DoIPClient.cpp
     src/DoIPConnection.cpp
+    src/DoIPDefaultConnection.cpp
     src/DoIPServer.cpp
     src/Logger.cpp
     src/MacAddress.cpp
-    src/DoIPDefaultConnection.cpp
-    src/cli/ServerConfigCLI.cpp
     src/uds/UdsMock.cpp
+    src/util/Daemonize.cpp
 )
 
 
@@ -129,7 +130,7 @@ target_include_directories(${DOIP_SERVER_LIB_NAME}
 # Link dependencies
 target_link_libraries(${DOIP_SERVER_LIB_NAME}
     PUBLIC
-        spdlog::spdlog
+        spdlog::spdlog_header_only
         CLI11::CLI11
     PRIVATE
         Threads::Threads
