@@ -104,3 +104,4 @@ The [original fork](https://github.com/Magolves/libdoip) is no longer maintained
 - [ISO 13400-2:2019(en) Road vehicles — Diagnostic communication over Internet Protocol (DoIP) — Part 2: Transport protocol and network layer services](<https://www.iso.org/obp/ui/#iso:std:iso:13400:-2:ed-2:v1:en>)
 - [Specification of Diagnostic over IP](<https://www.autosar.org/fileadmin/standards/R20-11/CP/AUTOSAR_SWS_DiagnosticOverIP.pdf>)
 - [Diagnostics over Internet Protocol (DoIP)](<https://cdn.vector.com/cms/content/know-how/_application-notes/AN-IND-1-026_DoIP_in_CANoe.pdf>)
+- [Diagnostics Over Internet Protocol (DoIP) in CANoe](<https://cdn.vector.com/cms/content/know-how/_application-notes/AN-IND-1-026_DoIP_in_CANoe.pdf>)
