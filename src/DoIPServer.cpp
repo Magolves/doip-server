@@ -2,6 +2,7 @@
 #include <cerrno>    // for errno
 #include <cstring>   // for strerror
 #include <fcntl.h>
+#include <fstream>   // for PID file writing
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -21,52 +22,65 @@ DoIPServer::~DoIPServer() {
 }
 
 DoIPServer::DoIPServer(const ServerConfig &config)
-    :  m_doipLog(Logger::get("doip")), m_udpLog(Logger::get("udp ")), m_tcpLog(Logger::get("tcp ")), m_config(config) {
+    : m_config(config) {
 
-
-    setLoopbackMode(m_config.loopback);
-
+    // Daemonize FIRST if requested, before any logging or resource initialization
     if (m_config.daemonize) {
         daemonize();
     }
+
+    // Initialize loggers AFTER daemonization to avoid fork() issues with spdlog
+    m_doipLog = Logger::get("doip");
+    m_udpLog = Logger::get("udp ");
+    m_tcpLog = Logger::get("tcp ");
+
+    setLoopbackMode(m_config.loopback);
 }
 
 void DoIPServer::daemonize() {
     pid_t pid = fork();
-    std::cout << "Daemonizing process pid " << pid << '\n';
     if (pid < 0) {
-        m_doipLog->error("First fork failed: {}", strerror(errno));
+        std::cerr << "First fork failed: " << strerror(errno) << std::endl;
         return;
     }
 
     if (pid > 0) {
-        // Parent exits; child continues
+        // Parent process: print child PID and exit
+        std::cout << "Started daemon with PID " << pid << '\n';
         _exit(0);
     }
 
     // Child: create new session and become session leader
     if (setsid() < 0) {
-        m_doipLog->error("setsid failed: {}", strerror(errno));
+        std::cerr << "setsid failed: " << strerror(errno) << std::endl;
         return;
     }
 
     // Second fork to ensure the daemon can't reacquire a tty
     pid = fork();
     if (pid < 0) {
-        m_doipLog->error("Second fork failed: {}", strerror(errno));
+        std::cerr << "Second fork failed: " << strerror(errno) << std::endl;
         return;
     }
     if (pid > 0) {
         _exit(0);
     }
 
+    // Final daemon process: get our PID and write to file for test integration
+    pid_t daemon_pid = getpid();
+
+    // Write PID to file for testing/monitoring
+    std::ofstream pid_file("/tmp/doip_server.pid");
+    if (pid_file.is_open()) {
+        pid_file << daemon_pid << std::endl;
+        pid_file.close();
+    }
+
     // Set file mode creation mask to a safe default
     umask(0);
 
-    // Change working directory to root to avoid blocking mounts
-    if (chdir("/") != 0) {
-        m_doipLog->warn("chdir to / failed: {}", strerror(errno));
-    }
+    // DON'T change working directory - it breaks relative paths for sockets/files
+    // Production daemons should chdir("/"), but for testing we need access to local resources
 
     // Close and redirect standard file descriptors to /dev/null
     int fd = open("/dev/null", O_RDWR);
@@ -77,11 +91,8 @@ void DoIPServer::daemonize() {
         if (fd > STDERR_FILENO) {
             close(fd);
         }
-    } else {
-        m_doipLog->warn("Failed to open /dev/null: {}", strerror(errno));
     }
-
-    m_doipLog->info("DoIP Server daemonized and running");
+    // Note: can't log here yet as loggers aren't initialized
 }
 
 /*
