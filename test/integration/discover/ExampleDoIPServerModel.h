@@ -22,6 +22,8 @@ class ExampleDoIPServerModel : public DoIPDownstreamServerModel {
 
     }
 
+    virtual std::string getModelName() const override { return DoIPServerModel::getModelName() + ".ExampleDoIPServerModel"; }
+
   private:
     uds::UdsMockProvider m_uds;
 };

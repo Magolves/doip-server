@@ -96,10 +96,10 @@ class DoIPServer {
 
     /**
      * @brief Block until a TCP client connects and create a DoIP connection.
-     * @param model Server model instance used by the connection.
+     * @param modelFactory Model factory callable to create a server model for the connection.
      * @return Unique pointer to established `DoIPConnection`, or nullptr on failure.
      */
-    std::unique_ptr<DoIPConnection> waitForTcpConnection(UniqueServerModelPtr model);
+    std::unique_ptr<DoIPConnection> waitForTcpConnection(std::function<UniqueServerModelPtr()> modelFactory);
 
     [[nodiscard]]
     /**

@@ -44,9 +44,7 @@ void DoIPServer::stop() {
 
     // Wait for all threads to finish BEFORE closing sockets
     for (auto &thread : m_workerThreads) {
-        m_doipLog->info("Joining worker thread {}...", fmt::streamed(thread.get_id()));
         if (thread.joinable()) {
-            m_doipLog->info("Terminated worker thread {}...", fmt::streamed(thread.get_id()));
             thread.join();
         }
     }
@@ -424,7 +422,7 @@ ssize_t DoIPServer::sendUdpResponse(DoIPMessage msg) {
     return sentBytes;
 }
 
-std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(UniqueServerModelPtr model) {
+std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(std::function<UniqueServerModelPtr()> modelFactory) {
     // waits till client approach to make connection
     if (listen(m_tcpSock.get(), 5) < 0) {
         return nullptr;
@@ -439,6 +437,8 @@ std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(UniqueServerMod
         return nullptr;
     }
 
+    auto model = modelFactory ? modelFactory() : std::make_unique<DefaultDoIPServerModel>();
+    m_tcpLog->info("Accepted new TCP connection from server address {}, model {} (factory {})", model->serverAddress, model->getModelName(), modelFactory ? "provided" : "default");
     return std::unique_ptr<DoIPConnection>(new DoIPConnection(tcpSocket, std::move(model), m_TimerManager));
 }
 
@@ -447,8 +447,8 @@ void DoIPServer::tcpListenerThread(std::function<UniqueServerModelPtr()> modelFa
     m_doipLog->info("TCP listener thread started");
 
     while (m_tcpRunning.load()) {
-        auto model = modelFactory ? modelFactory() : std::make_unique<DefaultDoIPServerModel>();
-        auto connection = waitForTcpConnection(std::move(model));
+
+        auto connection = waitForTcpConnection(modelFactory);
 
         if (!connection) {
             if (m_tcpRunning.load()) {

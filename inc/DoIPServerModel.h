@@ -65,6 +65,8 @@ using ServerModelDownstreamHandler = std::function<DoIPDownstreamResult(IConnect
 struct DoIPServerModel {
     virtual ~DoIPServerModel() = default;
 
+    virtual std::string getModelName() const { return "Generic DoIPServerModel"; }
+
     /// Called when the connection is being opened
     ServerModelOpenHandler onOpenConnection;
 
@@ -144,6 +146,8 @@ struct DefaultDoIPServerModel : public DoIPServerModel {
 
     ~DefaultDoIPServerModel() {
     }
+
+    virtual std::string getModelName() const override { return "DefaultDoIPServerModel"; }
 };
 
 } // namespace doip

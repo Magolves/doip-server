@@ -36,7 +36,7 @@ void listenTcp() {
     logger->info("TCP listener thread started");
 
     while (true) {
-        tcpConnection = server->waitForTcpConnection(std::make_unique<CanIsoTpServerModel>(interfaceName, tx_address, rx_address));
+        tcpConnection = server->waitForTcpConnection( []() { return std::make_unique<CanIsoTpServerModel>(interfaceName, tx_address, rx_address); } );
 
         while (tcpConnection->isSocketActive()) {
             tcpConnection->receiveTcpMessage();
