@@ -12,7 +12,7 @@
 #include <spdlog/spdlog.h>
 #include <string>
 #include <unordered_map>
-#include <stdexcept>
+#include <iostream>
 
 #if !defined(FMT_VERSION) || FMT_VERSION < 90000
 #include <optional>
@@ -79,10 +79,11 @@ class Logger {
         static std::mutex mutex;
         std::lock_guard<std::mutex> lock(mutex);
 
-        auto &loggers = m_loggers;
-        if (auto it = loggers.find(name); it != loggers.end()) {
-            return it->second;
-        }
+        // std::cout << "-- Get logger '" << name << "'...\n";
+        // if (auto it = m_loggers.find(name); it != m_loggers.end()) {
+        //     std::cout << "-- Get logger from list '" << name << "'...\n";
+        //     return it->second;
+        // }
 
         std::shared_ptr<spdlog::logger> new_logger;
         if (use_syslog) {
@@ -104,7 +105,7 @@ class Logger {
             new_logger->set_pattern(DEFAULT_PATTERN);
         }
 
-        loggers.emplace(name, new_logger);
+        //m_loggers.emplace(name, new_logger);
         return new_logger;
     }
 
@@ -156,12 +157,12 @@ class Logger {
 
     // Explicit shutdown to avoid sanitizer leak reports and ensure safe teardown
     static void shutdown() {
-        for (auto &pair : m_loggers) {
-            if (pair.second) {
-                pair.second->flush();
-            }
-        }
-        m_loggers.clear();
+        // for (auto &pair : m_loggers) {
+        //     if (pair.second) {
+        //         pair.second->flush();
+        //     }
+        // }
+        // m_loggers.clear();
         // Also shutdown spdlog registry resources (safe even if unused)
         spdlog::shutdown();
     }
@@ -172,60 +173,3 @@ class Logger {
 };
 
 } // namespace doip
-
-// Logging macros
-#define LOG_DOIP_TRACE(...) doip::Logger::get()->trace(__VA_ARGS__)
-#define LOG_DOIP_DEBUG(...) doip::Logger::get()->debug(__VA_ARGS__)
-#define LOG_DOIP_INFO(...) doip::Logger::get()->info(__VA_ARGS__)
-#define LOG_DOIP_WARN(...) doip::Logger::get()->warn(__VA_ARGS__)
-#define LOG_DOIP_ERROR(...) doip::Logger::get()->error(__VA_ARGS__)
-#define LOG_DOIP_CRITICAL(...) doip::Logger::get()->critical(__VA_ARGS__)
-
-// Logging macros for UDP socket
-#define LOG_UDP_TRACE(...) doip::Logger::getUdp()->trace(__VA_ARGS__)
-#define LOG_UDP_DEBUG(...) doip::Logger::getUdp()->debug(__VA_ARGS__)
-#define LOG_UDP_INFO(...) doip::Logger::getUdp()->info(__VA_ARGS__)
-#define LOG_UDP_WARN(...) doip::Logger::getUdp()->warn(__VA_ARGS__)
-#define LOG_UDP_ERROR(...) doip::Logger::getUdp()->error(__VA_ARGS__)
-#define LOG_UDP_CRITICAL(...) doip::Logger::getUdp()->critical(__VA_ARGS__)
-
-// Logging macros for TCP socket
-#define LOG_TCP_TRACE(...) doip::Logger::getTcp()->trace(__VA_ARGS__)
-#define LOG_TCP_DEBUG(...) doip::Logger::getTcp()->debug(__VA_ARGS__)
-#define LOG_TCP_INFO(...) doip::Logger::getTcp()->info(__VA_ARGS__)
-#define LOG_TCP_WARN(...) doip::Logger::getTcp()->warn(__VA_ARGS__)
-#define LOG_TCP_ERROR(...) doip::Logger::getTcp()->error(__VA_ARGS__)
-#define LOG_TCP_CRITICAL(...) doip::Logger::getTcp()->critical(__VA_ARGS__)
-
-// Colored logging macros
-#define LOG_DOIP_SUCCESS(...) \
-    doip::Logger::get()->info(std::string(doip::ansi::bold_green) + fmt::format(__VA_ARGS__) + doip::ansi::reset)
-
-#define LOG_DOIP_ERROR_COLORED(...) \
-    doip::Logger::get()->error(std::string(doip::ansi::bold_red) + fmt::format(__VA_ARGS__) + doip::ansi::reset)
-
-#define LOG_DOIP_PROTOCOL(...) \
-    doip::Logger::get()->info(std::string(doip::ansi::bold_blue) + fmt::format(__VA_ARGS__) + doip::ansi::reset)
-
-#define LOG_DOIP_CONNECTION(...) \
-    doip::Logger::get()->info(std::string(doip::ansi::bold_magenta) + fmt::format(__VA_ARGS__) + doip::ansi::reset)
-
-#define LOG_DOIP_HIGHLIGHT(...) \
-    doip::Logger::get()->info(std::string(doip::ansi::bold_cyan) + fmt::format(__VA_ARGS__) + doip::ansi::reset)
-
-// Convenience macros for types with stream operators (using fmt::streamed)
-// These automatically wrap arguments with fmt::streamed() for seamless logging of DoIP types
-#define LOG_DOIP_STREAM_INFO(obj, ...) LOG_DOIP_INFO(fmt::format("{} " __VA_ARGS__, fmt::streamed(obj)))
-#define LOG_DOIP_STREAM_DEBUG(obj, ...) LOG_DOIP_DEBUG(fmt::format("{} " __VA_ARGS__, fmt::streamed(obj)))
-#define LOG_DOIP_STREAM_WARN(obj, ...) LOG_DOIP_WARN(fmt::format("{} " __VA_ARGS__, fmt::streamed(obj)))
-#define LOG_DOIP_STREAM_ERROR(obj, ...) LOG_DOIP_ERROR(fmt::format("{} " __VA_ARGS__, fmt::streamed(obj)))
-
-// Colored stream logging macros for DoIP types
-#define LOG_DOIP_STREAM_SUCCESS(obj, ...) \
-    doip::Logger::get()->info(std::string(doip::ansi::bold_green) + fmt::format("{} " __VA_ARGS__, fmt::streamed(obj)) + doip::ansi::reset)
-
-#define LOG_DOIP_STREAM_PROTOCOL(obj, ...) \
-    doip::Logger::get()->info(std::string(doip::ansi::bold_blue) + fmt::format("{} " __VA_ARGS__, fmt::streamed(obj)) + doip::ansi::reset)
-
-#define LOG_DOIP_STREAM_CONNECTION(obj, ...) \
-    doip::Logger::get()->info(std::string(doip::ansi::bold_magenta) + fmt::format("{} " __VA_ARGS__, fmt::streamed(obj)) + doip::ansi::reset)

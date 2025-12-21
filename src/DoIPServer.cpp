@@ -7,6 +7,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <pthread.h>
+#include <cstdio>
 #include "DoIPConnection.h"
 #include "DoIPMessage.h"
 #include "DoIPServer.h"
@@ -14,6 +16,7 @@
 #include "MacAddress.h"
 
 using namespace doip;
+
 
 DoIPServer::~DoIPServer() {
     if (m_udpRunning.load() || m_tcpRunning.load()) {
@@ -24,9 +27,9 @@ DoIPServer::~DoIPServer() {
 DoIPServer::DoIPServer(const ServerConfig &config)
     : m_config(config) {
 
-    m_doipLog = Logger::get("doip");
-    m_udpLog = Logger::get("udp ");
-    m_tcpLog = Logger::get("tcp ");
+    m_doipLog = Logger::get("server");
+    m_udpLog = Logger::getUdp();
+    m_tcpLog = Logger::getTcp();
 
     setLoopbackMode(m_config.loopback);
 }
@@ -35,17 +38,21 @@ DoIPServer::DoIPServer(const ServerConfig &config)
  * Stop the server and cleanup
  */
 void DoIPServer::stop() {
+    m_doipLog->info("Stopping DoIP server...");
     m_udpRunning.store(false);
     m_tcpRunning.store(false);
 
     // Wait for all threads to finish BEFORE closing sockets
     for (auto &thread : m_workerThreads) {
+        m_doipLog->info("Joining worker thread {}...", fmt::streamed(thread.get_id()));
         if (thread.joinable()) {
+            m_doipLog->info("Terminated worker thread {}...", fmt::streamed(thread.get_id()));
             thread.join();
         }
     }
     m_workerThreads.clear();
 
+    m_doipLog->info("Server stopped, closing sockets...");
     closeUdpSocket();
     closeTcpSocket();
 }
@@ -104,6 +111,9 @@ bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFacto
         ::close(sock_fd);
         return false;
     }
+
+    int flags = fcntl(sock_fd, F_GETFL, 0);
+    fcntl(sock_fd, F_SETFL, flags | O_NONBLOCK);
 
     // Put the socket into listening state so the OS reports LISTEN and accept() can proceed
     if (listen(sock_fd, 5) < 0) {
@@ -289,7 +299,7 @@ void DoIPServer::udpListenerThread() {
 
     m_udpLog->info("UDP listener thread started");
 
-    while (m_udpRunning) {
+    while (m_udpRunning.load()) {
         ssize_t received = recvfrom(m_udpLock.get(), m_receiveBuf.data(), sizeof(m_receiveBuf), 0,
                                     reinterpret_cast<struct sockaddr *>(&m_clientAddress), &client_len);
 
@@ -420,6 +430,10 @@ std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(UniqueServerMod
         return nullptr;
     }
 
+    if (!(m_tcpRunning.load())) {
+        return nullptr;
+    }
+
     int tcpSocket = accept(m_tcpSock.get(), nullptr, nullptr);
     if (tcpSocket < 0) {
         return nullptr;
@@ -429,6 +443,7 @@ std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(UniqueServerMod
 }
 
 void DoIPServer::tcpListenerThread(std::function<UniqueServerModelPtr()> modelFactory) {
+
     m_doipLog->info("TCP listener thread started");
 
     while (m_tcpRunning.load()) {
@@ -444,8 +459,8 @@ void DoIPServer::tcpListenerThread(std::function<UniqueServerModelPtr()> modelFa
         }
 
         // Spawn a dedicated thread for this connection
-        // Note: We detach because the connection thread manages its own lifecycle
-        std::thread(&DoIPServer::connectionHandlerThread, this, std::move(connection)).detach();
+        // -- Note: We detach because the connection thread manages its own lifecycle
+        m_workerThreads.emplace_back(std::thread(&DoIPServer::connectionHandlerThread, this, std::move(connection)));
     }
 
     m_doipLog->info("TCP listener thread stopped");

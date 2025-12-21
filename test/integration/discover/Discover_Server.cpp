@@ -22,13 +22,19 @@ std::unique_ptr<DoIPServer> server;
 static std::atomic<bool> g_stopRequested{false};
 
 static void handle_signal(int) {
+    std::cerr << "Signal received, stopping server..." << std::endl;
     g_stopRequested.store(true);
+    if (server) {
+        server->stop();
+    }
 }
 
 int main(int argc, char *argv[]) {
     ServerConfig cfg;
     cfg.loopback = true;                                            // For testing, use loopback announcements
     cfg.daemonize = argc > 1 && std::string(argv[1]) == "--daemon"; // For testing, run as daemon
+    auto console = spdlog::stdout_color_mt("doip-server");
+
 
     Logger::setUseSyslog(cfg.daemonize);
     if (cfg.daemonize) {
@@ -53,7 +59,7 @@ int main(int argc, char *argv[]) {
     // Configure logging
     Logger::setLevel(spdlog::level::debug);
 
-    LOG_DOIP_INFO("Starting DoIP Discovery Server");
+    console->info("Starting DoIP Discovery Server");
 
     server = std::make_unique<DoIPServer>(cfg);
 
@@ -63,17 +69,17 @@ int main(int argc, char *argv[]) {
     server->setAnnounceNum(10);
 
     if (!server->setupUdpSocket()) {
-        LOG_DOIP_CRITICAL("Failed to set up UDP socket");
-        server.reset(); // Clean up before exiting
+        console->critical("Failed to set up UDP socket");
+        server->stop(); // Clean up before exiting
         return 1;
     }
 
     if (!server->setupTcpSocket([]() { return std::make_unique<ExampleDoIPServerModel>(); })) {
-        LOG_DOIP_CRITICAL("Failed to set up TCP socket");
+        console->critical("Failed to set up TCP socket");
         return 1;
     }
 
-    LOG_DOIP_INFO("DoIP Server is running. Waiting for connections...");
+    console->info("DoIP Server is running. Waiting for connections...");
 
     while (server->isRunning()) {
         if (g_stopRequested.load()) {
@@ -82,7 +88,7 @@ int main(int argc, char *argv[]) {
         }
         sleep(1);
     }
-    LOG_DOIP_INFO("DoIP Server Example terminated");
+    console->info("DoIP Server Example terminated");
     if (cfg.daemonize) {
         (void)std::remove("/tmp/doip-discover.pid");
     }

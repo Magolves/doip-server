@@ -19,12 +19,14 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
             (void)ctx;
             startWorker();
             m_provider.start();
+            m_log->info("Connection opened (from DoIPDownstreamServerModel)");
         };
         onCloseConnection = [this](IConnectionContext &ctx, DoIPCloseReason reason) noexcept {
             (void)ctx;
             stopWorker();
             m_provider.stop();
-            LOG_DOIP_WARN("Connection closed ({})", fmt::streamed(reason));
+            m_log->info("Connection closed (from DoIPDownstreamServerModel), reason: {}", fmt::streamed(reason));
+
         };
 
         onDiagnosticMessage = [this](IConnectionContext &ctx, const DoIPMessage &msg) noexcept -> DoIPDiagnosticAck {
@@ -67,13 +69,15 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
     }
 
     protected:
+    std::shared_ptr<spdlog::logger> m_log;
+
+
     virtual void handleDownstreamResponse(const DownstreamResponse &response) {
         m_log->info("Handle downstream response {} [latency {}ms]", fmt::streamed(response.payload), response.latency.count());
         m_rx.push(response.payload);
     }
 
   private:
-    std::shared_ptr<spdlog::logger> m_log ;
 
     ServerModelDownstreamResponseHandler m_downstreamCallback = nullptr;
     ThreadSafeQueue<ByteArray> m_rx;

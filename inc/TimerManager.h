@@ -280,9 +280,9 @@ class TimerManager {
                 try {
                     callback(id);
                 } catch (const std::exception& e) {
-                    LOG_DOIP_ERROR("Timer callback {} threw exception: {}", static_cast<int>(id), e.what());
+                    std::cerr << "Timer callback " << static_cast<int>(id) << " threw exception: " << e.what() << std::endl;
                 } catch (...) {
-                    LOG_DOIP_ERROR("Timer callback {} threw unknown exception", static_cast<int>(id));
+                    std::cerr << "Timer callback " << static_cast<int>(id) << " threw unknown exception" << std::endl;
                 }
             }
         }

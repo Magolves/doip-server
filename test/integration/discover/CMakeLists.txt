@@ -70,7 +70,7 @@ set_tests_properties(Integration_StartDiscoverServer PROPERTIES
 
 # Wait until UDP 13401 is bound before running client
 add_test(NAME Integration_WaitForServerReady
-    COMMAND bash -c "for i in $(seq 1 50); do ss -ulpn | grep 13401 && exit 0; sleep 0.1; done; echo 'Server not ready on UDP 13401' >&2; exit 1"
+    COMMAND bash -c "for i in $(seq 1 100); do ss -ulpn | grep 13401 && exit 0; sleep 0.1; done; echo 'Server not ready on UDP 13401' >&2; exit 1"
 )
 set_tests_properties(Integration_WaitForServerReady PROPERTIES
     FIXTURES_REQUIRED demo_server

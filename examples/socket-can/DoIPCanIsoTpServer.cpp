@@ -23,6 +23,8 @@ std::unique_ptr<DoIPConnection> tcpConnection(nullptr);
 const std::string &interfaceName{"vcan0"};
 uint32_t tx_address = 0x98DA28F2;  // DoIP server sends to ECU (tester -> ECU)
 uint32_t rx_address = 0x98DAF228;  // DoIP server receives from ECU (ECU -> tester)
+
+std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("isotp");
 } // namespace
 
 void listenTcp();
@@ -31,7 +33,7 @@ void listenTcp();
  * Check permanently if tcp message was received
  */
 void listenTcp() {
-    LOG_UDP_INFO("TCP listener thread started");
+    logger->info("TCP listener thread started");
 
     while (true) {
         tcpConnection = server->waitForTcpConnection(std::make_unique<CanIsoTpServerModel>(interfaceName, tx_address, rx_address));
@@ -55,24 +57,24 @@ int main(int argc, char *argv[]) {
     }
 
     // Configure logging
-    doip::Logger::setLevel(spdlog::level::debug);
-    LOG_DOIP_INFO("Starting DoIP Server Example");
+    logger->set_level(spdlog::level::debug);
+    logger->info("Starting DoIP Server Example");
 
     server = std::make_unique<DoIPServer>(cfg);
     // Apply defaults used previously in example
     if (!server->setupTcpSocket([]() { return std::make_unique<CanIsoTpServerModel>(interfaceName, tx_address, rx_address); })) {
-        LOG_DOIP_CRITICAL("Failed to set up TCP socket");
+        logger->critical("Failed to set up TCP socket");
         return 1;
     }
 
     doipReceiver.push_back(thread(&listenTcp));
-    LOG_DOIP_INFO("Starting TCP listener threads");
+    logger->info("Starting TCP listener threads");
 
     while (server->isRunning()) {
         sleep(1);
     }
 
     doipReceiver.at(0).join();
-    LOG_DOIP_INFO("DoIP CAN ISOTP Server Example terminated");
+    logger->info("DoIP CAN ISOTP Server Example terminated");
     return 0;
 }
