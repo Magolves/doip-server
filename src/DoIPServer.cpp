@@ -56,18 +56,24 @@ void DoIPServer::stop() {
  */
 void DoIPServer::connectionHandlerThread(std::unique_ptr<DoIPConnection> connection) {
     m_tcpLog->info("Connection handler thread started");
+    auto closeReason = DoIPCloseReason::ApplicationRequest;
 
-    while (m_udpRunning.load() && connection->isSocketActive()) {
+    while (m_tcpRunning.load()) {
         int result = connection->receiveTcpMessage();
 
         if (result < 0) {
             m_tcpLog->info("Connection closed or error occurred");
+            closeReason = DoIPCloseReason::SocketError;
+            break;
+        } else if (result == 0) {
+            m_tcpLog->info("Connection closed by client");
+            closeReason = DoIPCloseReason::ApplicationRequest;
             break;
         }
     }
-
+    connection->closeConnection(closeReason);
     // Connection is automatically closed when unique_ptr goes out of scope
-    m_tcpLog->info("Connection handler thread stopped");
+    m_tcpLog->info("Connection thread exit {}", fmt::streamed(closeReason));
 }
 
 /*
