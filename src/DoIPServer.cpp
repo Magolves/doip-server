@@ -29,7 +29,6 @@ DoIPServer::DoIPServer(const ServerConfig &config)
     m_tcpLog = Logger::get("tcp ");
 
     setLoopbackMode(m_config.loopback);
-    openlog("doipd", LOG_PID | LOG_CONS, LOG_DAEMON);
 }
 
 /*
@@ -73,7 +72,7 @@ void DoIPServer::connectionHandlerThread(std::unique_ptr<DoIPConnection> connect
     }
     connection->closeConnection(closeReason);
     // Connection is automatically closed when unique_ptr goes out of scope
-    m_tcpLog->info("Connection thread exit {}", fmt::streamed(closeReason));
+    m_tcpLog->info("Connection to {} thread exit {}", connection->getClientAddress(), fmt::streamed(closeReason));
 }
 
 /*
@@ -137,7 +136,7 @@ bool DoIPServer::setupUdpSocket() {
 
     int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock_fd < 0) {
-        perror("Failed to create socket");
+        m_udpLog->debug("Failed to create UDP socket: {}", strerror(errno));
         return false;
     }
 
@@ -159,8 +158,8 @@ bool DoIPServer::setupUdpSocket() {
     server_addr.sin_port = htons(DOIP_UDP_DISCOVERY_PORT);
 
     if (bind(sock_fd, reinterpret_cast<struct sockaddr *>(&server_addr), sizeof(server_addr)) < 0) {
-        perror("Failed to bind socket");
-        ::close(sock_fd);
+        m_udpLog->error("Failed to bind UDP socket on {}: {}", DOIP_UDP_DISCOVERY_PORT, strerror(errno));
+        close(sock_fd);
         return false;
     }
 

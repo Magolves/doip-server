@@ -68,13 +68,24 @@ set_tests_properties(Integration_StartDiscoverServer PROPERTIES
     LABELS integration
 )
 
+# Wait until UDP 13401 is bound before running client
+add_test(NAME Integration_WaitForServerReady
+    COMMAND bash -c "for i in $(seq 1 50); do ss -ulpn | grep 13401 && exit 0; sleep 0.1; done; echo 'Server not ready on UDP 13401' >&2; exit 1"
+)
+set_tests_properties(Integration_WaitForServerReady PROPERTIES
+    FIXTURES_REQUIRED demo_server
+    FIXTURES_SETUP demo_ready
+    TIMEOUT 10
+    LABELS integration
+)
+
 # Integration test: run discover (udp client) against the running server
 # FIXME: No route to host error occurs here -> no announcement received by client
 add_test(NAME Integration_DiscoverClient_Runs
     COMMAND $<TARGET_FILE:Discover_Client>
 )
 set_tests_properties(Integration_DiscoverClient_Runs PROPERTIES
-    FIXTURES_REQUIRED demo_server
+    FIXTURES_REQUIRED "demo_server;demo_ready"
     TIMEOUT 20
     LABELS integration
 )
@@ -91,7 +102,7 @@ set_tests_properties(Integration_DiagSessionRuns PROPERTIES
 
 # Teardown fixture: stop server
 add_test(NAME Integration_StopDiscoverServer
-    COMMAND pkill -f Discover_Server
+    COMMAND bash -c "if [ -f /tmp/doip-discover.pid ]; then kill \$(cat /tmp/doip-discover.pid); rm -f /tmp/doip-discover.pid; else pkill -f Discover_Server; fi"
 )
 set_tests_properties(Integration_StopDiscoverServer PROPERTIES
     FIXTURES_CLEANUP demo_server

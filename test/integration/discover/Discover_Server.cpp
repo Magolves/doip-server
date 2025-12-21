@@ -1,4 +1,6 @@
 #include <chrono>
+#include <csignal>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <thread>
@@ -17,6 +19,11 @@
 using namespace doip;
 
 std::unique_ptr<DoIPServer> server;
+static std::atomic<bool> g_stopRequested{false};
+
+static void handle_signal(int) {
+    g_stopRequested.store(true);
+}
 
 int main(int argc, char *argv[]) {
     ServerConfig cfg;
@@ -29,7 +36,18 @@ int main(int argc, char *argv[]) {
             std::cerr << "Failed to daemonize process" << std::endl;
             return 1;
         }
+        // Write PID file for integration tests cleanup
+        try {
+            std::ofstream pidf("/tmp/doip-discover.pid", std::ios::trunc);
+            pidf << getpid() << std::endl;
+        } catch (...) {
+            // best-effort
+        }
     }
+
+    // Install simple signal handlers for graceful shutdown
+    std::signal(SIGINT, handle_signal);
+    std::signal(SIGTERM, handle_signal);
 
 
     // Configure logging
@@ -58,9 +76,16 @@ int main(int argc, char *argv[]) {
     LOG_DOIP_INFO("DoIP Server is running. Waiting for connections...");
 
     while (server->isRunning()) {
+        if (g_stopRequested.load()) {
+            server->stop();
+            break;
+        }
         sleep(1);
     }
     LOG_DOIP_INFO("DoIP Server Example terminated");
+    if (cfg.daemonize) {
+        (void)std::remove("/tmp/doip-discover.pid");
+    }
     // Cleanly shutdown loggers to avoid sanitizer leak reports
     doip::Logger::shutdown();
     return 0;

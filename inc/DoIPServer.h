@@ -141,6 +141,11 @@ class DoIPServer {
     void closeUdpSocket();
 
     /**
+     * @brief Stop the server, close sockets, and join threads.
+     */
+    void stop();
+
+    /**
      * @brief Get the logical gateway address of the server
      *
      * @return DoIPAddress Logical gateway address
@@ -222,6 +227,7 @@ class DoIPServer {
      */
     int getClientPort() const { return m_clientPort; }
 
+
     protected:
 
     /**
@@ -257,7 +263,6 @@ class DoIPServer {
     ServerConfig m_config;
     std::function<UniqueServerModelPtr()> m_modelFactory;
 
-    void stop();
     void setMulticastGroup(const char *address) const;
 
     ssize_t sendNegativeUdpAck(DoIPNegativeAck ackCode);
