@@ -14,7 +14,7 @@ TEST_SUITE("MacAddress") {
         MacAddress mac;
 
         // This should attempt to get the first available interface
-        bool result = getMacAddress(nullptr, mac);
+        const bool result = getMacAddress(nullptr, mac);
 
         // On systems with network interfaces, this should succeed
         // We can't guarantee it will succeed in all test environments
@@ -32,7 +32,7 @@ TEST_SUITE("MacAddress") {
     TEST_CASE("getFirstMacAddress") {
         MacAddress mac;
 
-        bool result = getFirstMacAddress(mac);
+        const bool result = getFirstMacAddress(mac);
 
         if (result) {
             INFO("Successfully retrieved first MAC address");
@@ -77,7 +77,7 @@ TEST_SUITE("MacAddress") {
                 successfulInterface = iface;
 
                 // Check that it's not all zeros
-                bool allZeros = std::all_of(mac.begin(), mac.end(), [](uint8_t byte) { return byte == 0; });;
+                const bool allZeros = std::all_of(mac.begin(), mac.end(), [](uint8_t byte) { return byte == 0; });;
 
                 if (!allZeros) {
                     INFO("Found interface: " << iface);
