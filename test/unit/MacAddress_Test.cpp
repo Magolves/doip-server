@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <sstream>
+#include <algorithm>
 
 using namespace doip;
 
@@ -21,14 +22,7 @@ TEST_SUITE("MacAddress") {
             INFO("Successfully retrieved MAC address from first interface");
 
             // Check that it's not all zeros
-            bool allZeros = true;
-            for (size_t i = 0; i < 6; ++i) {
-                if (mac[i] != 0) {
-                    allZeros = false;
-                    break;
-                }
-            }
-
+            bool allZeros = std::all_of(mac.begin(), mac.end(), [](uint8_t byte) { return byte == 0; });
             CHECK_FALSE(allZeros);
         } else {
             WARN("Could not retrieve MAC address from first interface (may be expected in some environments)");
@@ -44,14 +38,7 @@ TEST_SUITE("MacAddress") {
             INFO("Successfully retrieved first MAC address");
 
             // Check that it's not all zeros
-            bool allZeros = true;
-            for (size_t i = 0; i < 6; ++i) {
-                if (mac[i] != 0) {
-                    allZeros = false;
-                    break;
-                }
-            }
-
+            bool allZeros = std::all_of(mac.begin(), mac.end(), [](uint8_t byte) { return byte == 0; });
             CHECK_FALSE(allZeros);
 
             // Print MAC address for debugging (won't show in successful tests)
@@ -90,13 +77,7 @@ TEST_SUITE("MacAddress") {
                 successfulInterface = iface;
 
                 // Check that it's not all zeros
-                bool allZeros = true;
-                for (size_t i = 0; i < 6; ++i) {
-                    if (mac[i] != 0) {
-                        allZeros = false;
-                        break;
-                    }
-                }
+                bool allZeros = std::all_of(mac.begin(), mac.end(), [](uint8_t byte) { return byte == 0; });;
 
                 if (!allZeros) {
                     INFO("Found interface: " << iface);
