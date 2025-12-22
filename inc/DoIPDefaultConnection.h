@@ -277,7 +277,9 @@ class DoIPDefaultConnection : public IConnectionContext {
   protected:
     UniqueServerModelPtr m_serverModel;
     SharedTimerManagerPtr<ConnectionTimers> m_timerManager;
-    
+    std::shared_ptr<spdlog::logger> m_log = Logger::get("tcp");
+
+
     std::array<StateDescriptor, 7> STATE_DESCRIPTORS;
     DoIPAddress m_routedClientAddress;
 

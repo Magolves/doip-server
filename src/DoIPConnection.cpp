@@ -27,17 +27,17 @@ void DoIPConnection::closeSocket() {
  *              or -1 if error occurred
  */
 int DoIPConnection::receiveTcpMessage() {
-    LOG_DOIP_INFO("Waiting for DoIP Header...");
+    m_log->info("Waiting for DoIP Header...");
     uint8_t genericHeader[DOIP_HEADER_SIZE];
     unsigned int readBytes = receiveFixedNumberOfBytesFromTCP(genericHeader, DOIP_HEADER_SIZE);
     if (readBytes == DOIP_HEADER_SIZE /*&& !m_aliveCheckTimer.hasTimeout()*/) {
-        LOG_DOIP_INFO("Received DoIP Header.");
+        m_log->info("Received DoIP Header.");
 
         auto optHeader = DoIPMessage::tryParseHeader(genericHeader, DOIP_HEADER_SIZE);
         if (!optHeader.has_value()) {
             // m_stateMachine.processEvent(DoIPServerEvent::InvalidMessage);
             //  TODO: Notify application of invalid message?
-            LOG_DOIP_ERROR("DoIP message header parsing failed");
+            m_log->error("DoIP message header parsing failed");
             closeSocket();
             return -2;
         }
@@ -45,13 +45,13 @@ int DoIPConnection::receiveTcpMessage() {
         auto plType = optHeader->first;
         auto payloadLength = optHeader->second;
 
-        LOG_DOIP_INFO("Payload Type: {}, length: {} ", fmt::streamed(plType), payloadLength);
+        m_log->info("Payload Type: {}, length: {} ", fmt::streamed(plType), payloadLength);
 
         if (payloadLength > 0) {
-            LOG_DOIP_DEBUG("Waiting for {} bytes of payload...", payloadLength);
+            m_log->debug("Waiting for {} bytes of payload...", payloadLength);
             unsigned int receivedPayloadBytes = receiveFixedNumberOfBytesFromTCP(m_receiveBuf.data(), payloadLength);
             if (receivedPayloadBytes < payloadLength) {
-                LOG_DOIP_ERROR("DoIP message incomplete");
+                m_log->error("DoIP message incomplete");
                 // m_stateMachine.processEvent(DoIPServerEvent::InvalidMessage);
                 //  todo: Notify application of invalid message?
                 closeSocket();
@@ -59,7 +59,7 @@ int DoIPConnection::receiveTcpMessage() {
             }
 
             DoIPMessage msg = DoIPMessage(plType, m_receiveBuf.data(), receivedPayloadBytes);
-            LOG_DOIP_INFO("RX: {}", fmt::streamed(msg));
+            m_log->info("RX: {}", fmt::streamed(msg));
         }
 
         DoIPMessage message(plType, m_receiveBuf.data(), payloadLength);
@@ -88,7 +88,18 @@ size_t DoIPConnection::receiveFixedNumberOfBytesFromTCP(uint8_t *receivedData, s
 
     while (remainingPayload > 0) {
         ssize_t result = recv(m_tcpSocket, &receivedData[payloadPos], remainingPayload, 0);
-        if (result <= 0) {
+        if (result < 0) {
+            // Handle non-blocking socket or interrupted system call
+            if (errno == EAGAIN /*|| errno == EWOULDBLOCK */ || errno == EINTR) {
+                // No data available yet or interrupted - retry
+                continue;
+            }
+            // Real error occurred
+            m_log->error("recv() failed: {}", strerror(errno));
+            return payloadPos;
+        } else if (result == 0) {
+            // Connection closed by peer
+            m_log->info("Connection closed by peer during receive");
             return payloadPos;
         }
         size_t readBytes = static_cast<size_t>(result);
@@ -115,9 +126,9 @@ ssize_t DoIPConnection::sendMessage(const uint8_t *message, size_t messageLength
 ssize_t DoIPConnection::sendProtocolMessage(const DoIPMessage &msg) {
     ssize_t sentBytes = sendMessage(msg.data(), msg.size());
     if (sentBytes < 0) {
-        LOG_DOIP_ERROR("Error sending message to client: {}", fmt::streamed(msg));
+        m_log->error("Error sending message to client: {}", fmt::streamed(msg));
     } else {
-        LOG_DOIP_INFO("Sent {} bytes to client: {}", sentBytes, fmt::streamed(msg));
+        m_log->info("Sent {} bytes to client: {}", sentBytes, fmt::streamed(msg));
     }
     return sentBytes;
 }
@@ -126,11 +137,11 @@ void DoIPConnection::closeConnection(DoIPCloseReason reason) {
     // Guard against recursive calls using atomic exchange
     bool expected = false;
     if (!m_isClosing.compare_exchange_strong(expected, true)) {
-        LOG_DOIP_DEBUG("Connection already closing - ignoring recursive call");
+        m_log->debug("Connection already closing - ignoring recursive call");
         return;
     }
 
-    LOG_DOIP_INFO("Closing connection, reason: {}", fmt::streamed(reason));
+    m_log->info("Closing connection, reason: {}", fmt::streamed(reason));
 
     // Call base class to handle state machine and notification
     DoIPDefaultConnection::closeConnection(reason);

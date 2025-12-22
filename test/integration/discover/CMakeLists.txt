@@ -38,17 +38,46 @@ foreach(demo_source ${DISCOVER_SOURCES})
 
 endforeach()
 
+
+# Define the source and destination paths
+set(SOURCE_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/test-local-client.py)
+set(DESTINATION_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/test-local-client.py)
+
+# Add a custom command to copy the file only if it changes
+add_custom_command(
+    OUTPUT ${DESTINATION_SCRIPT}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${SOURCE_SCRIPT}
+            ${DESTINATION_SCRIPT}
+    DEPENDS ${SOURCE_SCRIPT}
+    COMMENT "Copying ${SOURCE_SCRIPT} to binary directory (if changed)"
+)
+
+# Optionally, add the output to a target to ensure it's built
+add_custom_target(copy_script ALL DEPENDS ${DESTINATION_SCRIPT})
+
 message(STATUS "Adding integration tests for examples")
 
 # Integration fixture: start DoIPServer as a daemon
 add_test(NAME Integration_StartDiscoverServer
-    COMMAND $<TARGET_FILE:Discover_Server> --daemonize --loopback
+    COMMAND $<TARGET_FILE:Discover_Server> --daemon
 )
 set_tests_properties(Integration_StartDiscoverServer PROPERTIES
     FIXTURES_SETUP demo_server
     TIMEOUT 20
     LABELS integration
 )
+
+# # Wait until UDP 13401 is bound before running client
+# add_test(NAME Integration_WaitForServerReady
+#     COMMAND bash -c "for i in $(seq 1 100); do ss -ulpn | grep 13401 && exit 0; sleep 0.1; done; echo 'Server not ready on UDP 13401' >&2; exit 1"
+# )
+# set_tests_properties(Integration_WaitForServerReady PROPERTIES
+#     FIXTURES_REQUIRED demo_server
+#     FIXTURES_SETUP demo_ready
+#     TIMEOUT 10
+#     LABELS integration
+# )
 
 # Integration test: run discover (udp client) against the running server
 # FIXME: No route to host error occurs here -> no announcement received by client
@@ -73,7 +102,7 @@ set_tests_properties(Integration_DiagSessionRuns PROPERTIES
 
 # Teardown fixture: stop server
 add_test(NAME Integration_StopDiscoverServer
-    COMMAND pkill -f Discover_Server
+    COMMAND bash -c "if [ -f /tmp/doip-discover.pid ]; then kill \$(cat /tmp/doip-discover.pid); rm -f /tmp/doip-discover.pid; else pkill -f Discover_Server; fi"
 )
 set_tests_properties(Integration_StopDiscoverServer PROPERTIES
     FIXTURES_CLEANUP demo_server

@@ -4,27 +4,27 @@
  */
 
 #include "DoIPServerModel.h"
-#include "ThreadSafeQueue.h"
 #include "IDownstreamProvider.h"
+#include "ThreadSafeQueue.h"
 
 using namespace doip;
 using namespace std::chrono_literals;
 
 class DoIPDownstreamServerModel : public DoIPServerModel {
   public:
-    DoIPDownstreamServerModel(const std::string& name, IDownstreamProvider& provider) : m_log(Logger::get(name)), m_provider(provider) {
-
+    DoIPDownstreamServerModel(const std::string &name, IDownstreamProvider &provider) : m_log(Logger::get(name)), m_provider(provider) {
 
         onOpenConnection = [this](IConnectionContext &ctx) noexcept {
             (void)ctx;
             startWorker();
             m_provider.start();
+            m_log->info("Connection opened (from DoIPDownstreamServerModel)");
         };
         onCloseConnection = [this](IConnectionContext &ctx, DoIPCloseReason reason) noexcept {
             (void)ctx;
             stopWorker();
             m_provider.stop();
-            LOG_DOIP_WARN("Connection closed ({})", fmt::streamed(reason));
+            m_log->info("Connection closed (from DoIPDownstreamServerModel), reason: {}", fmt::streamed(reason));
         };
 
         onDiagnosticMessage = [this](IConnectionContext &ctx, const DoIPMessage &msg) noexcept -> DoIPDiagnosticAck {
@@ -64,25 +64,27 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
             return DoIPDownstreamResult::Pending;
         };
 
+        m_log->info("Initialized downstream model");
     }
 
-    protected:
+    virtual std::string getModelName() const override { return DoIPServerModel::getModelName() + "." + m_provider.getProviderName(); }
+
+  protected:
+    std::shared_ptr<spdlog::logger> m_log;
+
     virtual void handleDownstreamResponse(const DownstreamResponse &response) {
         m_log->info("Handle downstream response {} [latency {}ms]", fmt::streamed(response.payload), response.latency.count());
         m_rx.push(response.payload);
     }
 
   private:
-    std::shared_ptr<spdlog::logger> m_log ;
-
     ServerModelDownstreamResponseHandler m_downstreamCallback = nullptr;
     ThreadSafeQueue<ByteArray> m_rx;
     ThreadSafeQueue<ByteArray> m_tx;
-    IDownstreamProvider& m_provider;
+    IDownstreamProvider &m_provider;
 
     std::thread m_worker;
     bool m_running = true;
-
 
     void startWorker() {
         m_worker = std::thread([this] {
@@ -99,8 +101,6 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
         m_log->info("Stopped worker thread");
     }
 
-
-
     /**
      * @brief Thread simulating downstream communication (e. g. CAN).
      */
@@ -115,8 +115,7 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
             // simulate receive
             m_provider.sendRequest(req, [this](const DownstreamResponse &resp) {
                 handleDownstreamResponse(resp);
-            } );
-
+            });
         }
 
         if (m_rx.size()) {
