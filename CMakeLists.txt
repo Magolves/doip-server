@@ -12,13 +12,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Build options
-option(WITH_UNIT_TEST "Build unit tests" OFF)
+option(WITH_UNIT_TEST "Build unit tests" ON)
+option(WITH_INTEGRATION_TEST "Enable integration tests" ON)
 option(WITH_TEST_COV "Enable test coverage reporting " OFF)
 option(WITH_EXAMPLES "Build examples" ON)
 option(ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers in Debug builds" OFF)
 option(ENABLE_STATIC_ANALYSIS "Enable static analysis tools" OFF)
 option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
-option(WITH_INTEGRATION_TEST "Enable integration tests" OFF)
 
 if (APPLE)
     link_directories(/opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/gcc/aarch64-apple-darwin24/15)
