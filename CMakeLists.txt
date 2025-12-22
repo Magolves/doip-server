@@ -19,6 +19,10 @@ option(ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers in De
 option(ENABLE_STATIC_ANALYSIS "Enable static analysis tools" OFF)
 option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
 
+if (APPLE)
+    link_directories(/opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/gcc/aarch64-apple-darwin24/15)
+endif()
+
 # Set default build type if not specified
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
