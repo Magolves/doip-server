@@ -144,9 +144,8 @@ struct DefaultDoIPServerModel : public DoIPServerModel {
         onDownstreamRequest = nullptr;
     }
 
-    ~DefaultDoIPServerModel() {
-    }
-
+    ~DefaultDoIPServerModel() override = default;
+    
     virtual std::string getModelName() const override { return "DefaultDoIPServerModel"; }
 };
 

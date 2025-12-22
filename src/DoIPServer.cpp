@@ -429,15 +429,20 @@ std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(std::function<U
 
     int tcpSocket = accept(m_tcpSock.get(), nullptr, nullptr);
     if (tcpSocket < 0) {
-        // Handle non-blocking socket: EAGAIN/EWOULDBLOCK means no connection available yet
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            return nullptr; // No connection available, caller will retry
+            return nullptr;
         }
         // Other errors (e.g., EINTR, ECONNABORTED)
         if (m_tcpRunning.load()) {
             m_tcpLog->error("accept() failed: {}", strerror(errno));
         }
         return nullptr;
+    }
+
+    // Set accepted socket to blocking mode (it inherits non-blocking from listening socket)
+    int flags = fcntl(tcpSocket, F_GETFL, 0);
+    if (flags >= 0) {
+        fcntl(tcpSocket, F_SETFL, flags & ~O_NONBLOCK);
     }
 
     auto model = modelFactory ? modelFactory() : std::make_unique<DefaultDoIPServerModel>();

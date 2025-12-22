@@ -88,7 +88,18 @@ size_t DoIPConnection::receiveFixedNumberOfBytesFromTCP(uint8_t *receivedData, s
 
     while (remainingPayload > 0) {
         ssize_t result = recv(m_tcpSocket, &receivedData[payloadPos], remainingPayload, 0);
-        if (result <= 0) {
+        if (result < 0) {
+            // Handle non-blocking socket or interrupted system call
+            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+                // No data available yet or interrupted - retry
+                continue;
+            }
+            // Real error occurred
+            m_log->error("recv() failed: {}", strerror(errno));
+            return payloadPos;
+        } else if (result == 0) {
+            // Connection closed by peer
+            m_log->info("Connection closed by peer during receive");
             return payloadPos;
         }
         size_t readBytes = static_cast<size_t>(result);
