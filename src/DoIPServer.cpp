@@ -27,7 +27,6 @@ DoIPServer::~DoIPServer() {
 DoIPServer::DoIPServer(const ServerConfig &config)
     : m_config(config), m_doipLog(Logger::get("server")), m_udpLog(Logger::getUdp()), m_tcpLog(Logger::getTcp()) {
 
-
     setLoopbackMode(m_config.loopback);
 }
 

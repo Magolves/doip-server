@@ -220,16 +220,14 @@ class DoIPServer {
      * @brief Get last accepted client IP (string form).
      * @return IP address string.
      */
-    const std::string& getClientIp() const { return m_clientIp; }
+    const std::string &getClientIp() const { return m_clientIp; }
     /**
      * @brief Get last accepted client TCP port.
      * @return Client port number.
      */
     int getClientPort() const { return m_clientPort; }
 
-
-    protected:
-
+  protected:
     /**
      * @brief Get the model factory callable.
      * @return std::function<UniqueServerModelPtr()> model factory callable.
@@ -239,9 +237,11 @@ class DoIPServer {
     }
 
   private:
-    std::shared_ptr<spdlog::logger> m_doipLog ;
-    std::shared_ptr<spdlog::logger> m_udpLog ;
-    std::shared_ptr<spdlog::logger> m_tcpLog ;
+    // Server configuration
+    ServerConfig m_config;
+    std::shared_ptr<spdlog::logger> m_doipLog;
+    std::shared_ptr<spdlog::logger> m_udpLog;
+    std::shared_ptr<spdlog::logger> m_tcpLog;
     Socket m_tcpSock;
     Socket m_udpLock;
     struct sockaddr_in m_serverAddress{};
@@ -259,8 +259,6 @@ class DoIPServer {
     std::vector<std::thread> m_workerThreads;
     std::mutex m_mutex;
 
-    // Server configuration
-    ServerConfig m_config;
     std::function<UniqueServerModelPtr()> m_modelFactory;
 
     void setMulticastGroup(const char *address) const;
@@ -281,7 +279,6 @@ class DoIPServer {
 
     ssize_t sendUdpResponse(DoIPMessage msg);
 };
-
 
 } // namespace doip
 

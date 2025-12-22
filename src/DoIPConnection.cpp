@@ -90,7 +90,7 @@ size_t DoIPConnection::receiveFixedNumberOfBytesFromTCP(uint8_t *receivedData, s
         ssize_t result = recv(m_tcpSocket, &receivedData[payloadPos], remainingPayload, 0);
         if (result < 0) {
             // Handle non-blocking socket or interrupted system call
-            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+            if (errno == EAGAIN /*|| errno == EWOULDBLOCK */ || errno == EINTR) {
                 // No data available yet or interrupted - retry
                 continue;
             }
