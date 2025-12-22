@@ -88,6 +88,10 @@ class UdsMockProvider : public IDownstreamProvider {
         cb(dr); // Invoke the callback immediately
     }
 
+    virtual std::string getProviderName() const override {
+        return "UdsMockProvider";
+    }
+
   private:
     uds::UdsMock m_uds;
     uint16_t m_p2_ms = 1000;

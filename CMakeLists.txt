@@ -18,6 +18,11 @@ option(WITH_EXAMPLES "Build examples" ON)
 option(ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers in Debug builds" OFF)
 option(ENABLE_STATIC_ANALYSIS "Enable static analysis tools" OFF)
 option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
+option(WITH_INTEGRATION_TEST "Enable integration tests" OFF)
+
+if (APPLE)
+    link_directories(/opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/gcc/aarch64-apple-darwin24/15)
+endif()
 
 # Set default build type if not specified
 if(NOT CMAKE_BUILD_TYPE)
@@ -93,14 +98,15 @@ set(DOIP_SERVER_LIB_NAME doip-server CACHE STRING "DoIP library name")
 
 
 set(SOURCES
+    src/cli/ServerConfigCLI.cpp
     src/DoIPClient.cpp
     src/DoIPConnection.cpp
+    src/DoIPDefaultConnection.cpp
     src/DoIPServer.cpp
     src/Logger.cpp
     src/MacAddress.cpp
-    src/DoIPDefaultConnection.cpp
-    src/cli/ServerConfigCLI.cpp
     src/uds/UdsMock.cpp
+    src/util/Daemonize.cpp
 )
 
 
@@ -129,7 +135,7 @@ target_include_directories(${DOIP_SERVER_LIB_NAME}
 # Link dependencies
 target_link_libraries(${DOIP_SERVER_LIB_NAME}
     PUBLIC
-        spdlog::spdlog
+        spdlog::spdlog_header_only
         CLI11::CLI11
     PRIVATE
         Threads::Threads

@@ -13,34 +13,6 @@ This library uses [spdlog](https://github.com/gabime/spdlog) for high-performanc
 
 ## Usage
 
-### Basic Logging
-
-```cpp
-#include "Logger.h"
-
-// Different log levels
-LOG_DOIP_TRACE("Detailed trace information");
-LOG_DOIP_DEBUG("Debug information");
-LOG_DOIP_INFO("General information");
-LOG_DOIP_WARN("Warning message");
-LOG_DOIP_ERROR("Error occurred");
-LOG_DOIP_CRITICAL("Critical error");
-```
-
-### Formatted Logging
-
-```cpp
-#include "Logger.h"
-
-int port = 13400;
-std::string interface = "eth0";
-LOG_DOIP_INFO("DoIP server starting on interface '{}' port {}", interface, port);
-
-// Works with any type that supports fmt formatting
-auto timestamp = std::chrono::system_clock::now();
-LOG_DOIP_DEBUG("Connection established at {}", timestamp);
-```
-
 ### Configuration
 
 ```cpp

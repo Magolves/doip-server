@@ -176,6 +176,10 @@ class CanIsoTpProvider : public IDownstreamProvider {
         cb(dr);
     }
 
+    virtual std::string getProviderName() const override {
+        return "CanIsoTpProvider";
+    }
+
   private:
     std::string m_interfaceName;
     uint32_t m_txAddress;

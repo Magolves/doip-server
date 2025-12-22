@@ -2,11 +2,13 @@
 #include <cerrno>    // for errno
 #include <cstring>   // for strerror
 #include <fcntl.h>
-#include <fstream>   // for PID file writing
+#include <fstream> // for PID file writing
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#include <syslog.h>
+#include <pthread.h>
+#include <cstdio>
 #include "DoIPConnection.h"
 #include "DoIPMessage.h"
 #include "DoIPServer.h"
@@ -15,6 +17,7 @@
 
 using namespace doip;
 
+
 DoIPServer::~DoIPServer() {
     if (m_udpRunning.load() || m_tcpRunning.load()) {
         stop();
@@ -22,83 +25,16 @@ DoIPServer::~DoIPServer() {
 }
 
 DoIPServer::DoIPServer(const ServerConfig &config)
-    : m_config(config) {
-
-    // Daemonize FIRST if requested, before any logging or resource initialization
-    if (m_config.daemonize) {
-        daemonize();
-    }
-
-    // Initialize loggers AFTER daemonization to avoid fork() issues with spdlog
-    m_doipLog = Logger::get("doip");
-    m_udpLog = Logger::get("udp ");
-    m_tcpLog = Logger::get("tcp ");
+    : m_config(config), m_doipLog(Logger::get("server")), m_udpLog(Logger::getUdp()), m_tcpLog(Logger::getTcp()) {
 
     setLoopbackMode(m_config.loopback);
-}
-
-void DoIPServer::daemonize() {
-    pid_t pid = fork();
-    if (pid < 0) {
-        std::cerr << "First fork failed: " << strerror(errno) << std::endl;
-        return;
-    }
-
-    if (pid > 0) {
-        // Parent process: print child PID and exit
-        std::cout << "Started daemon with PID " << pid << '\n';
-        _exit(0);
-    }
-
-    // Child: create new session and become session leader
-    if (setsid() < 0) {
-        std::cerr << "setsid failed: " << strerror(errno) << std::endl;
-        return;
-    }
-
-    // Second fork to ensure the daemon can't reacquire a tty
-    pid = fork();
-    if (pid < 0) {
-        std::cerr << "Second fork failed: " << strerror(errno) << std::endl;
-        return;
-    }
-    if (pid > 0) {
-        _exit(0);
-    }
-
-    // Final daemon process: get our PID and write to file for test integration
-    pid_t daemon_pid = getpid();
-
-    // Write PID to file for testing/monitoring
-    std::ofstream pid_file("/tmp/doip_server.pid");
-    if (pid_file.is_open()) {
-        pid_file << daemon_pid << std::endl;
-        pid_file.close();
-    }
-
-    // Set file mode creation mask to a safe default
-    umask(0);
-
-    // DON'T change working directory - it breaks relative paths for sockets/files
-    // Production daemons should chdir("/"), but for testing we need access to local resources
-
-    // Close and redirect standard file descriptors to /dev/null
-    int fd = open("/dev/null", O_RDWR);
-    if (fd >= 0) {
-        dup2(fd, STDIN_FILENO);
-        dup2(fd, STDOUT_FILENO);
-        dup2(fd, STDERR_FILENO);
-        if (fd > STDERR_FILENO) {
-            close(fd);
-        }
-    }
-    // Note: can't log here yet as loggers aren't initialized
 }
 
 /*
  * Stop the server and cleanup
  */
 void DoIPServer::stop() {
+    m_doipLog->info("Stopping DoIP server...");
     m_udpRunning.store(false);
     m_tcpRunning.store(false);
 
@@ -110,6 +46,7 @@ void DoIPServer::stop() {
     }
     m_workerThreads.clear();
 
+    m_doipLog->info("Server stopped, closing sockets...");
     closeUdpSocket();
     closeTcpSocket();
 }
@@ -119,18 +56,24 @@ void DoIPServer::stop() {
  */
 void DoIPServer::connectionHandlerThread(std::unique_ptr<DoIPConnection> connection) {
     m_tcpLog->info("Connection handler thread started");
+    auto closeReason = DoIPCloseReason::ApplicationRequest;
 
-    while (m_udpRunning.load() && connection->isSocketActive()) {
+    while (m_tcpRunning.load()) {
         int result = connection->receiveTcpMessage();
 
         if (result < 0) {
             m_tcpLog->info("Connection closed or error occurred");
+            closeReason = DoIPCloseReason::SocketError;
+            break;
+        } else if (result == 0) {
+            m_tcpLog->info("Connection closed by client");
+            closeReason = DoIPCloseReason::ApplicationRequest;
             break;
         }
     }
-
+    connection->closeConnection(closeReason);
     // Connection is automatically closed when unique_ptr goes out of scope
-    m_tcpLog->info("Connection handler thread stopped");
+    m_tcpLog->info("Connection to {} thread exit {}", connection->getClientAddress(), fmt::streamed(closeReason));
 }
 
 /*
@@ -163,6 +106,9 @@ bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFacto
         return false;
     }
 
+    int flags = fcntl(sock_fd, F_GETFL, 0);
+    fcntl(sock_fd, F_SETFL, flags | O_NONBLOCK);
+
     // Put the socket into listening state so the OS reports LISTEN and accept() can proceed
     if (listen(sock_fd, 5) < 0) {
         m_tcpLog->error("Failed to listen on TCP socket: {}", strerror(errno));
@@ -194,7 +140,7 @@ bool DoIPServer::setupUdpSocket() {
 
     int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock_fd < 0) {
-        perror("Failed to create socket");
+        m_udpLog->debug("Failed to create UDP socket: {}", strerror(errno));
         return false;
     }
 
@@ -216,8 +162,8 @@ bool DoIPServer::setupUdpSocket() {
     server_addr.sin_port = htons(DOIP_UDP_DISCOVERY_PORT);
 
     if (bind(sock_fd, reinterpret_cast<struct sockaddr *>(&server_addr), sizeof(server_addr)) < 0) {
-        perror("Failed to bind socket");
-        ::close(sock_fd);
+        m_udpLog->error("Failed to bind UDP socket on {}: {}", DOIP_UDP_DISCOVERY_PORT, strerror(errno));
+        close(sock_fd);
         return false;
     }
 
@@ -347,7 +293,7 @@ void DoIPServer::udpListenerThread() {
 
     m_udpLog->info("UDP listener thread started");
 
-    while (m_udpRunning) {
+    while (m_udpRunning.load()) {
         ssize_t received = recvfrom(m_udpLock.get(), m_receiveBuf.data(), sizeof(m_receiveBuf), 0,
                                     reinterpret_cast<struct sockaddr *>(&m_clientAddress), &client_len);
 
@@ -451,7 +397,7 @@ ssize_t DoIPServer::sendVehicleAnnouncement() {
     m_doipLog->info("TX {}", fmt::streamed(msg));
     if (sentBytes > 0) {
         m_udpLog->info("Sent Vehicle Announcement: {} bytes to {}:{}",
-                     sentBytes, dest_ip, DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
+                       sentBytes, dest_ip, DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
     } else {
         m_udpLog->error("Failed to send announcement: {}", strerror(errno));
     }
@@ -465,33 +411,54 @@ ssize_t DoIPServer::sendUdpResponse(DoIPMessage msg) {
     if (sentBytes > 0) {
         m_doipLog->info("TX {}", fmt::streamed(msg));
         m_udpLog->info("Sent UDS response: {} bytes to {}:{}",
-                     sentBytes, m_clientIp, ntohs(m_clientAddress.sin_port));
+                       sentBytes, m_clientIp, ntohs(m_clientAddress.sin_port));
     } else {
         m_doipLog->error("Failed to send message: {}", strerror(errno));
     }
     return sentBytes;
 }
 
-std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(UniqueServerModelPtr model) {
-    // waits till client approach to make connection
-    if (listen(m_tcpSock.get(), 5) < 0) {
+std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(std::function<UniqueServerModelPtr()> modelFactory) {
+    if (!(m_tcpRunning.load())) {
         return nullptr;
     }
 
     int tcpSocket = accept(m_tcpSock.get(), nullptr, nullptr);
     if (tcpSocket < 0) {
+#if EAGAIN != EWOULDBLOCK
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        return nullptr;
+    }
+#else
+    if (errno == EAGAIN) {
+        return nullptr;
+    }
+#endif
+        // Other errors (e.g., EINTR, ECONNABORTED)
+        if (m_tcpRunning.load()) {
+            m_tcpLog->error("accept() failed: {}", strerror(errno));
+        }
         return nullptr;
     }
 
+    // Set accepted socket to blocking mode (it inherits non-blocking from listening socket)
+    int flags = fcntl(tcpSocket, F_GETFL, 0);
+    if (flags >= 0) {
+        fcntl(tcpSocket, F_SETFL, flags & ~O_NONBLOCK);
+    }
+
+    auto model = modelFactory ? modelFactory() : std::make_unique<DefaultDoIPServerModel>();
+    m_tcpLog->info("Accepted new TCP connection from server address {}, model {} (factory {})", model->serverAddress, model->getModelName(), modelFactory ? "provided" : "default");
     return std::unique_ptr<DoIPConnection>(new DoIPConnection(tcpSocket, std::move(model), m_TimerManager));
 }
 
 void DoIPServer::tcpListenerThread(std::function<UniqueServerModelPtr()> modelFactory) {
+
     m_doipLog->info("TCP listener thread started");
 
     while (m_tcpRunning.load()) {
-        auto model = modelFactory ? modelFactory() : std::make_unique<DefaultDoIPServerModel>();
-        auto connection = waitForTcpConnection(std::move(model));
+
+        auto connection = waitForTcpConnection(modelFactory);
 
         if (!connection) {
             if (m_tcpRunning.load()) {
@@ -502,8 +469,8 @@ void DoIPServer::tcpListenerThread(std::function<UniqueServerModelPtr()> modelFa
         }
 
         // Spawn a dedicated thread for this connection
-        // Note: We detach because the connection thread manages its own lifecycle
-        std::thread(&DoIPServer::connectionHandlerThread, this, std::move(connection)).detach();
+        // -- Note: We detach because the connection thread manages its own lifecycle
+        m_workerThreads.emplace_back(std::thread(&DoIPServer::connectionHandlerThread, this, std::move(connection)));
     }
 
     m_doipLog->info("TCP listener thread stopped");

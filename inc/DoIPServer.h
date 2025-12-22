@@ -96,10 +96,10 @@ class DoIPServer {
 
     /**
      * @brief Block until a TCP client connects and create a DoIP connection.
-     * @param model Server model instance used by the connection.
+     * @param modelFactory Model factory callable to create a server model for the connection.
      * @return Unique pointer to established `DoIPConnection`, or nullptr on failure.
      */
-    std::unique_ptr<DoIPConnection> waitForTcpConnection(UniqueServerModelPtr model);
+    std::unique_ptr<DoIPConnection> waitForTcpConnection(std::function<UniqueServerModelPtr()> modelFactory);
 
     [[nodiscard]]
     /**
@@ -139,6 +139,11 @@ class DoIPServer {
      * @brief Close the UDP socket if open.
      */
     void closeUdpSocket();
+
+    /**
+     * @brief Stop the server, close sockets, and join threads.
+     */
+    void stop();
 
     /**
      * @brief Get the logical gateway address of the server
@@ -215,15 +220,14 @@ class DoIPServer {
      * @brief Get last accepted client IP (string form).
      * @return IP address string.
      */
-    std::string getClientIp() const { return m_clientIp; }
+    const std::string &getClientIp() const { return m_clientIp; }
     /**
      * @brief Get last accepted client TCP port.
      * @return Client port number.
      */
     int getClientPort() const { return m_clientPort; }
 
-    protected:
-
+  protected:
     /**
      * @brief Get the model factory callable.
      * @return std::function<UniqueServerModelPtr()> model factory callable.
@@ -233,9 +237,11 @@ class DoIPServer {
     }
 
   private:
-    std::shared_ptr<spdlog::logger> m_doipLog ;
-    std::shared_ptr<spdlog::logger> m_udpLog ;
-    std::shared_ptr<spdlog::logger> m_tcpLog ;
+    // Server configuration
+    ServerConfig m_config;
+    std::shared_ptr<spdlog::logger> m_doipLog;
+    std::shared_ptr<spdlog::logger> m_udpLog;
+    std::shared_ptr<spdlog::logger> m_tcpLog;
     Socket m_tcpSock;
     Socket m_udpLock;
     struct sockaddr_in m_serverAddress{};
@@ -253,12 +259,7 @@ class DoIPServer {
     std::vector<std::thread> m_workerThreads;
     std::mutex m_mutex;
 
-    // Server configuration
-    ServerConfig m_config;
     std::function<UniqueServerModelPtr()> m_modelFactory;
-
-    void stop();
-    void daemonize();
 
     void setMulticastGroup(const char *address) const;
 
@@ -278,7 +279,6 @@ class DoIPServer {
 
     ssize_t sendUdpResponse(DoIPMessage msg);
 };
-
 
 } // namespace doip
 
