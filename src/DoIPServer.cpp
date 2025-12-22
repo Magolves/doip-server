@@ -425,9 +425,15 @@ std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(std::function<U
 
     int tcpSocket = accept(m_tcpSock.get(), nullptr, nullptr);
     if (tcpSocket < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            return nullptr;
-        }
+#if EAGAIN != EWOULDBLOCK
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        return nullptr;
+    }
+#else
+    if (errno == EAGAIN) {
+        return nullptr;
+    }
+#endif
         // Other errors (e.g., EINTR, ECONNABORTED)
         if (m_tcpRunning.load()) {
             m_tcpLog->error("accept() failed: {}", strerror(errno));
