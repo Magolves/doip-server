@@ -423,17 +423,20 @@ ssize_t DoIPServer::sendUdpResponse(DoIPMessage msg) {
 }
 
 std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(std::function<UniqueServerModelPtr()> modelFactory) {
-    // waits till client approach to make connection
-    if (listen(m_tcpSock.get(), 5) < 0) {
-        return nullptr;
-    }
-
     if (!(m_tcpRunning.load())) {
         return nullptr;
     }
 
     int tcpSocket = accept(m_tcpSock.get(), nullptr, nullptr);
     if (tcpSocket < 0) {
+        // Handle non-blocking socket: EAGAIN/EWOULDBLOCK means no connection available yet
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return nullptr; // No connection available, caller will retry
+        }
+        // Other errors (e.g., EINTR, ECONNABORTED)
+        if (m_tcpRunning.load()) {
+            m_tcpLog->error("accept() failed: {}", strerror(errno));
+        }
         return nullptr;
     }
 
