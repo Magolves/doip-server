@@ -1,6 +1,8 @@
 # Add subdirectories first to create test targets
 add_subdirectory(unit)
-add_subdirectory(integration)
+if (WITH_INTEGRATION_TEST)
+    add_subdirectory(integration)
+endif()
 
 # ------------------------------------------------------------
 # Optional: Test coverage task with HTML report (requires gcovr)
