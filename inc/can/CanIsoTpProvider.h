@@ -176,7 +176,7 @@ class CanIsoTpProvider : public IDownstreamProvider {
         cb(dr);
     }
 
-    virtual std::string getProviderName() const override {
+    virtual std::string_view getProviderName() const override {
         return "CanIsoTpProvider";
     }
 

@@ -61,9 +61,9 @@ class IDownstreamProvider {
     /**
      * @brief Get the provider name object.
      *
-     * @return std::string
+     * @return std::string_view tge provider name
      */
-    virtual std::string getProviderName() const = 0;
+    virtual std::string_view getProviderName() const = 0;
 };
 
 } // namespace doip
