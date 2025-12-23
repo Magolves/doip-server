@@ -108,6 +108,18 @@ class DoIPMessage {
     }
 
     /**
+     * @brief Construct a new DoIP Message object with payload type and generic byte array.
+     * @note: 'Perfect forwarding' to accept various byte array types.
+     * @tparam ByteArrayT Type of the byte array (e.g., ByteArray, std::vector<uint8_t>)
+     * @param payloadType The payload type for this message
+     * @param payload The payload data as a byte array
+     */
+    template <typename ByteArrayT>
+    explicit DoIPMessage(DoIPPayloadType payloadType, ByteArrayT &&payload) {
+        buildMessage(payloadType, std::forward<ByteArrayT>(payload));
+    }
+
+    /**
      * @brief Constructs a DoIP message with payload type and initializer list.
      *
      * @param payloadType The payload type for this message
