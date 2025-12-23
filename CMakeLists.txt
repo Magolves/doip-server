@@ -13,7 +13,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Build options
 option(WITH_UNIT_TEST "Build unit tests" ON)
-option(WITH_INTEGRATION_TEST "Enable integration tests" OFF)
+option(WITH_INTEGRATION_TEST "Enable integration tests" ON)
 # Enable test coverage reporting
 option(WITH_TEST_COV "Enable test coverage reporting " OFF)
 option(WITH_EXAMPLES "Build examples" ON)

@@ -65,8 +65,8 @@ int main(int argc, char *argv[]) {
 
     server->setFurtherActionRequired(DoIPFurtherAction::NoFurtherAction);
     // for discovery check we use relaxed announcement settings
-    server->setAnnounceInterval(1000);
-    server->setAnnounceNum(10);
+    server->setAnnounceInterval(500);  // Send announcements every 500ms for faster discovery
+    server->setAnnounceNum(100);       // Send 100 announcements = 50 seconds of announcements (enough for parallel test execution)
 
     if (!server->setupUdpSocket()) {
         console->critical("Failed to set up UDP socket");
