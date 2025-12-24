@@ -17,7 +17,7 @@
 
 using namespace doip;
 
-DoIPServer::~DoIPServer() {
+DoIPServer::~DoIPServer() noexcept {
     if (m_udpRunning.load() || m_tcpRunning.load()) {
         stop();
     }

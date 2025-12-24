@@ -197,7 +197,7 @@ class TimerManager {
      * @return size_t number of timers.
      */
     [[nodiscard]]
-    size_t timerCount() const {
+    size_t timerCount() const noexcept {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_timers.size();
     }
@@ -205,7 +205,7 @@ class TimerManager {
     /**
      * @brief Stops all timers and the timer manager.
      */
-    void stop() {
+    void stop() noexcept {
         if (m_running.exchange(false)) {
             m_cv.notify_all();
             if (m_thread.joinable()) {

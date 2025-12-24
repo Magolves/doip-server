@@ -185,7 +185,7 @@ class GenericFixedId {
      *
      * @return const std::array<uint8_t, ID_LENGTH>& Reference to the internal array
      */
-    const std::array<uint8_t, ID_LENGTH> &getArray() const {
+    const std::array<uint8_t, ID_LENGTH> &getArray() const noexcept {
         return m_id;
     }
 
@@ -194,7 +194,7 @@ class GenericFixedId {
      *
      * @return const uint8_t* Pointer to the identifier data
      */
-    const uint8_t *data() const {
+    const uint8_t *data() const noexcept {
         return m_id.data();
     }
 
@@ -214,7 +214,7 @@ class GenericFixedId {
      *
      * @return constexpr size_t Always returns ID_LENGTH (IdLength)
      */
-    constexpr size_t size() const {
+    constexpr size_t size() const noexcept {
         return m_id.size();
     }
 
@@ -223,7 +223,7 @@ class GenericFixedId {
      *
      * @return bool True if all bytes are zero or all bytes are the padding character
      */
-    bool isEmpty() const {
+    bool isEmpty() const noexcept {
         if constexpr (zeroPadding) {
             // For zero-padded identifiers, check if all bytes are the padding character
             return std::all_of(m_id.begin(), m_id.end(), [](uint8_t byte) { return byte == static_cast<uint8_t>(padChar); });
@@ -239,7 +239,7 @@ class GenericFixedId {
      * @param other The other identifier to compare with
      * @return bool True if both identifiers are identical
      */
-    bool operator==(const GenericFixedId &other) const {
+    bool operator==(const GenericFixedId &other) const noexcept {
         return m_id == other.m_id;
     }
 
@@ -249,7 +249,7 @@ class GenericFixedId {
      * @param other The other identifier to compare with
      * @return bool True if identifiers are different
      */
-    bool operator!=(const GenericFixedId &other) const {
+    bool operator!=(const GenericFixedId &other) const noexcept {
         return m_id != other.m_id;
     }
 
@@ -268,7 +268,7 @@ class GenericFixedId {
      *
      * @return char constexpr the padding character
      */
-    char constexpr getPadChar() {
+    constexpr char getPadChar() const noexcept {
         return padChar;
     }
 
@@ -277,7 +277,7 @@ class GenericFixedId {
      *
      * @return uint8_t constexpr the padding byte
      */
-    uint8_t constexpr getPadByte() {
+    constexpr uint8_t getPadByte() const noexcept {
         return static_cast<uint8_t>(padChar);
     }
 
@@ -473,24 +473,24 @@ class DoIpVin {
         constexpr size_t size() const {
             return VIN_LENGTH;
         }
-        bool isEmpty() const {
+        bool isEmpty() const noexcept  {
             return m_data.isEmpty();
         }
 
-        bool operator==(const DoIpVin &other) const {
+        bool operator==(const DoIpVin &other) const noexcept {
             return m_data == other.m_data;
         }
-        bool operator!=(const DoIpVin &other) const {
+        bool operator!=(const DoIpVin &other) const noexcept {
             return m_data != other.m_data;
         }
         const uint8_t &operator[](size_t index) const {
             return m_data[index];
         }
 
-        constexpr char getPadChar() const {
+        constexpr char getPadChar() const noexcept {
             return '0';
         }
-        constexpr uint8_t getPadByte() const {
+        constexpr uint8_t getPadByte() const noexcept {
             return static_cast<uint8_t>('0');
         }
 
@@ -519,7 +519,7 @@ class DoIpVin {
          *
          * @return true if all characters are valid (A-Z except I,O,Q and 0-9)
          */
-        bool isValid() const {
+        bool isValid() const noexcept {
             return std::all_of(m_data.begin(), m_data.end(),
                                [](uint8_t byte) {
                                    char c = static_cast<char>(byte);
@@ -537,7 +537,7 @@ class DoIpVin {
      * @param vin The DoIpVin to validate
      * @return true if valid, false otherwise
      */
-    inline bool isValidVin(const DoIpVin &vin) {
+    inline bool isValidVin(const DoIpVin &vin) noexcept {
         return vin.isValid();
     }
 

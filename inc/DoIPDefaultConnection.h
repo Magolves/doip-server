@@ -139,7 +139,7 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @brief Checks if routing is currently activated
      * @return true if routing is activated, false otherwise
      */
-    bool isRoutingActivated() const { return m_state && m_state->state == DoIPServerState::RoutingActivated; }
+    bool isRoutingActivated() const noexcept { return m_state && m_state->state == DoIPServerState::RoutingActivated; }
 
     /**
      * @brief Gets the alive check retry count

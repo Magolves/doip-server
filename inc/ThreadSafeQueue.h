@@ -86,7 +86,7 @@ class ThreadSafeQueue {
         cv_.notify_all();
     }
 
-    size_t size() const {
+    size_t size() const noexcept {
         std::lock_guard<std::mutex> lock(mutex_);
         return queue_.size();
     }

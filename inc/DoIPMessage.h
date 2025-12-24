@@ -283,7 +283,7 @@ class DoIPMessage {
      *
      * @return std::optional<DoIPAddress> The source address if present, std::nullopt otherwise
      */
-    std::optional<DoIPAddress> getSourceAddress() const {
+    std::optional<DoIPAddress> getSourceAddress() const noexcept {
         auto payloadRef = getPayload();
         // todo: Simplify
         if (hasSourceAddress()) {
@@ -297,7 +297,7 @@ class DoIPMessage {
      *
      * @return std::optional<DoIPAddress> The logical address if present, std::nullopt otherwise
      */
-    std::optional<DoIPAddress> getLogicalAddress() const {
+    std::optional<DoIPAddress> getLogicalAddress() const noexcept {
         auto payloadRef = getPayload();
         if (getPayloadType() == DoIPPayloadType::VehicleIdentificationResponse && payloadRef.second >= 19) {
             return readAddressFrom(payloadRef.first + 17);
@@ -310,7 +310,7 @@ class DoIPMessage {
      *
      * @return std::optional<DoIPAddress> The target address if present, std::nullopt otherwise
      */
-    std::optional<DoIPAddress> getTargetAddress() const {
+    std::optional<DoIPAddress> getTargetAddress() const noexcept {
         auto payloadRef = getPayload();
         if (getPayloadType() == DoIPPayloadType::DiagnosticMessage && payloadRef.second >= 4) {
             return readAddressFrom(payloadRef.first, 2);
@@ -375,7 +375,7 @@ class DoIPMessage {
      *
      * @return bool True if the message has a valid structure
      */
-    bool isValid() const {
+    bool isValid() const noexcept {
         return m_data.size() >= DOIP_HEADER_SIZE &&
                isValidProtocolVersion() &&
                getPayloadSize() == getPayloadLengthFromHeader();
@@ -388,7 +388,7 @@ class DoIPMessage {
      * @param offset Offset to start checking from (default: 0)
      * @return bool True if valid
      */
-    static bool isValidProtocolVersion(const uint8_t *data, size_t length, size_t offset = 0) {
+    static bool isValidProtocolVersion(const uint8_t *data, size_t length, size_t offset = 0) noexcept {
         if (length < 2) {
             return false;
         }
@@ -485,7 +485,7 @@ class DoIPMessage {
      *
      * @return bool True if valid
      */
-    bool isValidProtocolVersion() const {
+    bool isValidProtocolVersion() const noexcept {
         if (m_data.size() < 2) {
             return false;
         }

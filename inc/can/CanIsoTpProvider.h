@@ -47,7 +47,7 @@ class CanIsoTpProvider : public IDownstreamProvider {
 
                                                                                                                 };
 
-    virtual ~CanIsoTpProvider() {
+    virtual ~CanIsoTpProvider() noexcept {
         m_canSocket.close();
         m_logger->info("CAN ISO-TP provider stopped");
     }
