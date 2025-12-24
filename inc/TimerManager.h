@@ -215,7 +215,7 @@ class TimerManager {
     }
 
   private:
-    std::map<TimerId, TimerEntry> m_timers;
+    std::unordered_map<TimerId, TimerEntry> m_timers;
     mutable std::mutex m_mutex;
     std::condition_variable m_cv;
     std::thread m_thread;
