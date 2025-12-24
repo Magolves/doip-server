@@ -248,35 +248,31 @@ class TimerManager {
                 continue;
             }
 
-            std::vector<TimerId> expired;
+            // Collect expired timers and their callbacks while holding the lock
+            std::vector<std::pair<TimerId, std::function<void(TimerId)>>> callbacks;
+            std::vector<TimerId> toRemove;
+
             for (const auto &[id, timer] : m_timers) {
                 if (timer.enabled && timer.expiry <= now) {
-                    expired.push_back(id);
+                    callbacks.emplace_back(id, timer.callback);
+                    if (timer.periodic) {
+                        m_timers[id].expiry = std::chrono::steady_clock::now() + timer.interval;
+                    } else {
+                        toRemove.push_back(id);  // Mark for removal
+                    }
                 }
             }
 
+            // Erase non-periodic expired timers
+            for (TimerId id : toRemove) {
+                m_timers.erase(id);
+            }
+
+            // Release lock before executing callbacks
             lock.unlock();
 
-            for (TimerId id : expired) {
-                lock.lock();
-                auto it = m_timers.find(id);
-                if (it == m_timers.end() || !it->second.enabled) {
-                    lock.unlock();
-                    continue;
-                }
-
-                auto callback = it->second.callback;
-                bool periodic = it->second.periodic;
-                auto interval = it->second.interval;
-
-                if (periodic) {
-                    it->second.expiry = std::chrono::steady_clock::now() + interval;
-                } else {
-                    m_timers.erase(it);
-                }
-
-                lock.unlock();
-
+            // Execute callbacks
+            for (const auto &[id, callback] : callbacks) {
                 try {
                     callback(id);
                 } catch (const std::exception& e) {
