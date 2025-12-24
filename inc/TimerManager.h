@@ -65,6 +65,7 @@ class TimerManager {
 
         m_timers[id] = std::move(entry);
 
+        m_timers_changed = true;
         m_cv.notify_one();
 
         return id;
@@ -79,7 +80,12 @@ class TimerManager {
      */
     bool removeTimer(TimerId id) {
         std::lock_guard<std::mutex> lock(m_mutex);
-        return m_timers.erase(id) > 0;
+        bool removed = m_timers.erase(id) > 0;
+        if (removed) {
+            m_timers_changed = true;
+            m_cv.notify_one();
+        }
+        return removed;
     }
 
     [[nodiscard]]
@@ -91,6 +97,7 @@ class TimerManager {
         }
 
         it->second.expiry = std::chrono::steady_clock::now() + it->second.interval;
+        m_timers_changed = true;
         m_cv.notify_one();
         return true;
     }
@@ -114,6 +121,7 @@ class TimerManager {
 
         it->second.interval = newDuration;
         it->second.expiry = std::chrono::steady_clock::now() + newDuration;
+        m_timers_changed = true;
         m_cv.notify_one();
         return true;
     }
@@ -153,6 +161,7 @@ class TimerManager {
         if (!it->second.enabled) {
             it->second.enabled = true;
             it->second.expiry = std::chrono::steady_clock::now() + it->second.interval;
+            m_timers_changed = true;
             m_cv.notify_one();
         }
         return true;
@@ -176,6 +185,8 @@ class TimerManager {
     void stopAll() {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_timers.clear();
+        m_timers_changed = true;
+        m_cv.notify_one();
     }
 
     /**
@@ -220,12 +231,14 @@ class TimerManager {
     std::condition_variable m_cv;
     std::thread m_thread;
     std::atomic<bool> m_running{false};
+    std::atomic<bool> m_timers_changed{false};  // Flag to signal timer changes
 
     void run() {
         while (m_running) {
             std::unique_lock<std::mutex> lock(m_mutex);
 
             if (m_timers.empty()) {
+                m_timers_changed = false;  // Reset flag even when no timers
                 m_cv.wait(lock, [this]() {
                     return !m_running || !m_timers.empty();
                 });
@@ -242,8 +255,9 @@ class TimerManager {
             }
 
             if (nextExpiry > now) {
+                m_timers_changed = false;  // Reset flag before waiting
                 m_cv.wait_until(lock, nextExpiry, [this]() {
-                    return !m_running;
+                    return !m_running || m_timers_changed.load();
                 });
                 continue;
             }

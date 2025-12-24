@@ -161,30 +161,69 @@ TEST_SUITE("TimerManager") {
     }
 
     TEST_CASE("TimerOne enable/disable") {
-        // Test 1: Disable functionality
+        // Test 1: Verify disabled timer does NOT execute (even after multiple periods)
         {
             TimerManager<TimerTestId> manager;
-            std::atomic<bool> callbackExecuted{false};
+            std::atomic<int> executionCount{0};
 
-            auto callback = [&callbackExecuted](TimerTestId id) noexcept {
+            auto callback = [&executionCount](TimerTestId id) noexcept {
                 (void)id;
-                callbackExecuted = true;
+                executionCount++;
             };
 
-            // Create timer with longer duration to have time to disable it
-            auto timerId = manager.addTimer(TimerTestId::TimerOne, 200ms, callback);
+            // Create timer with 50ms interval
+            auto timerId = manager.addTimer(TimerTestId::TimerOne, 50ms, callback);
             REQUIRE(timerId.has_value());
 
             // Disable timer immediately
             bool disabled = manager.disableTimer(timerId.value());
             CHECK(disabled);
 
-            // Wait longer than timer duration to ensure it doesn't execute
-            std::this_thread::sleep_for(250ms);
-            CHECK_FALSE(callbackExecuted);
+            // Wait 4x the timer period - if properly disabled, count stays 0
+            // This is robust against timing jitter since we wait multiple periods
+            std::this_thread::sleep_for(200ms);
+            CHECK(executionCount == 0);
         }
 
-        // Test 2: Basic enable/disable API
+        // Test 2: Verify re-enabling allows execution (use periodic timer for reliability)
+        {
+            TimerManager<TimerTestId> manager;
+            std::atomic<int> executionCount{0};
+
+            auto callback = [&executionCount](TimerTestId id) noexcept {
+                (void)id;
+                executionCount++;
+            };
+
+            // Use periodic timer to ensure it keeps running after re-enable
+            auto timerId = manager.addTimer(TimerTestId::TimerOne, 30ms, callback, true);  // Shorter interval
+            REQUIRE(timerId.has_value());
+
+            // Disable and verify it doesn't execute
+            bool disabled = manager.disableTimer(timerId.value());
+            REQUIRE(disabled);
+            std::this_thread::sleep_for(150ms);  // Wait 5x the period
+            REQUIRE(executionCount == 0);  // Use REQUIRE to fail fast if this doesn't work
+
+            // Re-enable - this should restart the timer with a new expiry time
+            bool enabled = manager.enableTimer(timerId.value());
+            REQUIRE(enabled);
+
+            // Add a small delay to let the timer thread process the enable
+            std::this_thread::sleep_for(10ms);
+
+            // Now wait for the timer to fire multiple times
+            std::this_thread::sleep_for(100ms);  // ~3 periods
+
+            // Debug: print the actual count
+            INFO("Execution count after re-enable: " << executionCount.load());
+            CHECK(executionCount >= 1); // Should have executed at least once
+
+            // Clean up
+            manager.removeTimer(timerId.value());
+        }
+
+        // Test 3: Basic enable/disable API with non-existent timer
         {
             TimerManager<TimerTestId> manager;
 
