@@ -24,6 +24,7 @@
 #include "DoIPIdentifiers.h"
 #include "DoIPNegativeAck.h"
 #include "DoIPServerModel.h"
+#include "IServerTransport.h"
 #include "MacAddress.h"
 #include "Socket.h"
 
@@ -243,11 +244,9 @@ class DoIPServer {
     std::shared_ptr<spdlog::logger> m_doipLog;
     std::shared_ptr<spdlog::logger> m_udpLog;
     std::shared_ptr<spdlog::logger> m_tcpLog;
-    Socket m_tcpSock;
-    Socket m_udpLock;
-    struct sockaddr_in m_serverAddress{};
-    struct sockaddr_in m_clientAddress{};
-    std::array<uint8_t, DOIP_MAXIMUM_MTU> m_receiveBuf{};
+
+    // Transport abstraction (replaces direct socket management)
+    UniqueServerTransportPtr m_transport;
 
     std::string m_clientIp{};
     int m_clientPort{};
@@ -262,10 +261,6 @@ class DoIPServer {
 
     std::function<UniqueServerModelPtr()> m_modelFactory;
 
-    void setMulticastGroup(const char *address) const;
-
-    ssize_t sendNegativeUdpAck(DoIPNegativeAck ackCode);
-
     /**
      * @brief Background TCP listener that accepts connections and spawns handlers.
      * @param modelFactory Factory callable that returns a `UniqueServerModelPtr` per connection.
@@ -274,11 +269,7 @@ class DoIPServer {
 
     void connectionHandlerThread(std::unique_ptr<DoIPDefaultConnection> connection);
 
-    void udpListenerThread();
     void udpAnnouncementThread();
-    ssize_t sendVehicleAnnouncement();
-
-    ssize_t sendUdpResponse(DoIPMessage msg);
 };
 
 } // namespace doip

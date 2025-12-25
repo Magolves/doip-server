@@ -9,10 +9,10 @@
 
 namespace doip {
 
-DoIPConnection::DoIPConnection(int tcpSocket, UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager)
-    : DoIPDefaultConnection(std::move(model), std::make_unique<TcpConnectionTransport>(tcpSocket), timerManager),
+DoIPConnection::DoIPConnection(UniqueConnectionTransportPtr transport, UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager)
+    : DoIPDefaultConnection(std::move(model), std::move(transport), timerManager),
       m_logicalAddress(ZERO_ADDRESS),
-      m_tcpSocket(tcpSocket) {
+      m_tcpSocket(0) {
 }
 
 /*
