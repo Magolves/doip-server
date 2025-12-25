@@ -10,16 +10,7 @@
 namespace doip {
 
 DoIPConnection::DoIPConnection(UniqueConnectionTransportPtr transport, UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager)
-    : DoIPDefaultConnection(std::move(model), std::move(transport), timerManager),
-      m_logicalAddress(ZERO_ADDRESS),
-      m_tcpSocket(0) {
-}
-
-/*
- * Closes the socket for this server (private method)
- */
-void DoIPConnection::closeSocket() {
-    m_transport->close(DoIPCloseReason::ApplicationRequest);
+    : DoIPDefaultConnection(std::move(model), std::move(transport), timerManager) {
 }
 
 /*
@@ -42,18 +33,6 @@ int DoIPConnection::receiveMessage() {
     return 1;
 }
 
-/**
- * Sends a message back to the connected client
- * @param message           contains generic header and payload specific content
- * @param messageLength     length of the complete message
- * @return                  number of bytes written is returned,
- *                          or -1 if error occurred
- */
-ssize_t DoIPConnection::sendMessage(const uint8_t *message, size_t messageLength) {
-    ssize_t result = write(m_tcpSocket, message, messageLength);
-    return result;
-}
-
 // === IConnectionContext interface implementation ===
 ssize_t DoIPConnection::sendProtocolMessage(const DoIPMessage &msg) {
     return DoIPDefaultConnection::sendProtocolMessage(msg);  // Delegate to base class
@@ -73,23 +52,12 @@ void DoIPConnection::closeConnection(DoIPCloseReason reason) {
 
     m_log->info("Closing connection, reason: {}", fmt::streamed(reason));
 
-    // Call base class to handle state machine and notification
+    // Call base class to handle state machine, transport cleanup, and notification
     DoIPDefaultConnection::closeConnection(reason);
-
-    close(m_tcpSocket);
-    m_tcpSocket = 0;
 }
 
 DoIPAddress DoIPConnection::getServerAddress() const {
     return m_serverModel->serverAddress;
-}
-
-DoIPAddress DoIPConnection::getClientAddress() const {
-    return m_logicalAddress;
-}
-
-void DoIPConnection::setClientAddress(const DoIPAddress &address) {
-    m_logicalAddress = address;
 }
 
 DoIPDiagnosticAck DoIPConnection::notifyDiagnosticMessage(const DoIPMessage &msg) {

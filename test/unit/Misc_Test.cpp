@@ -5,6 +5,7 @@
 
 #include "DoIPAddress.h"
 #include "DoIPConnection.h"
+#include "MockConnectionTransport.h"
 
 using namespace doip;
 
@@ -32,7 +33,15 @@ TEST_SUITE("DoIPConnection") {
     TEST_CASE("Connection Initialization") {
 
         SharedTimerManagerPtr<ConnectionTimers> timerManager = std::make_shared<TimerManager<ConnectionTimers>>();
-        DoIPConnection conn(0, std::make_unique<DefaultDoIPServerModel>(), timerManager);
+        // Create connection with mock transport (simulates closed socket)
+        auto mockTransport = std::make_unique<MockConnectionTransport>();
+        DoIPConnection conn(std::move(mockTransport), std::make_unique<DefaultDoIPServerModel>(), timerManager);
+
+        // Connection should be active after construction
+        CHECK(conn.isSocketActive() == true);
+
+        // After closing, socket should be inactive
+        conn.closeConnection(DoIPCloseReason::ApplicationRequest);
         CHECK(conn.isSocketActive() == false);
     }
 }

@@ -29,10 +29,9 @@ class DoIPConnection : public DoIPDefaultConnection {
     DoIPConnection(UniqueConnectionTransportPtr transport, UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager);
 
     int receiveMessage();
-    size_t receiveFixedNumberOfBytesFromTCP(uint8_t *receivedData, size_t payloadLength);
 
     void sendDiagnosticPayload(const DoIPAddress &sourceAddress, const ByteArray &payload);
-    bool isSocketActive() { return m_tcpSocket != 0; };
+    bool isSocketActive() { return m_isOpen; };
 
     void sendDiagnosticAck(const DoIPAddress &sourceAddress);
     void sendDiagnosticNegativeAck(const DoIPAddress &sourceAddress, DoIPNegativeDiagnosticAck ackCode);
@@ -66,18 +65,6 @@ class DoIPConnection : public DoIPDefaultConnection {
     DoIPAddress getServerAddress() const override;
 
     /**
-     * @brief Get the currently client (active source) address
-     * @return The client (active source) address, or 0 if no routing is active
-     */
-    DoIPAddress getClientAddress() const override;
-
-    /**
-     * @brief Set the client (active source) address after routing activation
-     * @param address The client's source address
-     */
-    void setClientAddress(const DoIPAddress& address) override;
-
-    /**
      * @brief Handle an incoming diagnostic message (application callback)
      * @param msg The diagnostic message received
      * @return std::nullopt for ACK, or NACK code
@@ -105,15 +92,8 @@ class DoIPConnection : public DoIPDefaultConnection {
     bool hasDownstreamHandler() const override;
 
   private:
-    DoIPAddress m_logicalAddress;
-
-    // TCP socket-specific members
-    int m_tcpSocket;
-    std::array<uint8_t, DOIP_MAXIMUM_MTU> m_receiveBuf{};
     std::atomic<bool> m_isClosing{false};  // Guard against recursive closeConnection calls
     std::optional<DoIPMessage> m_pendingDownstreamRequest;
-
-    void closeSocket();
 
     int reactOnReceivedTcpMessage(const DoIPMessage &message);
 
