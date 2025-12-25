@@ -103,7 +103,7 @@ void DoIPDefaultConnection::setClientAddress(const DoIPAddress &address) {
     m_routedClientAddress = address;
 }
 
-void DoIPDefaultConnection::handleMessage2(const DoIPMessage &message) {
+void DoIPDefaultConnection::handleMessage(const DoIPMessage &message) {
     m_state->messageHandler(message);
 }
 

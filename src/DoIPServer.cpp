@@ -71,7 +71,7 @@ void DoIPServer::connectionHandlerThread(std::unique_ptr<DoIPDefaultConnection> 
             closeReason = DoIPCloseReason::SocketError;
             break;
         } else {
-            connection->handleMessage2(msg.value());
+            connection->handleMessage(msg.value());
         }
     }
     connection->closeConnection(closeReason);

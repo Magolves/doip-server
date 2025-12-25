@@ -38,7 +38,7 @@ int DoIPConnection::receiveMessage() {
     const DoIPMessage &message = optMessage.value();
     m_log->info("Received DoIP message: {}", fmt::streamed(message));
 
-    handleMessage2(message);
+    handleMessage(message);
     return 1;
 }
 

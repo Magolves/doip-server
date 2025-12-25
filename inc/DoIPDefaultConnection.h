@@ -281,7 +281,7 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @brief Handles a message (internal helper)
      * @param message The message to handle
      */
-    void handleMessage2(const DoIPMessage &message);
+    void handleMessage(const DoIPMessage &message);
 
   protected:
     UniqueServerModelPtr m_serverModel;
