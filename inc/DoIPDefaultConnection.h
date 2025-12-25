@@ -285,8 +285,8 @@ class DoIPDefaultConnection : public IConnectionContext {
 
   protected:
     UniqueServerModelPtr m_serverModel;
-    SharedTimerManagerPtr<ConnectionTimers> m_timerManager;
     UniqueConnectionTransportPtr m_transport;
+    SharedTimerManagerPtr<ConnectionTimers> m_timerManager;
     std::shared_ptr<spdlog::logger> m_log = Logger::get("tcp");
 
 
