@@ -16,7 +16,7 @@ class ThreadSafeQueue {
   public:
     ThreadSafeQueue() = default;
 
-    ~ThreadSafeQueue() {
+    ~ThreadSafeQueue() noexcept {
         stop();
     }
 
@@ -144,7 +144,7 @@ class ThreadSafeQueue {
     /**
      * @brief Clear all items from the queue
      */
-    void clear() {
+    void clear() noexcept {
         {
             std::lock_guard<std::mutex> lock(mutex_);
             std::queue<T> empty;

@@ -221,13 +221,13 @@ class DoIPServer {
      * @brief Get last accepted client IP (string form).
      * @return IP address string.
      */
-    std::string_view getClientIp() const { return m_clientIp; }
+    std::string_view getClientIp() const noexcept { return m_clientIp; }
 
     /**
      * @brief Get last accepted client TCP port.
      * @return Client port number.
      */
-    int getClientPort() const { return m_clientPort; }
+    int getClientPort() const noexcept { return m_clientPort; }
 
   protected:
     /**
