@@ -2,6 +2,7 @@
 
 #include "DoIPDefaultConnection.h"
 #include "DoIPMessage.h"
+#include "MockTransport.h"
 
 namespace doip {
 
@@ -26,7 +27,7 @@ TEST_SUITE("DoIPDefaultConnection") {
         DoIPAddress sa = DoIPAddress(0x0E00);
 
         DoIPDefaultConnectionTestFixture()
-            : connection(std::make_unique<DoIPDefaultConnection>(std::make_unique<DefaultDoIPServerModel>(), timerManager)) {
+            : connection(std::make_unique<DoIPDefaultConnection>(std::make_unique<DefaultDoIPServerModel>(), std::make_unique<MockTransport>(), timerManager)) {
                 connection->setAliveCheckTimeout(200ms);
                 connection->setGeneralInactivityTimeout(500ms);
                 connection->setInitialInactivityTimeout(500ms);

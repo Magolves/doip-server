@@ -2,6 +2,7 @@
 #include "DoIPMessage.h"
 #include "DoIPPayloadType.h"
 #include "Logger.h"
+#include "TcpTransport.h"
 
 #include <iomanip>
 #include <iostream>
@@ -9,7 +10,7 @@
 namespace doip {
 
 DoIPConnection::DoIPConnection(int tcpSocket, UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager)
-    : DoIPDefaultConnection(std::move(model), timerManager),
+    : DoIPDefaultConnection(std::move(model), std::make_unique<TcpTransport>(tcpSocket), timerManager),
       m_logicalAddress(ZERO_ADDRESS),
       m_tcpSocket(tcpSocket) {
 }

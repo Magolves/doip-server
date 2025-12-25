@@ -6,8 +6,9 @@
 
 namespace doip {
 
-DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers> &timerManager)
+DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, UniqueTransportPtr tp,  const SharedTimerManagerPtr<ConnectionTimers> &timerManager)
     : m_serverModel(std::move(model)),
+        m_transport(std::move(tp)),
       m_timerManager(timerManager),
       STATE_DESCRIPTORS{
           StateDescriptor(
@@ -57,7 +58,7 @@ DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, const S
 
 ssize_t DoIPDefaultConnection::sendProtocolMessage(const DoIPMessage &msg) {
     m_log->info("Default connection: Sending protocol message: {}", fmt::streamed(msg));
-    return static_cast<ssize_t>(msg.size()); // Simulate sending by returning the message size
+    return m_transport->sendMessage(msg);
 }
 
 void DoIPDefaultConnection::closeConnection(DoIPCloseReason reason) {

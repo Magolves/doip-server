@@ -60,6 +60,7 @@ class ITransport {
     virtual std::string getIdentifier() const = 0;
 };
 
+using UniqueTransportPtr = std::unique_ptr<ITransport>;
 } // namespace doip
 
 #endif /* ITRANSPORT_H */
