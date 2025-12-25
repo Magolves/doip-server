@@ -1,24 +1,23 @@
-#include <algorithm> // for std::remove_if
-#include <cerrno>    // for errno
-#include <cstring>   // for strerror
-#include <fcntl.h>
-#include <fstream> // for PID file writing
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <syslog.h>
-#include <pthread.h>
-#include <cstdio>
+#include "DoIPServer.h"
 #include "DoIPConnection.h"
 #include "DoIPMessage.h"
-#include "DoIPServer.h"
 #include "DoIPServerModel.h"
 #include "MacAddress.h"
+#include <algorithm> // for std::remove_if
+#include <cerrno>    // for errno
+#include <cstdio>
+#include <cstring> // for strerror
+#include <fcntl.h>
+#include <fstream> // for PID file writing
+#include <pthread.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <syslog.h>
+#include <unistd.h>
 
 using namespace doip;
 
-
-DoIPServer::~DoIPServer() {
+DoIPServer::~DoIPServer() noexcept {
     if (m_udpRunning.load() || m_tcpRunning.load()) {
         stop();
     }
@@ -122,7 +121,9 @@ bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFacto
 
     // Also start TCP acceptor thread so TCP 13400 enters LISTEN state and accepts connections
     m_tcpRunning.store(true);
-    m_workerThreads.emplace_back([this, modelFactory]() { tcpListenerThread(modelFactory); });
+    m_workerThreads.emplace_back([this, factory = std::move(modelFactory)]() mutable {
+        tcpListenerThread(std::move(factory));
+    });
 
     m_tcpLog->info("TCP socket bound and listening on port {}", DOIP_SERVER_TCP_PORT);
     return true;
@@ -426,13 +427,13 @@ std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(std::function<U
     int tcpSocket = accept(m_tcpSock.get(), nullptr, nullptr);
     if (tcpSocket < 0) {
 #if EAGAIN != EWOULDBLOCK
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        return nullptr;
-    }
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return nullptr;
+        }
 #else
-    if (errno == EAGAIN) {
-        return nullptr;
-    }
+        if (errno == EAGAIN) {
+            return nullptr;
+        }
 #endif
         // Other errors (e.g., EINTR, ECONNABORTED)
         if (m_tcpRunning.load()) {

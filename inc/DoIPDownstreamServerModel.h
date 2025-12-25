@@ -13,7 +13,6 @@ using namespace std::chrono_literals;
 class DoIPDownstreamServerModel : public DoIPServerModel {
   public:
     DoIPDownstreamServerModel(const std::string &name, IDownstreamProvider &provider) : m_log(Logger::get(name)), m_provider(provider) {
-
         onOpenConnection = [this](IConnectionContext &ctx) noexcept {
             (void)ctx;
             startWorker();
@@ -67,7 +66,13 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
         m_log->info("Initialized downstream model");
     }
 
-    virtual std::string getModelName() const override { return DoIPServerModel::getModelName() + "." + m_provider.getProviderName(); }
+    virtual std::string_view getModelName() const override {
+        return "DoIPDownstreamServerModel";
+    }
+
+    IDownstreamProvider &getProvider() const {
+        return m_provider;
+    }
 
   protected:
     std::shared_ptr<spdlog::logger> m_log;
@@ -85,6 +90,8 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
 
     std::thread m_worker;
     bool m_running = true;
+
+    mutable std::string m_ModelName;
 
     void startWorker() {
         m_worker = std::thread([this] {

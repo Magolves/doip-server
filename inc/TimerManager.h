@@ -65,6 +65,7 @@ class TimerManager {
 
         m_timers[id] = std::move(entry);
 
+        m_timers_changed = true;
         m_cv.notify_one();
 
         return id;
@@ -79,7 +80,12 @@ class TimerManager {
      */
     bool removeTimer(TimerId id) {
         std::lock_guard<std::mutex> lock(m_mutex);
-        return m_timers.erase(id) > 0;
+        bool removed = m_timers.erase(id) > 0;
+        if (removed) {
+            m_timers_changed = true;
+            m_cv.notify_one();
+        }
+        return removed;
     }
 
     [[nodiscard]]
@@ -91,6 +97,7 @@ class TimerManager {
         }
 
         it->second.expiry = std::chrono::steady_clock::now() + it->second.interval;
+        m_timers_changed = true;
         m_cv.notify_one();
         return true;
     }
@@ -114,6 +121,7 @@ class TimerManager {
 
         it->second.interval = newDuration;
         it->second.expiry = std::chrono::steady_clock::now() + newDuration;
+        m_timers_changed = true;
         m_cv.notify_one();
         return true;
     }
@@ -153,6 +161,7 @@ class TimerManager {
         if (!it->second.enabled) {
             it->second.enabled = true;
             it->second.expiry = std::chrono::steady_clock::now() + it->second.interval;
+            m_timers_changed = true;
             m_cv.notify_one();
         }
         return true;
@@ -176,6 +185,8 @@ class TimerManager {
     void stopAll() {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_timers.clear();
+        m_timers_changed = true;
+        m_cv.notify_one();
     }
 
     /**
@@ -197,7 +208,7 @@ class TimerManager {
      * @return size_t number of timers.
      */
     [[nodiscard]]
-    size_t timerCount() const {
+    size_t timerCount() const noexcept {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_timers.size();
     }
@@ -205,7 +216,7 @@ class TimerManager {
     /**
      * @brief Stops all timers and the timer manager.
      */
-    void stop() {
+    void stop() noexcept {
         if (m_running.exchange(false)) {
             m_cv.notify_all();
             if (m_thread.joinable()) {
@@ -215,17 +226,19 @@ class TimerManager {
     }
 
   private:
-    std::map<TimerId, TimerEntry> m_timers;
+    std::unordered_map<TimerId, TimerEntry> m_timers;
     mutable std::mutex m_mutex;
     std::condition_variable m_cv;
     std::thread m_thread;
     std::atomic<bool> m_running{false};
+    std::atomic<bool> m_timers_changed{false};  // Flag to signal timer changes
 
     void run() {
         while (m_running) {
             std::unique_lock<std::mutex> lock(m_mutex);
 
             if (m_timers.empty()) {
+                m_timers_changed = false;  // Reset flag even when no timers
                 m_cv.wait(lock, [this]() {
                     return !m_running || !m_timers.empty();
                 });
@@ -242,41 +255,38 @@ class TimerManager {
             }
 
             if (nextExpiry > now) {
+                m_timers_changed = false;  // Reset flag before waiting
                 m_cv.wait_until(lock, nextExpiry, [this]() {
-                    return !m_running;
+                    return !m_running || m_timers_changed.load();
                 });
                 continue;
             }
 
-            std::vector<TimerId> expired;
+            // Collect expired timers and their callbacks while holding the lock
+            std::vector<std::pair<TimerId, std::function<void(TimerId)>>> callbacks;
+            std::vector<TimerId> toRemove;
+
             for (const auto &[id, timer] : m_timers) {
                 if (timer.enabled && timer.expiry <= now) {
-                    expired.push_back(id);
+                    callbacks.emplace_back(id, timer.callback);
+                    if (timer.periodic) {
+                        m_timers[id].expiry = std::chrono::steady_clock::now() + timer.interval;
+                    } else {
+                        toRemove.push_back(id);  // Mark for removal
+                    }
                 }
             }
 
+            // Erase non-periodic expired timers
+            for (TimerId id : toRemove) {
+                m_timers.erase(id);
+            }
+
+            // Release lock before executing callbacks
             lock.unlock();
 
-            for (TimerId id : expired) {
-                lock.lock();
-                auto it = m_timers.find(id);
-                if (it == m_timers.end() || !it->second.enabled) {
-                    lock.unlock();
-                    continue;
-                }
-
-                auto callback = it->second.callback;
-                bool periodic = it->second.periodic;
-                auto interval = it->second.interval;
-
-                if (periodic) {
-                    it->second.expiry = std::chrono::steady_clock::now() + interval;
-                } else {
-                    m_timers.erase(it);
-                }
-
-                lock.unlock();
-
+            // Execute callbacks
+            for (const auto &[id, callback] : callbacks) {
                 try {
                     callback(id);
                 } catch (const std::exception& e) {

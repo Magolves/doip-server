@@ -6,7 +6,7 @@
 
 namespace doip {
 
-DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager)
+DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers> &timerManager)
     : m_serverModel(std::move(model)),
       m_timerManager(timerManager),
       STATE_DESCRIPTORS{
@@ -105,22 +105,21 @@ void DoIPDefaultConnection::transitionTo(DoIPServerState newState) {
         return;
     }
 
-    auto it = std::find_if(
-        STATE_DESCRIPTORS.begin(),
-        STATE_DESCRIPTORS.end(),
-        [newState](const StateDescriptor &desc) {
-            return desc.state == newState;
-        });
-    if (it != STATE_DESCRIPTORS.end()) {
-        m_log->info("-> Transitioning from state {} to state {}", fmt::streamed(m_state->state), fmt::streamed(newState));
-        m_state = &(*it);
-        startStateTimer(m_state);
-        if (m_state->enterStateHandler) {
-            m_log->info("Calling enterState handler");
-            m_state->enterStateHandler();
-        }
-    } else {
-        m_log->error("Invalid state transition to {}", fmt::streamed(newState));
+    m_log->info("-> Transitioning from state {} to state {}", fmt::streamed(m_state->state), fmt::streamed(newState));
+
+    // Direct array access using enum as index (assumes enum values 0-6)
+    size_t index = static_cast<size_t>(newState);
+    if (index >= STATE_DESCRIPTORS.size()) {
+        m_log->error("Invalid state transition to {} (index out of bounds: {})", fmt::streamed(newState), index);
+        return;
+    }
+
+    m_state = &STATE_DESCRIPTORS[index];
+
+    startStateTimer(m_state);
+    if (m_state->enterStateHandler) {
+        m_log->info("Calling enterState handler");
+        m_state->enterStateHandler();
     }
 }
 
@@ -312,7 +311,6 @@ void DoIPDefaultConnection::handleWaitDownstreamResponse(DoIPServerEvent event, 
 
     // Implementation of handling wait downstream response would go here
     m_log->critical("handleWaitDownstreamResponse NOT IMPL");
-
 }
 
 void DoIPDefaultConnection::handleFinalize(DoIPServerEvent event, OptDoIPMessage msg) {
@@ -399,7 +397,7 @@ ssize_t DoIPDefaultConnection::sendDiagnosticMessageResponse(const DoIPAddress &
     return sentBytes;
 }
 
-ssize_t DoIPDefaultConnection::sendDownstreamResponse(const DoIPAddress &sourceAddress, const ByteArray& payload) {
+ssize_t DoIPDefaultConnection::sendDownstreamResponse(const DoIPAddress &sourceAddress, const ByteArray &payload) {
     DoIPAddress targetAddress = getServerAddress();
     DoIPMessage message = message::makeDiagnosticMessage(sourceAddress, targetAddress, payload);
 
@@ -428,8 +426,6 @@ void DoIPDefaultConnection::notifyDiagnosticAckSent(DoIPDiagnosticAck ack) {
 bool DoIPDefaultConnection::hasDownstreamHandler() const {
     return m_serverModel->hasDownstreamHandler();
 }
-
-
 
 DoIPDownstreamResult DoIPDefaultConnection::notifyDownstreamRequest(const DoIPMessage &msg) {
     if (m_serverModel->onDownstreamRequest) {
