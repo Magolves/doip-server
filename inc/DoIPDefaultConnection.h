@@ -7,7 +7,7 @@
 #include "DoIPRoutingActivationResult.h"
 #include "DoIPTimes.h"
 #include "IConnectionContext.h"
-#include "ITransport.h"
+#include "IConnectionTransport.h"
 #include "TimerManager.h"
 #include <optional>
 
@@ -104,10 +104,10 @@ class DoIPDefaultConnection : public IConnectionContext {
     /**
      * @brief Constructs a DoIPDefaultConnection
      * @param model The server model to use
-     * @param tp The transport interface
+     * @param tp The connection transport interface
      * @param timerManager The shared timer manager
      */
-    explicit DoIPDefaultConnection(UniqueServerModelPtr model, UniqueTransportPtr tp, const SharedTimerManagerPtr<ConnectionTimers>& timerManager);
+    explicit DoIPDefaultConnection(UniqueServerModelPtr model, UniqueConnectionTransportPtr tp, const SharedTimerManagerPtr<ConnectionTimers>& timerManager);
 
     /**
      * @brief Sends a DoIP protocol message to the client
@@ -115,6 +115,12 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @return Number of bytes sent
      */
     ssize_t sendProtocolMessage(const DoIPMessage &msg) override;
+
+    /**
+     * @brief Receives a DoIP protocol message from the client
+     * @return The received message, or std::nullopt on error
+     */
+    std::optional<DoIPMessage> receiveProtocolMessage() override;
 
     /**
      * @brief Closes the connection
@@ -280,7 +286,7 @@ class DoIPDefaultConnection : public IConnectionContext {
   protected:
     UniqueServerModelPtr m_serverModel;
     SharedTimerManagerPtr<ConnectionTimers> m_timerManager;
-    UniqueTransportPtr m_transport;
+    UniqueConnectionTransportPtr m_transport;
     std::shared_ptr<spdlog::logger> m_log = Logger::get("tcp");
 
 

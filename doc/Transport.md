@@ -202,7 +202,7 @@ TEST_CASE("State machine routing activation") {
 
     // Complex setup, hard to control timing
     write(sockets[1], requestData, size);
-    conn.receiveTcpMessage();
+    conn.receiveMessage();
 
     // Hard to verify what was sent
     uint8_t response[1024];

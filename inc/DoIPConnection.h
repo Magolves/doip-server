@@ -28,7 +28,7 @@ class DoIPConnection : public DoIPDefaultConnection {
 
     DoIPConnection(int tcpSocket, UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager);
 
-    int receiveTcpMessage();
+    int receiveMessage();
     size_t receiveFixedNumberOfBytesFromTCP(uint8_t *receivedData, size_t payloadLength);
 
     void sendDiagnosticPayload(const DoIPAddress &sourceAddress, const ByteArray &payload);
@@ -45,6 +45,13 @@ class DoIPConnection : public DoIPDefaultConnection {
      * @param msg The DoIP message to send
      */
     ssize_t sendProtocolMessage(const DoIPMessage &msg) override;
+
+    /**
+     * @brief Receive a DoIP protocol message from the client
+     *
+     * @return std::optional<DoIPMessage> The received DoIP message, or std::nullopt on error
+     */
+    std::optional<DoIPMessage> receiveProtocolMessage() override;
 
     /**
      * @brief Close the TCP connection

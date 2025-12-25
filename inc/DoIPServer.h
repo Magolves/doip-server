@@ -272,7 +272,7 @@ class DoIPServer {
      */
     void tcpListenerThread(std::function<UniqueServerModelPtr()> modelFactory);
 
-    void connectionHandlerThread(std::unique_ptr<DoIPConnection> connection);
+    void connectionHandlerThread(std::unique_ptr<DoIPDefaultConnection> connection);
 
     void udpListenerThread();
     void udpAnnouncementThread();

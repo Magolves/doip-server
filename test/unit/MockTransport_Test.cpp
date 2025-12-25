@@ -1,13 +1,13 @@
-#include "MockTransport.h"
+#include "MockConnectionTransport.h"
 #include "DoIPMessage.h"
 #include "DoIPPayloadType.h"
 #include <doctest/doctest.h>
 
 using namespace doip;
 
-TEST_SUITE("MockTransport") {
-    TEST_CASE("MockTransport basic send/receive") {
-        MockTransport transport("test-transport");
+TEST_SUITE("MockConnectionTransport") {
+    TEST_CASE("MockConnectionTransport basic send/receive") {
+        MockConnectionTransport transport("test-transport");
 
         REQUIRE(transport.isActive());
         REQUIRE(transport.getIdentifier() == "test-transport");
@@ -41,7 +41,7 @@ TEST_SUITE("MockTransport") {
         }
 
         SUBCASE("Close transport") {
-            transport.close();
+            transport.close(DoIPCloseReason::ApplicationRequest);
             CHECK_FALSE(transport.isActive());
 
             DoIPMessage msg(DoIPPayloadType::AliveCheckRequest, nullptr, 0);
@@ -76,8 +76,8 @@ TEST_SUITE("MockTransport") {
         }
     }
 
-    TEST_CASE("MockTransport bidirectional communication simulation") {
-        MockTransport transport("client-mock");
+    TEST_CASE("MockConnectionTransport bidirectional communication simulation") {
+        MockConnectionTransport transport("client-mock");
 
         // Simulate client sending routing activation request
         uint8_t payload[] = {0x00, 0x01, 0x02, 0x03}; // Dummy payload

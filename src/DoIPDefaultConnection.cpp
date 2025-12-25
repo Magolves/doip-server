@@ -6,7 +6,7 @@
 
 namespace doip {
 
-DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, UniqueTransportPtr tp,  const SharedTimerManagerPtr<ConnectionTimers> &timerManager)
+DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, UniqueConnectionTransportPtr tp,  const SharedTimerManagerPtr<ConnectionTimers> &timerManager)
     : m_serverModel(std::move(model)),
         m_transport(std::move(tp)),
       m_timerManager(timerManager),
@@ -61,12 +61,18 @@ ssize_t DoIPDefaultConnection::sendProtocolMessage(const DoIPMessage &msg) {
     return m_transport->sendMessage(msg);
 }
 
+std::optional<DoIPMessage> DoIPDefaultConnection::receiveProtocolMessage() {
+    m_log->info("Default connection: Receiving protocol message...");
+    return m_transport->receiveMessage();
+}
+
 void DoIPDefaultConnection::closeConnection(DoIPCloseReason reason) {
     try {
         m_log->info("Default connection: Closing connection, reason: {}", fmt::streamed(reason));
         transitionTo(DoIPServerState::Closed);
         m_closeReason = reason;
         m_timerManager->stopAll();
+        m_transport->close(reason);  // Close the transport
         notifyConnectionClosed(reason);
     } catch (const std::exception &e) {
         m_log->error("Error notifying connection closed: {}", e.what());

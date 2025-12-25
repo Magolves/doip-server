@@ -106,8 +106,10 @@ set(SOURCES
     src/DoIPServer.cpp
     src/Logger.cpp
     src/MacAddress.cpp
-    src/TcpTransport.cpp
-    src/MockTransport.cpp
+    src/TcpServerTransport.cpp
+    src/TcpConnectionTransport.cpp
+    src/MockServerTransport.cpp
+    src/MockConnectionTransport.cpp
     src/uds/UdsMock.cpp
     src/util/Daemonize.cpp
 )

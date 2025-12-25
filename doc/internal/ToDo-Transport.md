@@ -52,23 +52,23 @@ Sehr gut! Ich sehe die Integration ist bereits weit fortgeschritten. Lass mich e
 
 #### 1. **Duplikation in DoIPConnection** (wie Sie erwähnt haben)
 Die alten TCP-spezifischen Methoden sind noch vorhanden:
-- `receiveTcpMessage()` - sollte `m_transport->receiveMessage()` verwenden
+- `receiveMessage()` - sollte `m_transport->receiveMessage()` verwenden
 - `receiveFixedNumberOfBytesFromTCP()` - wird nicht mehr benötigt (ist jetzt in TcpTransport)
 - `sendMessage()` - wird nicht mehr benötigt
 - `m_receiveBuf` - wird nicht mehr benötigt (ist in TcpTransport)
 - `m_tcpSocket` - wird nicht mehr benötigt
 
-#### 2. **DoIPConnection::receiveTcpMessage() sollte Transport nutzen**
+#### 2. **DoIPConnection::receiveMessage() sollte Transport nutzen**
 ```cpp
 // AKTUELL (Legacy-Code):
-int DoIPConnection::receiveTcpMessage() {
+int DoIPConnection::receiveMessage() {
     uint8_t genericHeader[DOIP_HEADER_SIZE];
     unsigned int readBytes = receiveFixedNumberOfBytesFromTCP(...);
     // ... manuelles Parsing
 }
 
 // SOLLTE SEIN (nutzt Transport-Abstraktion):
-int DoIPConnection::receiveTcpMessage() {
+int DoIPConnection::receiveMessage() {
     auto message = m_transport->receiveMessage();
     if (message.has_value()) {
         handleMessage2(*message);
@@ -110,7 +110,7 @@ private:
 
 1. **Typ-Alias hinzufügen**
 2. **Transport schließen in closeConnection()**
-3. **receiveTcpMessage() umbauen zu Transport-Nutzung**
+3. **receiveMessage() umbauen zu Transport-Nutzung**
 4. **Legacy-Code entfernen (nach Tests)**:
    - `receiveFixedNumberOfBytesFromTCP()`
    - `sendMessage(uint8_t*, size_t)`
@@ -130,6 +130,6 @@ private:
 - Transport nicht explizit geschlossen ⚠️
 - Legacy TCP-Code noch vorhanden (Duplikation) ⚠️
 - Typ-Alias fehlt ⚠️
-- receiveTcpMessage() nutzt noch direkten Socket-Zugriff ⚠️
+- receiveMessage() nutzt noch direkten Socket-Zugriff ⚠️
 
 Soll ich die fehlenden Änderungen implementieren?

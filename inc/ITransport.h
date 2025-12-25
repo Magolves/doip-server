@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <optional>
 
+#include "DoIPCloseReason.h"
+
 namespace doip {
 
 /**
@@ -38,10 +40,10 @@ class ITransport {
 
     /**
      * @brief Close the transport connection
-     *
+     * @param reason Reason for closing the transport
      * After calling this, the transport is no longer usable.
      */
-    virtual void close() = 0;
+    virtual void close(DoIPCloseReason reason) = 0;
 
     /**
      * @brief Check if the transport is currently active/connected

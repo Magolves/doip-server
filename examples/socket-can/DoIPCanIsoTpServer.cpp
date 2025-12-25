@@ -39,7 +39,7 @@ void listenTcp() {
         tcpConnection = server->waitForTcpConnection( []() { return std::make_unique<CanIsoTpServerModel>(interfaceName, tx_address, rx_address); } );
 
         while (tcpConnection->isSocketActive()) {
-            tcpConnection->receiveTcpMessage();
+            tcpConnection->receiveMessage();
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }

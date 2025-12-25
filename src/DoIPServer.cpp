@@ -53,21 +53,19 @@ void DoIPServer::stop() {
 /*
  * Background thread: Handle individual TCP connection
  */
-void DoIPServer::connectionHandlerThread(std::unique_ptr<DoIPConnection> connection) {
+void DoIPServer::connectionHandlerThread(std::unique_ptr<DoIPDefaultConnection> connection) {
     m_tcpLog->info("Connection handler thread started");
     auto closeReason = DoIPCloseReason::ApplicationRequest;
 
     while (m_tcpRunning.load()) {
-        int result = connection->receiveTcpMessage();
+        auto msg = connection->receiveProtocolMessage();
 
-        if (result < 0) {
+        if (!msg.has_value()) {
             m_tcpLog->info("Connection closed or error occurred");
             closeReason = DoIPCloseReason::SocketError;
             break;
-        } else if (result == 0) {
-            m_tcpLog->info("Connection closed by client");
-            closeReason = DoIPCloseReason::ApplicationRequest;
-            break;
+        } else {
+            connection->handleMessage2(msg.value());
         }
     }
     connection->closeConnection(closeReason);

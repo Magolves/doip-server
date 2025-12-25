@@ -1,34 +1,30 @@
-#ifndef MOCKTRANSPORT_H
-#define MOCKTRANSPORT_H
+#ifndef MOCKCONNECTIONTRANSPORT_H
+#define MOCKCONNECTIONTRANSPORT_H
 
-#include "ITransport.h"
+#include "IConnectionTransport.h"
 #include "ThreadSafeQueue.h"
-#include <queue>
 #include <atomic>
 #include <string>
-#include <optional>
-#include <spdlog/spdlog.h>
 
 namespace doip {
 
 /**
- * @brief Mock transport for testing DoIP connections without real sockets
+ * @brief Mock connection transport for testing
  *
  * Uses in-memory queues for bidirectional message passing.
- * Useful for unit testing state machines and protocol logic.
  */
-class MockTransport : public ITransport {
+class MockConnectionTransport : public IConnectionTransport {
   public:
     /**
-     * @brief Construct a mock transport with an identifier
+     * @brief Construct a mock connection transport
      *
-     * @param identifier Descriptive name for this transport (e.g., "test-client-1")
+     * @param identifier Descriptive name for this connection
      */
-    explicit MockTransport(const std::string &identifier = "mock-transport");
+    explicit MockConnectionTransport(const std::string &identifier = "mock-connection");
 
-    ~MockTransport() override = default;
+    ~MockConnectionTransport() override = default;
 
-    // ITransport interface
+    // IConnectionTransport interface
     ssize_t sendMessage(const DoIPMessage &msg) override;
     std::optional<DoIPMessage> receiveMessage() override;
     void close(DoIPCloseReason reason) override;
@@ -79,7 +75,6 @@ class MockTransport : public ITransport {
 
   private:
     std::string m_identifier;
-    std::shared_ptr<spdlog::logger> m_log;
     std::atomic<bool> m_isActive{true};
     bool m_blocking{false};
 
@@ -92,4 +87,4 @@ class MockTransport : public ITransport {
 
 } // namespace doip
 
-#endif /* MOCKTRANSPORT_H */
+#endif /* MOCKCONNECTIONTRANSPORT_H */
