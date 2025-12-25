@@ -90,4 +90,66 @@ class ThreadSafeQueue {
         std::lock_guard<std::mutex> lock(mutex_);
         return queue_.size();
     }
+
+    /**
+     * @brief Check if the queue is empty
+     *
+     * @return true if queue has no elements
+     */
+    bool empty() const noexcept {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return queue_.empty();
+    }
+
+    /**
+     * @brief Wait indefinitely for an item and pop it
+     *
+     * @param item Reference to store the popped item
+     * @return true if item was popped, false if queue was stopped
+     */
+    bool waitAndPop(T &item) {
+        std::unique_lock<std::mutex> lock(mutex_);
+
+        cv_.wait(lock, [this] {
+            return !queue_.empty() || stopped_;
+        });
+
+        if (stopped_ && queue_.empty()) {
+            return false;
+        }
+
+        item = std::move(queue_.front());
+        queue_.pop();
+        return true;
+    }
+
+    /**
+     * @brief Try to pop an item without blocking
+     *
+     * @param item Reference to store the popped item
+     * @return true if item was popped, false if queue was empty or stopped
+     */
+    bool tryPop(T &item) {
+        std::lock_guard<std::mutex> lock(mutex_);
+
+        if (queue_.empty() || stopped_) {
+            return false;
+        }
+
+        item = std::move(queue_.front());
+        queue_.pop();
+        return true;
+    }
+
+    /**
+     * @brief Clear all items from the queue
+     */
+    void clear() {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            std::queue<T> empty;
+            std::swap(queue_, empty);
+        }
+        cv_.notify_all();
+    }
 };
