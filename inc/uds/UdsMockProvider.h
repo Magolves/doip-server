@@ -88,7 +88,7 @@ class UdsMockProvider : public IDownstreamProvider {
         cb(dr); // Invoke the callback immediately
     }
 
-    virtual std::string getProviderName() const override {
+    virtual std::string_view getProviderName() const override {
         return "UdsMockProvider";
     }
 

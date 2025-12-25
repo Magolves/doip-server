@@ -78,9 +78,9 @@ class DoIPServer {
     explicit DoIPServer(const ServerConfig &config = DefaultServerConfig);
 
     /**
-     * @brief Destructor. Ensures sockets/threads are closed/stopped.
+     * @brief Destructor
      */
-    ~DoIPServer();
+    ~DoIPServer() noexcept;
 
     DoIPServer(const DoIPServer &) = delete;
     DoIPServer &operator=(const DoIPServer &) = delete;
@@ -113,7 +113,7 @@ class DoIPServer {
      * @brief Check if the server is currently running
      */
     [[nodiscard]]
-    bool isRunning() const { return m_udpRunning.load(); }
+    bool isRunning() const noexcept { return m_udpRunning.load(); }
 
     /**
      * @brief Set the number of vehicle announcements to send.
@@ -150,7 +150,7 @@ class DoIPServer {
      *
      * @return DoIPAddress Logical gateway address
      */
-    DoIPAddress getLogicalGatewayAddress() const {
+    DoIPAddress getLogicalGatewayAddress() const noexcept {
         return m_config.logicalAddress;
     }
     /**
@@ -220,7 +220,8 @@ class DoIPServer {
      * @brief Get last accepted client IP (string form).
      * @return IP address string.
      */
-    const std::string &getClientIp() const { return m_clientIp; }
+    std::string_view getClientIp() const { return m_clientIp; }
+
     /**
      * @brief Get last accepted client TCP port.
      * @return Client port number.

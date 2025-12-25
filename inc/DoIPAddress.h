@@ -36,7 +36,7 @@ constexpr DoIPAddress MAX_SOURCE_ADDRESS = 0xE3FF;
  * @return true the source address is valid
  * @return false the source address is NOT valid
  */
-inline bool isValidSourceAddress(const uint8_t *data, size_t offset = 0) {
+inline bool isValidSourceAddress(const uint8_t *data, size_t offset = 0) noexcept {
     uint16_t addr_value = (data[offset] << 8) | data[offset + 1];
 
     return MIN_SOURCE_ADDRESS <= addr_value && MAX_SOURCE_ADDRESS >= addr_value;
