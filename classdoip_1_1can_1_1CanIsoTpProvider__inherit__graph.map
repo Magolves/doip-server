@@ -1,0 +1,4 @@
+<map id="doip::can::CanIsoTpProvider" name="doip::can::CanIsoTpProvider">
+<area shape="rect" id="node1" title="SocketCAN&#45;based downstream provider using ISO&#45;TP." alt="" coords="5,80,208,107"/>
+<area shape="rect" id="node2" href="$classdoip_1_1IDownstreamProvider.html" title="Interface for downstream communication providers." alt="" coords="7,5,206,32"/>
+</map>

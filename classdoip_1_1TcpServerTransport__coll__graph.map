@@ -1,0 +1,4 @@
+<map id="doip::TcpServerTransport" name="doip::TcpServerTransport">
+<area shape="rect" id="node1" title="TCP&#45;based server transport implementation." alt="" coords="5,80,187,107"/>
+<area shape="rect" id="node2" href="$classdoip_1_1IServerTransport.html" title="Server&#45;level transport abstraction for DoIP." alt="" coords="14,5,178,32"/>
+</map>

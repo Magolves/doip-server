@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classdoip_1_1IServerTransport.html" title="Server&#45;level transport abstraction for DoIP." alt="" coords="5,31,169,57"/>
+<area shape="rect" id="node2" href="$classdoip_1_1MockServerTransport.html" title="Mock server transport for testing." alt="" coords="217,5,412,32"/>
+<area shape="rect" id="node3" href="$classdoip_1_1TcpServerTransport.html" title="TCP&#45;based server transport implementation." alt="" coords="224,56,405,83"/>
+</map>

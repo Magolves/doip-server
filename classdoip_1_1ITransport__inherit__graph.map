@@ -1,0 +1,5 @@
+<map id="doip::ITransport" name="doip::ITransport">
+<area shape="rect" id="node1" title="Transport layer abstraction for DoIP connections." alt="" coords="106,5,229,32"/>
+<area shape="rect" id="node2" href="$classdoip_1_1MockTransport.html" title="Mock transport for testing DoIP connections without real sockets." alt="" coords="5,80,159,107"/>
+<area shape="rect" id="node3" href="$classdoip_1_1TcpTransport.html" title="TCP&#45;based transport implementation for DoIP." alt="" coords="183,80,322,107"/>
+</map>

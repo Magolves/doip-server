@@ -1,0 +1,4 @@
+<map id="doip::TcpConnectionTransport" name="doip::TcpConnectionTransport">
+<area shape="rect" id="node1" title="TCP connection transport for a single client." alt="" coords="5,80,217,107"/>
+<area shape="rect" id="node2" href="$classdoip_1_1IConnectionTransport.html" title="Per&#45;connection transport abstraction for DoIP." alt="" coords="14,5,209,32"/>
+</map>

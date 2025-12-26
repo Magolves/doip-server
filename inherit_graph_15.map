@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classdoip_1_1ITransport.html" title="Transport layer abstraction for DoIP connections." alt="" coords="5,31,128,57"/>
+<area shape="rect" id="node2" href="$classdoip_1_1MockTransport.html" title="Mock transport for testing DoIP connections without real sockets." alt="" coords="176,5,329,32"/>
+<area shape="rect" id="node3" href="$classdoip_1_1TcpTransport.html" title="TCP&#45;based transport implementation for DoIP." alt="" coords="183,56,322,83"/>
+</map>

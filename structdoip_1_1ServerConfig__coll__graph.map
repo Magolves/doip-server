@@ -1,0 +1,6 @@
+<map id="doip::ServerConfig" name="doip::ServerConfig">
+<area shape="rect" id="node1" title="Server configuration structure used to initialize a DoIP server." alt="" coords="104,243,245,269"/>
+<area shape="rect" id="node2" href="$classdoip_1_1GenericFixedId.html" title=" " alt="" coords="20,124,175,165"/>
+<area shape="rect" id="node3" href="$classdoip_1_1GenericFixedId.html" title="Generic fixed&#45;length identifier class template." alt="" coords="5,5,189,61"/>
+<area shape="rect" id="node4" href="$classdoip_1_1DoIpVin.html" title="Vehicle Identification Number (VIN) &#45; 17 bytes according to ISO 3779." alt="" coords="199,131,308,158"/>
+</map>

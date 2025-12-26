@@ -1,0 +1,6 @@
+<map id="doip::DownstreamResponse" name="doip::DownstreamResponse">
+<area shape="rect" id="node1" title="Structured downstream response." alt="" coords="5,260,209,287"/>
+<area shape="rect" id="node2" href="$structdoip_1_1ByteArray.html" title="A dynamic array of bytes with utility methods for network protocol handling." alt="" coords="46,171,169,197"/>
+<area shape="rect" id="node3" title=" " alt="" coords="43,95,172,121"/>
+<area shape="rect" id="node4" title=" " alt="" coords="88,5,127,32"/>
+</map>

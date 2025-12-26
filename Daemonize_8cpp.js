@@ -1,0 +1,6 @@
+var Daemonize_8cpp =
+[
+    [ "daemonize", "Daemonize_8cpp.html#a220ab6c739f570fe0912b451bd7be017", null ],
+    [ "isRunning", "Daemonize_8cpp.html#a5921e5b62b62ab7f6610a30adaf6f423", null ],
+    [ "removePidFile", "Daemonize_8cpp.html#a922d41b9a3c5692a03b10c55921d627b", null ]
+];

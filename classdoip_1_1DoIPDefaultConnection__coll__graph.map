@@ -1,0 +1,13 @@
+<map id="doip::DoIPDefaultConnection" name="doip::DoIPDefaultConnection">
+<area shape="rect" id="node1" title="Default implementation of IConnectionContext." alt="" coords="1007,161,1216,188"/>
+<area shape="rect" id="node2" href="$classdoip_1_1IConnectionContext.html" title="Interface between DoIPServerStateMachine and DoIPConnection." alt="" coords="609,5,795,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="597,57,807,98"/>
+<area shape="rect" id="node4" title=" " alt="" coords="183,121,341,148"/>
+<area shape="rect" id="node7" title=" " alt="" coords="599,122,805,163"/>
+<area shape="rect" id="node5" title=" " alt="" coords="5,172,44,199"/>
+<area shape="rect" id="node9" title=" " alt="" coords="183,172,341,199"/>
+<area shape="rect" id="node11" title=" " alt="" coords="201,223,323,249"/>
+<area shape="rect" id="node6" title=" " alt="" coords="157,286,367,327"/>
+<area shape="rect" id="node10" title=" " alt="" coords="587,253,817,280"/>
+<area shape="rect" id="node8" title=" " alt="" coords="613,187,791,229"/>
+</map>

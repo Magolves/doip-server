@@ -1,0 +1,5 @@
+<map id="doip::IServerTransport" name="doip::IServerTransport">
+<area shape="rect" id="node1" title="Server&#45;level transport abstraction for DoIP." alt="" coords="126,5,290,32"/>
+<area shape="rect" id="node2" href="$classdoip_1_1MockServerTransport.html" title="Mock server transport for testing." alt="" coords="5,80,200,107"/>
+<area shape="rect" id="node3" href="$classdoip_1_1TcpServerTransport.html" title="TCP&#45;based server transport implementation." alt="" coords="224,80,405,107"/>
+</map>
