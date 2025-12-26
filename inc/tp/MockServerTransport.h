@@ -1,8 +1,8 @@
 #ifndef MOCKSERVERTRANSPORT_H
 #define MOCKSERVERTRANSPORT_H
 
-#include "IServerTransport.h"
-#include "MockConnectionTransport.h"
+#include "tp/IServerTransport.h"
+#include "tp/MockConnectionTransport.h"
 #include "ThreadSafeQueue.h"
 #include <atomic>
 #include <memory>

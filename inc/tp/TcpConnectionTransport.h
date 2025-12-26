@@ -1,41 +1,39 @@
-#ifndef TCPTRANSPORT_H
-#define TCPTRANSPORT_H
+#ifndef TCPCONNECTIONTRANSPORT_H
+#define TCPCONNECTIONTRANSPORT_H
 
-#include "ITransport.h"
+#include "tp/IConnectionTransport.h"
 #include "Logger.h"
 #include "gen/DoIPConfig.h"
 #include <array>
 #include <atomic>
 #include <memory>
-#include <arpa/inet.h>
-#include <sys/socket.h>
 
 namespace doip {
 
 /**
- * @brief TCP-based transport implementation for DoIP
+ * @brief TCP connection transport for a single client
  *
- * Wraps a TCP socket and provides DoIP message send/receive functionality.
+ * Wraps a connected TCP socket and provides DoIP message send/receive
  */
-class TcpTransport : public ITransport {
+class TcpConnectionTransport : public IConnectionTransport {
   public:
     /**
-     * @brief Construct a TCP transport from an existing socket
+     * @brief Construct a TCP connection transport from an existing socket
      *
      * @param socket The connected TCP socket (takes ownership)
      */
-    explicit TcpTransport(int socket);
+    explicit TcpConnectionTransport(int socket);
 
     /**
      * @brief Destructor - closes the socket
      */
-    ~TcpTransport() override;
+    ~TcpConnectionTransport() override;
 
     // Disable copy
-    TcpTransport(const TcpTransport&) = delete;
-    TcpTransport& operator=(const TcpTransport&) = delete;
+    TcpConnectionTransport(const TcpConnectionTransport &) = delete;
+    TcpConnectionTransport &operator=(const TcpConnectionTransport &) = delete;
 
-    // ITransport interface
+    // IConnectionTransport interface
     ssize_t sendMessage(const DoIPMessage &msg) override;
     std::optional<DoIPMessage> receiveMessage() override;
     void close(DoIPCloseReason reason) override;
@@ -62,8 +60,11 @@ class TcpTransport : public ITransport {
      * @brief Initialize the transport identifier string
      */
     void initializeIdentifier();
+
+    // Non-virtual shutdown used by destructor to avoid virtual calls
+    void shutdownSocket() noexcept;
 };
 
 } // namespace doip
 
-#endif /* TCPTRANSPORT_H */
+#endif /* TCPCONNECTIONTRANSPORT_H */

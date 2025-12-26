@@ -1,13 +1,12 @@
-#include "MockTransport.h"
-#include "Logger.h"
+#include "tp/MockConnectionTransport.h"
 
 namespace doip {
 
-MockTransport::MockTransport(const std::string &identifier)
-    : m_identifier(identifier), m_log(Logger::get("mockTp")) {
+MockConnectionTransport::MockConnectionTransport(const std::string &identifier)
+    : m_identifier(identifier) {
 }
 
-ssize_t MockTransport::sendMessage(const DoIPMessage &msg) {
+ssize_t MockConnectionTransport::sendMessage(const DoIPMessage &msg) {
     if (!m_isActive) {
         return -1;
     }
@@ -16,7 +15,7 @@ ssize_t MockTransport::sendMessage(const DoIPMessage &msg) {
     return static_cast<ssize_t>(msg.size());
 }
 
-std::optional<DoIPMessage> MockTransport::receiveMessage() {
+std::optional<DoIPMessage> MockConnectionTransport::receiveMessage() {
     if (!m_isActive) {
         return std::nullopt;
     }
@@ -38,27 +37,27 @@ std::optional<DoIPMessage> MockTransport::receiveMessage() {
     }
 }
 
-void MockTransport::close(DoIPCloseReason reason) {
-    m_log->debug("Closing MockTransport: {} ({})", m_identifier, fmt::streamed(reason));
+void MockConnectionTransport::close(DoIPCloseReason reason) {
+    (void)reason; // Unused in mock
     m_isActive = false;
     // Wake up any blocking waiters
     m_receiveQueue.clear();
     m_sentQueue.clear();
 }
 
-bool MockTransport::isActive() const {
+bool MockConnectionTransport::isActive() const {
     return m_isActive.load();
 }
 
-std::string MockTransport::getIdentifier() const {
+std::string MockConnectionTransport::getIdentifier() const {
     return m_identifier;
 }
 
-void MockTransport::injectMessage(const DoIPMessage &msg) {
+void MockConnectionTransport::injectMessage(const DoIPMessage &msg) {
     m_receiveQueue.push(msg);
 }
 
-std::optional<DoIPMessage> MockTransport::popSentMessage() {
+std::optional<DoIPMessage> MockConnectionTransport::popSentMessage() {
     DoIPMessage msg;
     if (m_sentQueue.tryPop(msg)) {
         return msg;
@@ -66,15 +65,15 @@ std::optional<DoIPMessage> MockTransport::popSentMessage() {
     return std::nullopt;
 }
 
-bool MockTransport::hasSentMessages() const {
+bool MockConnectionTransport::hasSentMessages() const {
     return !m_sentQueue.empty();
 }
 
-size_t MockTransport::sentMessageCount() const {
+size_t MockConnectionTransport::sentMessageCount() const {
     return m_sentQueue.size();
 }
 
-void MockTransport::clearQueues() {
+void MockConnectionTransport::clearQueues() {
     m_sentQueue.clear();
     m_receiveQueue.clear();
 }

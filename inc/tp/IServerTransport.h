@@ -2,7 +2,7 @@
 #define ISERVERTRANSPORT_H
 
 #include "DoIPMessage.h"
-#include "IConnectionTransport.h"
+#include "tp/IConnectionTransport.h"
 #include <memory>
 #include <string>
 

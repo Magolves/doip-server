@@ -2,7 +2,7 @@
 
 #include "DoIPDefaultConnection.h"
 #include "DoIPMessage.h"
-#include "MockConnectionTransport.h"
+#include "tp/MockConnectionTransport.h"
 
 namespace doip {
 

@@ -1,7 +1,7 @@
 #ifndef TCPSERVERTRANSPORT_H
 #define TCPSERVERTRANSPORT_H
 
-#include "IServerTransport.h"
+#include "tp/IServerTransport.h"
 #include "Logger.h"
 #include <atomic>
 #include <memory>

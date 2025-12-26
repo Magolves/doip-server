@@ -7,7 +7,7 @@
 #include "DoIPRoutingActivationResult.h"
 #include "DoIPTimes.h"
 #include "IConnectionContext.h"
-#include "IConnectionTransport.h"
+#include "tp/IConnectionTransport.h"
 #include "TimerManager.h"
 #include <optional>
 

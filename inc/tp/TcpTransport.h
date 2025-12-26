@@ -1,39 +1,41 @@
-#ifndef TCPCONNECTIONTRANSPORT_H
-#define TCPCONNECTIONTRANSPORT_H
+#ifndef TCPTRANSPORT_H
+#define TCPTRANSPORT_H
 
-#include "IConnectionTransport.h"
+#include "tp/ITransport.h"
 #include "Logger.h"
 #include "gen/DoIPConfig.h"
 #include <array>
 #include <atomic>
 #include <memory>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 
 namespace doip {
 
 /**
- * @brief TCP connection transport for a single client
+ * @brief TCP-based transport implementation for DoIP
  *
- * Wraps a connected TCP socket and provides DoIP message send/receive
+ * Wraps a TCP socket and provides DoIP message send/receive functionality.
  */
-class TcpConnectionTransport : public IConnectionTransport {
+class TcpTransport : public ITransport {
   public:
     /**
-     * @brief Construct a TCP connection transport from an existing socket
+     * @brief Construct a TCP transport from an existing socket
      *
      * @param socket The connected TCP socket (takes ownership)
      */
-    explicit TcpConnectionTransport(int socket);
+    explicit TcpTransport(int socket);
 
     /**
      * @brief Destructor - closes the socket
      */
-    ~TcpConnectionTransport() override;
+    ~TcpTransport() override;
 
     // Disable copy
-    TcpConnectionTransport(const TcpConnectionTransport &) = delete;
-    TcpConnectionTransport &operator=(const TcpConnectionTransport &) = delete;
+    TcpTransport(const TcpTransport&) = delete;
+    TcpTransport& operator=(const TcpTransport&) = delete;
 
-    // IConnectionTransport interface
+    // ITransport interface
     ssize_t sendMessage(const DoIPMessage &msg) override;
     std::optional<DoIPMessage> receiveMessage() override;
     void close(DoIPCloseReason reason) override;
@@ -60,11 +62,8 @@ class TcpConnectionTransport : public IConnectionTransport {
      * @brief Initialize the transport identifier string
      */
     void initializeIdentifier();
-
-    // Non-virtual shutdown used by destructor to avoid virtual calls
-    void shutdownSocket() noexcept;
 };
 
 } // namespace doip
 
-#endif /* TCPCONNECTIONTRANSPORT_H */
+#endif /* TCPTRANSPORT_H */

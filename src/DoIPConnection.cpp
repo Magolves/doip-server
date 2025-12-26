@@ -2,7 +2,7 @@
 #include "DoIPMessage.h"
 #include "DoIPPayloadType.h"
 #include "Logger.h"
-#include "TcpConnectionTransport.h"
+#include "tp/TcpConnectionTransport.h"
 
 #include <iomanip>
 #include <iostream>

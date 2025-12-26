@@ -24,7 +24,7 @@
 #include "DoIPIdentifiers.h"
 #include "DoIPNegativeAck.h"
 #include "DoIPServerModel.h"
-#include "IServerTransport.h"
+#include "tp/IServerTransport.h"
 #include "MacAddress.h"
 #include "Socket.h"
 

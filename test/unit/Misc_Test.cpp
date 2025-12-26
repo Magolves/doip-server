@@ -5,7 +5,7 @@
 
 #include "DoIPAddress.h"
 #include "DoIPConnection.h"
-#include "MockConnectionTransport.h"
+#include "tp/MockConnectionTransport.h"
 
 using namespace doip;
 
