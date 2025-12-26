@@ -8,6 +8,7 @@ add_executable(${DOIP_SERVER_LIB_NAME}_tests
     MacAddress_Test.cpp
     Main_Test.cpp
     Misc_Test.cpp
+    MockTransport_Test.cpp
     cli/ServerConfigCLI_Test.cpp
     Stream_Test.cpp
     ThreadSafeQueue_Test.cpp

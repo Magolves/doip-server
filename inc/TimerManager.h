@@ -3,7 +3,8 @@
 #include <chrono>
 #include <condition_variable>
 #include <functional>
-#include <map>
+#include <unordered_map>
+#include <iostream>
 #include <mutex>
 #include <optional>
 #include <thread>
@@ -186,7 +187,7 @@ class TimerManager {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_timers.clear();
         m_timers_changed = true;
-        m_cv.notify_one();
+        m_cv.notify_all();
     }
 
     /**

@@ -39,6 +39,8 @@ class IConnectionContext {
      */
     [[nodiscard]] virtual ssize_t sendProtocolMessage(const DoIPMessage &msg) = 0;
 
+    [[nodiscard]] virtual std::optional<DoIPMessage> receiveProtocolMessage() = 0;
+    
     /**
      * @brief Close the TCP connection
      *
