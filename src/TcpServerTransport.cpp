@@ -17,7 +17,24 @@ TcpServerTransport::TcpServerTransport(bool loopback)
 }
 
 TcpServerTransport::~TcpServerTransport() {
-    close();
+    closeSocket();
+}
+
+void TcpServerTransport::closeSocket() {
+    bool expected = true;
+    if (m_isActive.compare_exchange_strong(expected, false)) {
+        if (m_log) m_log->info("Closing TCP server transport (destructor)");
+
+        if (m_tcpServerSocket >= 0) {
+            ::close(m_tcpServerSocket);
+            m_tcpServerSocket = -1;
+        }
+
+        if (m_udpSocket >= 0) {
+            ::close(m_udpSocket);
+            m_udpSocket = -1;
+        }
+    }
 }
 
 bool TcpServerTransport::setup(uint16_t port) {
@@ -200,20 +217,8 @@ ssize_t TcpServerTransport::sendBroadcast(const DoIPMessage &msg, uint16_t port)
 }
 
 void TcpServerTransport::close() {
-    bool expected = true;
-    if (m_isActive.compare_exchange_strong(expected, false)) {
-        m_log->info("Closing TCP server transport");
-
-        if (m_tcpServerSocket >= 0) {
-            ::close(m_tcpServerSocket);
-            m_tcpServerSocket = -1;
-        }
-
-        if (m_udpSocket >= 0) {
-            ::close(m_udpSocket);
-            m_udpSocket = -1;
-        }
-    }
+    // Reuse non-virtual shutdown logic
+    closeSocket();
 }
 
 bool TcpServerTransport::isActive() const {

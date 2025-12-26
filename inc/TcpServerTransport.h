@@ -65,6 +65,8 @@ class TcpServerTransport : public IServerTransport {
      * @brief Configure broadcast/multicast settings
      */
     void configureBroadcast();
+
+    void closeSocket();
 };
 
 } // namespace doip

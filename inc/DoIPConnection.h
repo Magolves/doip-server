@@ -39,11 +39,6 @@ class DoIPConnection : public DoIPDefaultConnection {
 
     // === IConnectionContext interface implementation ===
 
-    /**
-     * @brief Send a DoIP protocol message to the client
-     * @param msg The DoIP message to send
-     */
-    ssize_t sendProtocolMessage(const DoIPMessage &msg) override;
 
     /**
      * @brief Receive a DoIP protocol message from the client

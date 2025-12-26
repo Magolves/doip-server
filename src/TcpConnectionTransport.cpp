@@ -17,7 +17,8 @@ TcpConnectionTransport::TcpConnectionTransport(int socket)
 }
 
 TcpConnectionTransport::~TcpConnectionTransport() {
-    close(DoIPCloseReason::ApplicationRequest);
+    // Avoid calling virtual method from destructor
+    shutdownSocket();
 }
 
 void TcpConnectionTransport::initializeIdentifier() {
@@ -27,7 +28,8 @@ void TcpConnectionTransport::initializeIdentifier() {
     if (getpeername(m_socket, reinterpret_cast<struct sockaddr *>(&addr), &addrLen) == 0) {
         char ipStr[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &addr.sin_addr, ipStr, sizeof(ipStr));
-        m_identifier = std::string(ipStr) + ":" + std::to_string(ntohs(addr.sin_port));
+        //TODO fix port display
+        m_identifier = std::string(ipStr);// + ":" + std::to_string(ntohs(addr.sin_port));
     } else {
         m_identifier = "socket_" + std::to_string(m_socket);
     }
@@ -123,10 +125,11 @@ ssize_t TcpConnectionTransport::receiveExactly(uint8_t *buffer, size_t length) {
             }
             // Real error
             m_log->error("recv() failed on {}: {}", m_identifier, strerror(errno));
-            return totalReceived;
+            // TODO: less casting for totalReceived possible?
+            return static_cast<ssize_t>(totalReceived);
         } else if (result == 0) {
             // Connection closed by peer
-            return totalReceived;
+            return static_cast<ssize_t>(totalReceived);
         }
 
         totalReceived += static_cast<size_t>(result);
@@ -151,6 +154,17 @@ bool TcpConnectionTransport::isActive() const {
 
 std::string TcpConnectionTransport::getIdentifier() const {
     return m_identifier;
+}
+
+void TcpConnectionTransport::shutdownSocket() noexcept {
+    bool expected = true;
+    if (m_isActive.compare_exchange_strong(expected, false)) {
+        // Best-effort close without relying on virtual dispatch
+        if (m_socket >= 0) {
+            ::close(m_socket);
+            m_socket = -1;
+        }
+    }
 }
 
 } // namespace doip

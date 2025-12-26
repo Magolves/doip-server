@@ -34,9 +34,6 @@ int DoIPConnection::receiveMessage() {
 }
 
 // === IConnectionContext interface implementation ===
-ssize_t DoIPConnection::sendProtocolMessage(const DoIPMessage &msg) {
-    return DoIPDefaultConnection::sendProtocolMessage(msg);  // Delegate to base class
-}
 
 std::optional<DoIPMessage> DoIPConnection::receiveProtocolMessage() {
     return m_transport->receiveMessage();  // Delegate to transport

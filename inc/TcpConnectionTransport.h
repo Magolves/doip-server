@@ -60,6 +60,9 @@ class TcpConnectionTransport : public IConnectionTransport {
      * @brief Initialize the transport identifier string
      */
     void initializeIdentifier();
+
+    // Non-virtual shutdown used by destructor to avoid virtual calls
+    void shutdownSocket() noexcept;
 };
 
 } // namespace doip
