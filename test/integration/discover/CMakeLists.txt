@@ -75,7 +75,7 @@ set_tests_properties(Integration_StartDiscoverServer PROPERTIES
 add_test(NAME Integration_WaitForServerReady
     COMMAND bash -c "
 echo 'Waiting for server to bind ports...'
-sleep 3
+sleep 5
 
 # First check if server process exists
 if ! pgrep -f Discover_Server >/dev/null 2>&1; then
@@ -84,10 +84,10 @@ if ! pgrep -f Discover_Server >/dev/null 2>&1; then
 fi
 
 for i in {1..150}; do
-  if command -v ss >/dev/null 2>&1; then
-    # Linux: use ss
-    udp_check=`ss -ulpn 2>/dev/null | grep -c ':13400'`
-    tcp_check=`ss -tlpn 2>/dev/null | grep -c ':13400'`
+    if command -v ss >/dev/null 2>&1; then
+        # Linux: use ss (without -p to avoid privilege restrictions)
+        udp_check=`ss -uln 2>/dev/null | grep -c ':13400'`
+        tcp_check=`ss -tln 2>/dev/null | grep -c ':13400'`
   else
     # macOS/BSD: use netstat
     udp_check=`netstat -an 2>/dev/null | grep -c 'udp.*\\.13400'`
