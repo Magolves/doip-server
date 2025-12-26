@@ -171,7 +171,7 @@ std::unique_ptr<IConnectionTransport> TcpServerTransport::acceptConnection() {
     int client_socket = accept(m_tcpServerSocket, reinterpret_cast<struct sockaddr *>(&client_addr), &client_len);
 
     if (client_socket < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        if (errno == EAGAIN /* || errno == EWOULDBLOCK */) {
             // No connection available (non-blocking mode)
             return nullptr;
         }
@@ -217,7 +217,6 @@ ssize_t TcpServerTransport::sendBroadcast(const DoIPMessage &msg, uint16_t port)
 }
 
 void TcpServerTransport::close() {
-    // Reuse non-virtual shutdown logic
     closeSocket();
 }
 
@@ -226,7 +225,9 @@ bool TcpServerTransport::isActive() const {
 }
 
 std::string TcpServerTransport::getIdentifier() const {
-    return "TCP-Server:0.0.0.0:" + std::to_string(m_port);
+    std::ostringstream oss;
+    oss << "TCP-Server:0.0.0.0:" << m_port;
+    return oss.str();
 }
 
 } // namespace doip
