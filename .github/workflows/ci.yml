@@ -59,7 +59,7 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build libspdlog-dev libcli11-dev
+        sudo apt-get install -y ninja-build libspdlog-dev libcli11-dev python3 python3-pip
         if [[ "${{ matrix.config.cxx }}" == "g++-11" ]]; then
           sudo apt-get install -y gcc-11 g++-11
         elif [[ "${{ matrix.config.cxx }}" == "g++-9" ]]; then
@@ -67,6 +67,13 @@ jobs:
         elif [[ "${{ matrix.config.cxx }}" == "clang++-14" ]]; then
           sudo apt-get install -y clang-14
         fi
+
+    - name: Install Python test dependencies
+      if: runner.os == 'Linux'
+      run: |
+        python3 --version
+        pip3 install --upgrade pip
+        pip3 install --no-cache-dir udsoncan doipclient
 
     - name: Set up CMake
       uses: jwlawson/actions-setup-cmake@v1.14
@@ -144,7 +151,13 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build libspdlog-dev libcli11-dev gcc-11 g++-11
+        sudo apt-get install -y ninja-build libspdlog-dev libcli11-dev gcc-11 g++-11 python3 python3-pip
+
+    - name: Install Python test dependencies
+      run: |
+        python3 --version
+        pip3 install --upgrade pip
+        pip3 install --no-cache-dir udsoncan doipclient
 
     - name: Set up CMake
       uses: jwlawson/actions-setup-cmake@v1.14
@@ -226,7 +239,13 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build libspdlog-dev libcli11-dev gcc-11 g++-11 lcov
+        sudo apt-get install -y ninja-build libspdlog-dev libcli11-dev gcc-11 g++-11 lcov python3 python3-pip
+
+    - name: Install Python test dependencies
+      run: |
+        python3 --version
+        pip3 install --upgrade pip
+        pip3 install --no-cache-dir udsoncan doipclient
 
     - name: Set up CMake
       uses: jwlawson/actions-setup-cmake@v1.14

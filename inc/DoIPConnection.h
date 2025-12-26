@@ -26,15 +26,12 @@ namespace doip {
 class DoIPConnection : public DoIPDefaultConnection {
   public:
 
-    DoIPConnection(int tcpSocket, UniqueServerModelPtr model);
+    DoIPConnection(UniqueConnectionTransportPtr transport, UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers>& timerManager);
 
-    int receiveTcpMessage();
-    size_t receiveFixedNumberOfBytesFromTCP(uint8_t *receivedData, size_t payloadLength);
+    int receiveMessage();
 
     void sendDiagnosticPayload(const DoIPAddress &sourceAddress, const ByteArray &payload);
-    bool isSocketActive() { return m_tcpSocket != 0; };
-
-    void triggerDisconnection();
+    bool isSocketActive() { return m_isOpen; };
 
     void sendDiagnosticAck(const DoIPAddress &sourceAddress);
     void sendDiagnosticNegativeAck(const DoIPAddress &sourceAddress, DoIPNegativeDiagnosticAck ackCode);
@@ -42,11 +39,13 @@ class DoIPConnection : public DoIPDefaultConnection {
 
     // === IConnectionContext interface implementation ===
 
+
     /**
-     * @brief Send a DoIP protocol message to the client
-     * @param msg The DoIP message to send
+     * @brief Receive a DoIP protocol message from the client
+     *
+     * @return std::optional<DoIPMessage> The received DoIP message, or std::nullopt on error
      */
-    ssize_t sendProtocolMessage(const DoIPMessage &msg) override;
+    std::optional<DoIPMessage> receiveProtocolMessage() override;
 
     /**
      * @brief Close the TCP connection
@@ -59,18 +58,6 @@ class DoIPConnection : public DoIPDefaultConnection {
      * @return The server's DoIP logical address
      */
     DoIPAddress getServerAddress() const override;
-
-    /**
-     * @brief Get the currently client (active source) address
-     * @return The client (active source) address, or 0 if no routing is active
-     */
-    DoIPAddress getClientAddress() const override;
-
-    /**
-     * @brief Set the client (active source) address after routing activation
-     * @param address The client's source address
-     */
-    void setClientAddress(const DoIPAddress& address) override;
 
     /**
      * @brief Handle an incoming diagnostic message (application callback)
@@ -100,15 +87,8 @@ class DoIPConnection : public DoIPDefaultConnection {
     bool hasDownstreamHandler() const override;
 
   private:
-    DoIPAddress m_logicalAddress;
-
-    // TCP socket-specific members
-    int m_tcpSocket;
-    std::array<uint8_t, DOIP_MAXIMUM_MTU> m_receiveBuf{};
     std::atomic<bool> m_isClosing{false};  // Guard against recursive closeConnection calls
     std::optional<DoIPMessage> m_pendingDownstreamRequest;
-
-    void closeSocket();
 
     int reactOnReceivedTcpMessage(const DoIPMessage &message);
 

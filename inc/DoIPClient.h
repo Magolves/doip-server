@@ -12,6 +12,7 @@
 
 #include "DoIPConfig.h"
 #include "DoIPMessage.h"
+#include "Logger.h"
 
 namespace doip {
 
@@ -63,6 +64,8 @@ class DoIPClient {
     int m_broadcast = 1;
     struct sockaddr_in m_serverAddress, m_clientAddress, m_announcementAddress;
     DoIPAddress m_sourceAddress = DoIPAddress(0xE000);
+
+    std::shared_ptr<spdlog::logger> m_log = spdlog::stdout_color_mt("doip-client");
 
     DoIpVin m_vin{0};
     DoIPAddress m_logicalAddress = ZERO_ADDRESS;

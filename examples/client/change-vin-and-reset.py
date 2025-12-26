@@ -33,7 +33,7 @@ with Client(conn, request_timeout=2, config=config) as client:
          vin_str = str(vin_value)
       print('Current Vehicle Identification Number is: %s' % vin_str)
 
-      client.write_data_by_identifier(udsoncan.DataIdentifier.VIN, 'ABC123456789GHIJK')       # Standard ID for VIN is 0xF190. Codec is set in the client configuration
+      client.write_data_by_identifier(udsoncan.DataIdentifier.VIN, 'ABC123456789GHXJK')       # Standard ID for VIN is 0xF190. Codec is set in the client configuration
       print('Vehicle Identification Number successfully changed.')
       client.ecu_reset(ECUReset.ResetType.hardReset)                                     # HardReset = 0x01
    except NegativeResponseException as e:

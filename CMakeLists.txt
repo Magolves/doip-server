@@ -9,15 +9,32 @@ project(libdoip-server
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(MAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Build options
-option(WITH_UNIT_TEST "Build unit tests" OFF)
+option(WITH_UNIT_TEST "Build unit tests" ON)
+option(WITH_INTEGRATION_TEST "Enable integration tests" ON)
+# Enable test coverage reporting
 option(WITH_TEST_COV "Enable test coverage reporting " OFF)
 option(WITH_EXAMPLES "Build examples" ON)
 option(ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers in Debug builds" OFF)
 option(ENABLE_STATIC_ANALYSIS "Enable static analysis tools" OFF)
 option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
+
+if (APPLE)
+    # Allow overriding the GCC library directory instead of hard-coding a specific versioned path.
+    # Default matches a typical Homebrew GCC installation but can be changed by users/CI:
+    #   cmake -DGCC_LIB_DIR=/custom/gcc/lib ...
+    set(GCC_LIB_DIR_DEFAULT "/opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/gcc/aarch64-apple-darwin24/15")
+    set(GCC_LIB_DIR "${GCC_LIB_DIR_DEFAULT}" CACHE PATH "Path to GCC libraries used for linking on Apple platforms")
+
+    if(EXISTS "${GCC_LIB_DIR}")
+        link_directories("${GCC_LIB_DIR}")
+    else()
+        message(WARNING "Configured GCC_LIB_DIR ('${GCC_LIB_DIR}') does not exist. "
+                        "Adjust GCC_LIB_DIR or install the appropriate GCC libraries if linking fails.")
+    endif()
+endif()
 
 # Set default build type if not specified
 if(NOT CMAKE_BUILD_TYPE)
@@ -93,14 +110,19 @@ set(DOIP_SERVER_LIB_NAME doip-server CACHE STRING "DoIP library name")
 
 
 set(SOURCES
+    src/cli/ServerConfigCLI.cpp
     src/DoIPClient.cpp
     src/DoIPConnection.cpp
+    src/DoIPDefaultConnection.cpp
     src/DoIPServer.cpp
     src/Logger.cpp
     src/MacAddress.cpp
-    src/DoIPDefaultConnection.cpp
-    src/cli/ServerConfigCLI.cpp
+    src/tp/TcpServerTransport.cpp
+    src/tp/TcpConnectionTransport.cpp
+    src/tp/MockServerTransport.cpp
+    src/tp/MockConnectionTransport.cpp
     src/uds/UdsMock.cpp
+    src/util/Daemonize.cpp
 )
 
 
@@ -129,7 +151,7 @@ target_include_directories(${DOIP_SERVER_LIB_NAME}
 # Link dependencies
 target_link_libraries(${DOIP_SERVER_LIB_NAME}
     PUBLIC
-        spdlog::spdlog
+        spdlog::spdlog_header_only
         CLI11::CLI11
     PRIVATE
         Threads::Threads
@@ -141,7 +163,8 @@ if(WITH_TEST_COV)
     # Instrument library for coverage
     message(STATUS "Instrumenting ${DOIP_SERVER_LIB_NAME} for test coverage")
     target_compile_options(${DOIP_SERVER_LIB_NAME} PRIVATE --coverage)
-    target_link_options(${DOIP_SERVER_LIB_NAME} PRIVATE --coverage)
+    # Use PUBLIC link options so coverage libraries propagate to consumers
+    target_link_libraries(${DOIP_SERVER_LIB_NAME} PUBLIC gcov)
 endif()
 
 # Install configuration
@@ -149,6 +172,7 @@ include(GNUInstallDirs)
 
 # Add examples subdirectory
 if (WITH_EXAMPLES)
+    message(STATUS "Building examples")
     add_subdirectory(examples)
 endif()
 

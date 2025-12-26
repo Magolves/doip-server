@@ -7,6 +7,7 @@
 #include "DoIPRoutingActivationResult.h"
 #include "DoIPTimes.h"
 #include "IConnectionContext.h"
+#include "tp/IConnectionTransport.h"
 #include "TimerManager.h"
 #include <optional>
 
@@ -103,8 +104,10 @@ class DoIPDefaultConnection : public IConnectionContext {
     /**
      * @brief Constructs a DoIPDefaultConnection
      * @param model The server model to use
+     * @param tp The connection transport interface
+     * @param timerManager The shared timer manager
      */
-    explicit DoIPDefaultConnection(UniqueServerModelPtr model);
+    explicit DoIPDefaultConnection(UniqueServerModelPtr model, UniqueConnectionTransportPtr tp, const SharedTimerManagerPtr<ConnectionTimers>& timerManager);
 
     /**
      * @brief Sends a DoIP protocol message to the client
@@ -112,6 +115,12 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @return Number of bytes sent
      */
     ssize_t sendProtocolMessage(const DoIPMessage &msg) override;
+
+    /**
+     * @brief Receives a DoIP protocol message from the client
+     * @return The received message, or std::nullopt on error
+     */
+    std::optional<DoIPMessage> receiveProtocolMessage() override;
 
     /**
      * @brief Closes the connection
@@ -123,7 +132,7 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @brief Checks if the connection is open
      * @return true if open, false otherwise
      */
-    bool isOpen() const override {
+    bool isOpen() const noexcept override {
         return m_isOpen;
     }
 
@@ -131,7 +140,7 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @brief Gets the reason for connection closure
      * @return The close reason
      */
-    DoIPCloseReason getCloseReason() const override {
+    DoIPCloseReason getCloseReason() const noexcept override {
         return m_closeReason;
     }
 
@@ -139,37 +148,37 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @brief Checks if routing is currently activated
      * @return true if routing is activated, false otherwise
      */
-    bool isRoutingActivated() const { return m_state && m_state->state == DoIPServerState::RoutingActivated; }
+    bool isRoutingActivated() const noexcept { return m_state && m_state->state == DoIPServerState::RoutingActivated; }
 
     /**
      * @brief Gets the alive check retry count
      * @return The number of alive check retries
      */
-    uint8_t getAliveCheckRetryCount() const { return m_aliveCheckRetryCount; }
+    uint8_t getAliveCheckRetryCount() const noexcept { return m_aliveCheckRetryCount; }
 
     /**
      * @brief Gets the initial inactivity timeout duration
      * @return The initial inactivity timeout in milliseconds
      */
-    std::chrono::milliseconds getInitialInactivityTimeout() const { return m_initialInactivityTimeout; }
+    std::chrono::milliseconds getInitialInactivityTimeout() const noexcept { return m_initialInactivityTimeout; }
 
     /**
      * @brief Gets the general inactivity timeout duration
      * @return The general inactivity timeout in milliseconds
      */
-    std::chrono::milliseconds getGeneralInactivityTimeout() const { return m_generalInactivityTimeout; }
+    std::chrono::milliseconds getGeneralInactivityTimeout() const noexcept { return m_generalInactivityTimeout; }
 
     /**
      * @brief Gets the alive check timeout duration
      * @return The alive check timeout in milliseconds
      */
-    std::chrono::milliseconds getAliveCheckTimeout() const { return m_aliveCheckTimeout; }
+    std::chrono::milliseconds getAliveCheckTimeout() const noexcept { return m_aliveCheckTimeout; }
 
     /**
      * @brief Gets the downstream response timeout duration
      * @return The downstream response timeout in milliseconds
      */
-    std::chrono::milliseconds getDownstreamResponseTimeout() const { return m_downstreamResponseTimeout; }
+    std::chrono::milliseconds getDownstreamResponseTimeout() const noexcept { return m_downstreamResponseTimeout; }
 
     /**
      * @brief Sets the alive check retry count
@@ -256,7 +265,7 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @brief Gets the current state of the connection
      * @return The current DoIPServerState
      */
-    DoIPServerState getState() const {
+    DoIPServerState getState() const noexcept {
         return m_state->state;
     }
 
@@ -272,17 +281,21 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @brief Handles a message (internal helper)
      * @param message The message to handle
      */
-    void handleMessage2(const DoIPMessage &message);
+    void handleMessage(const DoIPMessage &message);
 
   protected:
     UniqueServerModelPtr m_serverModel;
+    UniqueConnectionTransportPtr m_transport;
+    SharedTimerManagerPtr<ConnectionTimers> m_timerManager;
+    std::shared_ptr<spdlog::logger> m_log = Logger::get("tcp");
+
+
     std::array<StateDescriptor, 7> STATE_DESCRIPTORS;
     DoIPAddress m_routedClientAddress;
 
     bool m_isOpen;
     DoIPCloseReason m_closeReason = DoIPCloseReason::None;
     const StateDescriptor *m_state = nullptr;
-    TimerManager<ConnectionTimers> m_timerManager;
 
     // Alive check retry (not covered by the standard)
     uint8_t m_aliveCheckRetry{0};

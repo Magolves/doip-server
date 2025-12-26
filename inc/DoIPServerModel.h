@@ -65,6 +65,13 @@ using ServerModelDownstreamHandler = std::function<DoIPDownstreamResult(IConnect
 struct DoIPServerModel {
     virtual ~DoIPServerModel() = default;
 
+    /**
+     * @brief Get the model name.
+     *
+     * @return std::string_view with the model name.
+     */
+    virtual std::string_view getModelName() const { return "Generic DoIPServerModel"; }
+
     /// Called when the connection is being opened
     ServerModelOpenHandler onOpenConnection;
 
@@ -125,7 +132,7 @@ struct DefaultDoIPServerModel : public DoIPServerModel {
         onDiagnosticMessage = [](IConnectionContext &ctx, const DoIPMessage &msg) noexcept -> DoIPDiagnosticAck {
             (void)ctx;
             (void)msg;
-            LOG_DOIP_DEBUG("Diagnostic message received on DefaultDoIPServerModel");
+            //LOG_DOIP_DEBUG("Diagnostic message received on DefaultDoIPServerModel");
             // Default: always ACK
             return std::nullopt;
         };
@@ -133,7 +140,7 @@ struct DefaultDoIPServerModel : public DoIPServerModel {
         onDiagnosticNotification = [](IConnectionContext &ctx, DoIPDiagnosticAck ack) noexcept {
             (void)ctx;
             (void)ack;
-            LOG_DOIP_DEBUG("Diagnostic notification on DefaultDoIPServerModel");
+            //LOG_DOIP_DEBUG("Diagnostic notification on DefaultDoIPServerModel");
             // Default no-op
         };
 
@@ -142,8 +149,9 @@ struct DefaultDoIPServerModel : public DoIPServerModel {
         onDownstreamRequest = nullptr;
     }
 
-    ~DefaultDoIPServerModel() {
-    }
+    ~DefaultDoIPServerModel() override = default;
+
+    virtual std::string_view getModelName() const override { return "DefaultDoIPServerModel"; }
 };
 
 } // namespace doip

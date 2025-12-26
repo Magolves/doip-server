@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <sstream>
+#include <algorithm>
 
 using namespace doip;
 
@@ -13,7 +14,7 @@ TEST_SUITE("MacAddress") {
         MacAddress mac;
 
         // This should attempt to get the first available interface
-        bool result = getMacAddress(nullptr, mac);
+        const bool result = getMacAddress(nullptr, mac);
 
         // On systems with network interfaces, this should succeed
         // We can't guarantee it will succeed in all test environments
@@ -21,14 +22,7 @@ TEST_SUITE("MacAddress") {
             INFO("Successfully retrieved MAC address from first interface");
 
             // Check that it's not all zeros
-            bool allZeros = true;
-            for (size_t i = 0; i < 6; ++i) {
-                if (mac[i] != 0) {
-                    allZeros = false;
-                    break;
-                }
-            }
-
+            bool allZeros = std::all_of(mac.begin(), mac.end(), [](uint8_t byte) { return byte == 0; });
             CHECK_FALSE(allZeros);
         } else {
             WARN("Could not retrieve MAC address from first interface (may be expected in some environments)");
@@ -38,20 +32,13 @@ TEST_SUITE("MacAddress") {
     TEST_CASE("getFirstMacAddress") {
         MacAddress mac;
 
-        bool result = getFirstMacAddress(mac);
+        const bool result = getFirstMacAddress(mac);
 
         if (result) {
             INFO("Successfully retrieved first MAC address");
 
             // Check that it's not all zeros
-            bool allZeros = true;
-            for (size_t i = 0; i < 6; ++i) {
-                if (mac[i] != 0) {
-                    allZeros = false;
-                    break;
-                }
-            }
-
+            bool allZeros = std::all_of(mac.begin(), mac.end(), [](uint8_t byte) { return byte == 0; });
             CHECK_FALSE(allZeros);
 
             // Print MAC address for debugging (won't show in successful tests)
@@ -90,13 +77,7 @@ TEST_SUITE("MacAddress") {
                 successfulInterface = iface;
 
                 // Check that it's not all zeros
-                bool allZeros = true;
-                for (size_t i = 0; i < 6; ++i) {
-                    if (mac[i] != 0) {
-                        allZeros = false;
-                        break;
-                    }
-                }
+                const bool allZeros = std::all_of(mac.begin(), mac.end(), [](uint8_t byte) { return byte == 0; });
 
                 if (!allZeros) {
                     INFO("Found interface: " << iface);

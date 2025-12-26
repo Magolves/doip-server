@@ -24,6 +24,7 @@
 #include "DoIPIdentifiers.h"
 #include "DoIPNegativeAck.h"
 #include "DoIPServerModel.h"
+#include "tp/IServerTransport.h"
 #include "MacAddress.h"
 #include "Socket.h"
 
@@ -78,9 +79,9 @@ class DoIPServer {
     explicit DoIPServer(const ServerConfig &config = DefaultServerConfig);
 
     /**
-     * @brief Destructor. Ensures sockets/threads are closed/stopped.
+     * @brief Destructor
      */
-    ~DoIPServer();
+    ~DoIPServer() noexcept;
 
     DoIPServer(const DoIPServer &) = delete;
     DoIPServer &operator=(const DoIPServer &) = delete;
@@ -96,10 +97,10 @@ class DoIPServer {
 
     /**
      * @brief Block until a TCP client connects and create a DoIP connection.
-     * @param model Server model instance used by the connection.
+     * @param modelFactory Model factory callable to create a server model for the connection.
      * @return Unique pointer to established `DoIPConnection`, or nullptr on failure.
      */
-    std::unique_ptr<DoIPConnection> waitForTcpConnection(UniqueServerModelPtr model);
+    std::unique_ptr<DoIPConnection> waitForTcpConnection(std::function<UniqueServerModelPtr()> modelFactory);
 
     [[nodiscard]]
     /**
@@ -113,7 +114,7 @@ class DoIPServer {
      * @brief Check if the server is currently running
      */
     [[nodiscard]]
-    bool isRunning() const { return m_running.load(); }
+    bool isRunning() const noexcept { return m_udpRunning.load(); }
 
     /**
      * @brief Set the number of vehicle announcements to send.
@@ -141,11 +142,16 @@ class DoIPServer {
     void closeUdpSocket();
 
     /**
+     * @brief Stop the server, close sockets, and join threads.
+     */
+    void stop();
+
+    /**
      * @brief Get the logical gateway address of the server
      *
      * @return DoIPAddress Logical gateway address
      */
-    DoIPAddress getLogicalGatewayAddress() const {
+    DoIPAddress getLogicalGatewayAddress() const noexcept {
         return m_config.logicalAddress;
     }
     /**
@@ -215,37 +221,45 @@ class DoIPServer {
      * @brief Get last accepted client IP (string form).
      * @return IP address string.
      */
-    std::string getClientIp() const { return m_clientIp; }
+    std::string_view getClientIp() const noexcept { return m_clientIp; }
+
     /**
      * @brief Get last accepted client TCP port.
      * @return Client port number.
      */
-    int getClientPort() const { return m_clientPort; }
+    int getClientPort() const noexcept { return m_clientPort; }
+
+  protected:
+    /**
+     * @brief Get the model factory callable.
+     * @return std::function<UniqueServerModelPtr()> model factory callable.
+     */
+    std::function<UniqueServerModelPtr()> getModelFactory() const {
+        return m_modelFactory;
+    }
 
   private:
-    Socket m_tcp_sock;
-    Socket m_udp_sock;
-    struct sockaddr_in m_serverAddress{};
-    struct sockaddr_in m_clientAddress{};
-    ByteArray m_receiveBuf{};
+    // Server configuration
+    ServerConfig m_config;
+    std::shared_ptr<spdlog::logger> m_doipLog;
+    std::shared_ptr<spdlog::logger> m_udpLog;
+    std::shared_ptr<spdlog::logger> m_tcpLog;
+
+    // Transport abstraction (replaces direct socket management)
+    UniqueServerTransportPtr m_transport;
+
     std::string m_clientIp{};
     int m_clientPort{};
     DoIPFurtherAction m_FurtherActionReq = DoIPFurtherAction::NoFurtherAction;
+    SharedTimerManagerPtr<ConnectionTimers> m_TimerManager = std::make_shared<TimerManager<ConnectionTimers>>();
 
     // Automatic mode state
-    std::atomic<bool> m_running{false};
+    std::atomic<bool> m_udpRunning{false};
+    std::atomic<bool> m_tcpRunning{false};
     std::vector<std::thread> m_workerThreads;
     std::mutex m_mutex;
 
-    // Server configuration
-    ServerConfig m_config;
-
-    void stop();
-    void daemonize();
-
-    void setMulticastGroup(const char *address) const;
-
-    ssize_t sendNegativeUdpAck(DoIPNegativeAck ackCode);
+    std::function<UniqueServerModelPtr()> m_modelFactory;
 
     /**
      * @brief Background TCP listener that accepts connections and spawns handlers.
@@ -253,15 +267,10 @@ class DoIPServer {
      */
     void tcpListenerThread(std::function<UniqueServerModelPtr()> modelFactory);
 
-    void connectionHandlerThread(std::unique_ptr<DoIPConnection> connection);
+    void connectionHandlerThread(std::unique_ptr<DoIPDefaultConnection> connection);
 
-    void udpListenerThread();
     void udpAnnouncementThread();
-    ssize_t sendVehicleAnnouncement();
-
-    ssize_t sendUdpResponse(DoIPMessage msg);
 };
-
 
 } // namespace doip
 

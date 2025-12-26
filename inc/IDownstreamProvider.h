@@ -57,6 +57,13 @@ class IDownstreamProvider {
      * @brief Stop the provider and clean up resources.
      */
     virtual void stop() {}
+
+    /**
+     * @brief Get the provider name object.
+     *
+     * @return std::string_view the provider name
+     */
+    virtual std::string_view getProviderName() const = 0;
 };
 
 } // namespace doip
