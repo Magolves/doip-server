@@ -26,6 +26,7 @@ std::unique_ptr<IConnectionTransport> MockServerTransport::acceptConnection() {
 }
 
 ssize_t MockServerTransport::sendBroadcast(const DoIPMessage &msg, uint16_t port) {
+    (void)port;
     if (!m_isActive) {
         return -1;
     }
@@ -44,7 +45,9 @@ bool MockServerTransport::isActive() const {
 }
 
 std::string MockServerTransport::getIdentifier() const {
-    return m_identifier + ":" + std::to_string(m_port);
+    std::ostringstream oss;
+    oss << m_identifier << ":" << m_port;
+    return oss.str();
 }
 
 void MockServerTransport::injectConnection(std::unique_ptr<MockConnectionTransport> connection) {
