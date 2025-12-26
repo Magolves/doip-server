@@ -22,7 +22,18 @@ option(ENABLE_STATIC_ANALYSIS "Enable static analysis tools" OFF)
 option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
 
 if (APPLE)
-    link_directories(/opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/gcc/aarch64-apple-darwin24/15)
+    # Allow overriding the GCC library directory instead of hard-coding a specific versioned path.
+    # Default matches a typical Homebrew GCC installation but can be changed by users/CI:
+    #   cmake -DGCC_LIB_DIR=/custom/gcc/lib ...
+    set(GCC_LIB_DIR_DEFAULT "/opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/current/gcc/aarch64-apple-darwin24/15")
+    set(GCC_LIB_DIR "${GCC_LIB_DIR_DEFAULT}" CACHE PATH "Path to GCC libraries used for linking on Apple platforms")
+
+    if(EXISTS "${GCC_LIB_DIR}")
+        link_directories("${GCC_LIB_DIR}")
+    else()
+        message(WARNING "Configured GCC_LIB_DIR ('${GCC_LIB_DIR}') does not exist. "
+                        "Adjust GCC_LIB_DIR or install the appropriate GCC libraries if linking fails.")
+    endif()
 endif()
 
 # Set default build type if not specified

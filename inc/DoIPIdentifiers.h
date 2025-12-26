@@ -266,7 +266,7 @@ class GenericFixedId {
     /**
      * @brief Get the char used to pad shorter identifiers.
      *
-     * @return char constexpr the padding character
+     * @return constexpr char the padding character
      */
     constexpr char getPadChar() const noexcept {
         return padChar;

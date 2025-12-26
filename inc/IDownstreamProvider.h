@@ -61,7 +61,7 @@ class IDownstreamProvider {
     /**
      * @brief Get the provider name object.
      *
-     * @return std::string_view tge provider name
+     * @return std::string_view the provider name
      */
     virtual std::string_view getProviderName() const = 0;
 };

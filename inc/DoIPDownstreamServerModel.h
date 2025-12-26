@@ -91,8 +91,6 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
     std::thread m_worker;
     bool m_running = true;
 
-    mutable std::string m_ModelName;
-
     void startWorker() {
         m_worker = std::thread([this] {
             while (m_running) {

@@ -77,7 +77,7 @@ TEST_SUITE("MacAddress") {
                 successfulInterface = iface;
 
                 // Check that it's not all zeros
-                const bool allZeros = std::all_of(mac.begin(), mac.end(), [](uint8_t byte) { return byte == 0; });;
+                const bool allZeros = std::all_of(mac.begin(), mac.end(), [](uint8_t byte) { return byte == 0; });
 
                 if (!allZeros) {
                     INFO("Found interface: " << iface);
