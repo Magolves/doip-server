@@ -68,14 +68,16 @@ int main(int argc, char *argv[]) {
     server->setAnnounceInterval(500);  // Send announcements every 500ms for faster discovery
     server->setAnnounceNum(100);       // Send 100 announcements = 50 seconds of announcements (enough for parallel test execution)
 
-    if (!server->setupUdpSocket()) {
-        console->critical("Failed to set up UDP socket");
-        server->stop(); // Clean up before exiting
+    // Set up TCP first to ensure transport creates/binds both TCP and UDP sockets
+    if (!server->setupTcpSocket([]() { return std::make_unique<ExampleDoIPServerModel>(); })) {
+        console->critical("Failed to set up TCP socket");
         return 1;
     }
 
-    if (!server->setupTcpSocket([]() { return std::make_unique<ExampleDoIPServerModel>(); })) {
-        console->critical("Failed to set up TCP socket");
+    // Start announcement thread after sockets are bound
+    if (!server->setupUdpSocket()) {
+        console->critical("Failed to set up UDP announcements");
+        server->stop(); // Clean up before exiting
         return 1;
     }
 
