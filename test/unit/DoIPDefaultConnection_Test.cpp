@@ -2,6 +2,7 @@
 
 #include "DoIPDefaultConnection.h"
 #include "DoIPMessage.h"
+#include "MockConnectionTransport.h"
 
 namespace doip {
 
@@ -26,7 +27,7 @@ TEST_SUITE("DoIPDefaultConnection") {
         DoIPAddress sa = DoIPAddress(0x0E00);
 
         DoIPDefaultConnectionTestFixture()
-            : connection(std::make_unique<DoIPDefaultConnection>(std::make_unique<DefaultDoIPServerModel>(), timerManager)) {
+            : connection(std::make_unique<DoIPDefaultConnection>(std::make_unique<DefaultDoIPServerModel>(), std::make_unique<MockConnectionTransport>(), timerManager)) {
                 connection->setAliveCheckTimeout(200ms);
                 connection->setGeneralInactivityTimeout(500ms);
                 connection->setInitialInactivityTimeout(500ms);
@@ -64,7 +65,7 @@ TEST_SUITE("DoIPDefaultConnection") {
         CHECK(connection->getState() == DoIPServerState::WaitRoutingActivation);
         CHECK(connection->getCloseReason() == DoIPCloseReason::None);
 
-        connection->handleMessage2(DoIPMessage()); // Invalid empty message
+        connection->handleMessage(DoIPMessage()); // Invalid empty message
 
         CHECK(connection->isOpen() == false);
         CHECK(connection->getCloseReason() == DoIPCloseReason::InvalidMessage);
@@ -77,12 +78,12 @@ TEST_SUITE("DoIPDefaultConnection") {
         CHECK(connection->getState() == DoIPServerState::WaitRoutingActivation);
         CHECK(connection->getCloseReason() == DoIPCloseReason::None);
 
-        connection->handleMessage2(message::makeRoutingActivationRequest(sa));
+        connection->handleMessage(message::makeRoutingActivationRequest(sa));
         CHECK(connection->getState() == DoIPServerState::RoutingActivated);
         CHECK(connection->isRoutingActivated());
 
         WAIT_FOR_STATE(connection, DoIPServerState::WaitAliveCheckResponse, 100000);
-        connection->handleMessage2(message::makeAliveCheckResponse(sa));
+        connection->handleMessage(message::makeAliveCheckResponse(sa));
         WAIT_FOR_STATE(connection, DoIPServerState::RoutingActivated, 1000);
 
         WAIT_FOR_STATE(connection, DoIPServerState::WaitAliveCheckResponse, 100000);
@@ -102,7 +103,7 @@ TEST_SUITE("DoIPDefaultConnection") {
         CHECK(connection->getState() == DoIPServerState::WaitRoutingActivation);
         CHECK(connection->getCloseReason() == DoIPCloseReason::None);
 
-        connection->handleMessage2(message::makeRoutingActivationRequest(DoIPAddress(0xE000)));
+        connection->handleMessage(message::makeRoutingActivationRequest(DoIPAddress(0xE000)));
         CHECK(connection->getState() == DoIPServerState::RoutingActivated);
 
         WAIT_FOR_STATE(connection, DoIPServerState::WaitAliveCheckResponse, 100000);

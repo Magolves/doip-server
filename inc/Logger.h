@@ -79,11 +79,13 @@ class Logger {
         static std::mutex mutex;
         std::lock_guard<std::mutex> lock(mutex);
 
-        // std::cout << "-- Get logger '" << name << "'...\n";
-        // if (auto it = m_loggers.find(name); it != m_loggers.end()) {
-        //     std::cout << "-- Get logger from list '" << name << "'...\n";
-        //     return it->second;
-        // }
+        // Return cached logger if it exists
+        if (auto it = m_loggers.find(name); it != m_loggers.end()) {
+            if (it->second) {
+                it->second->set_level(level);
+                return it->second;
+            }
+        }
 
         std::shared_ptr<spdlog::logger> new_logger;
         if (use_syslog) {
@@ -105,7 +107,7 @@ class Logger {
             new_logger->set_pattern(DEFAULT_PATTERN);
         }
 
-        //m_loggers.emplace(name, new_logger);
+        m_loggers.emplace(name, new_logger);
         return new_logger;
     }
 
@@ -157,12 +159,12 @@ class Logger {
 
     // Explicit shutdown to avoid sanitizer leak reports and ensure safe teardown
     static void shutdown() {
-        // for (auto &pair : m_loggers) {
-        //     if (pair.second) {
-        //         pair.second->flush();
-        //     }
-        // }
-        // m_loggers.clear();
+        for (auto &pair : m_loggers) {
+            if (pair.second) {
+                pair.second->flush();
+            }
+        }
+        m_loggers.clear();
         // Also shutdown spdlog registry resources (safe even if unused)
         spdlog::shutdown();
     }

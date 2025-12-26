@@ -6,8 +6,9 @@
 
 namespace doip {
 
-DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, const SharedTimerManagerPtr<ConnectionTimers> &timerManager)
+DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, UniqueConnectionTransportPtr tp,  const SharedTimerManagerPtr<ConnectionTimers> &timerManager)
     : m_serverModel(std::move(model)),
+        m_transport(std::move(tp)),
       m_timerManager(timerManager),
       STATE_DESCRIPTORS{
           StateDescriptor(
@@ -57,7 +58,12 @@ DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, const S
 
 ssize_t DoIPDefaultConnection::sendProtocolMessage(const DoIPMessage &msg) {
     m_log->info("Default connection: Sending protocol message: {}", fmt::streamed(msg));
-    return static_cast<ssize_t>(msg.size()); // Simulate sending by returning the message size
+    return m_transport->sendMessage(msg);
+}
+
+std::optional<DoIPMessage> DoIPDefaultConnection::receiveProtocolMessage() {
+    m_log->info("Default connection: Receiving protocol message...");
+    return m_transport->receiveMessage();
 }
 
 void DoIPDefaultConnection::closeConnection(DoIPCloseReason reason) {
@@ -66,6 +72,7 @@ void DoIPDefaultConnection::closeConnection(DoIPCloseReason reason) {
         transitionTo(DoIPServerState::Closed);
         m_closeReason = reason;
         m_timerManager->stopAll();
+        m_transport->close(reason);  // Close the transport
         notifyConnectionClosed(reason);
     } catch (const std::exception &e) {
         m_log->error("Error notifying connection closed: {}", e.what());
@@ -96,7 +103,7 @@ void DoIPDefaultConnection::setClientAddress(const DoIPAddress &address) {
     m_routedClientAddress = address;
 }
 
-void DoIPDefaultConnection::handleMessage2(const DoIPMessage &message) {
+void DoIPDefaultConnection::handleMessage(const DoIPMessage &message) {
     m_state->messageHandler(message);
 }
 

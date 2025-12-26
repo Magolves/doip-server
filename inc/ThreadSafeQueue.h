@@ -8,15 +8,15 @@
 template <typename T>
 class ThreadSafeQueue {
   private:
-    std::queue<T> queue_;
-    mutable std::mutex mutex_;
-    std::condition_variable cv_;
-    bool stopped_ = false;
+    std::queue<T> m_queue;
+    mutable std::mutex m_mutex;
+    std::condition_variable m_cv;
+    bool m_stopped = false;
 
   public:
     ThreadSafeQueue() = default;
 
-    ~ThreadSafeQueue() {
+    ~ThreadSafeQueue() noexcept {
         stop();
     }
 
@@ -26,19 +26,19 @@ class ThreadSafeQueue {
 
     // Enable move operations
     ThreadSafeQueue(ThreadSafeQueue &&other) noexcept {
-        std::lock_guard<std::mutex> lock(other.mutex_);
-        queue_ = std::move(other.queue_);
-        stopped_ = other.stopped_;
-        other.stopped_ = true;
+        std::lock_guard<std::mutex> lock(other.m_mutex);
+        m_queue = std::move(other.m_queue);
+        m_stopped = other.m_stopped;
+        other.m_stopped = true;
     }
 
     ThreadSafeQueue &operator=(ThreadSafeQueue &&other) noexcept {
         if (this != &other) {
-            std::scoped_lock lock(mutex_, other.mutex_);
-            queue_ = std::move(other.queue_);
-            stopped_ = other.stopped_;
-            other.stopped_ = true;
-            cv_.notify_all();
+            std::scoped_lock lock(m_mutex, other.m_mutex);
+            m_queue = std::move(other.m_queue);
+            m_stopped = other.m_stopped;
+            other.m_stopped = true;
+            m_cv.notify_all();
         }
         return *this;
     }
@@ -52,42 +52,104 @@ class ThreadSafeQueue {
     template <typename U>
     void push(U&& item) {
         {
-            std::lock_guard<std::mutex> lock(mutex_);
-            if (stopped_)
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (m_stopped)
                 return;
-            queue_.push(std::forward<U>(item));
+            m_queue.push(std::forward<U>(item));
         }
-        cv_.notify_one();
+        m_cv.notify_one();
     }
 
     bool pop(T &item, std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) {
-        std::unique_lock<std::mutex> lock(mutex_);
+        std::unique_lock<std::mutex> lock(m_mutex);
 
-        if (!cv_.wait_for(lock, timeout, [this] {
-                return !queue_.empty() || stopped_;
+        if (!m_cv.wait_for(lock, timeout, [this] {
+                return !m_queue.empty() || m_stopped;
             })) {
             return false; // Timeout
         }
 
-        if (stopped_ && queue_.empty()) {
+        if (m_stopped && m_queue.empty()) {
             return false;
         }
 
-        item = std::move(queue_.front());
-        queue_.pop();
+        item = std::move(m_queue.front());
+        m_queue.pop();
         return true;
     }
 
     void stop() {
         {
-            std::lock_guard<std::mutex> lock(mutex_);
-            stopped_ = true;
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_stopped = true;
         }
-        cv_.notify_all();
+        m_cv.notify_all();
     }
 
     size_t size() const noexcept {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return queue_.size();
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_queue.size();
+    }
+
+    /**
+     * @brief Check if the queue is empty
+     *
+     * @return true if queue has no elements
+     */
+    bool empty() const noexcept {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_queue.empty();
+    }
+
+    /**
+     * @brief Wait indefinitely for an item and pop it
+     *
+     * @param item Reference to store the popped item
+     * @return true if item was popped, false if queue was stopped
+     */
+    bool waitAndPop(T &item) {
+        std::unique_lock<std::mutex> lock(m_mutex);
+
+        m_cv.wait(lock, [this] {
+            return !m_queue.empty() || m_stopped;
+        });
+
+        if (m_stopped && m_queue.empty()) {
+            return false;
+        }
+
+        item = std::move(m_queue.front());
+        m_queue.pop();
+        return true;
+    }
+
+    /**
+     * @brief Try to pop an item without blocking
+     *
+     * @param item Reference to store the popped item
+     * @return true if item was popped, false if queue was empty or stopped
+     */
+    bool tryPop(T &item) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+
+        if (m_queue.empty() || m_stopped) {
+            return false;
+        }
+
+        item = std::move(m_queue.front());
+        m_queue.pop();
+        return true;
+    }
+
+    /**
+     * @brief Clear all items from the queue
+     */
+    void clear() noexcept {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            std::queue<T> empty_queue;
+            std::swap(m_queue, empty_queue);
+        }
+        m_cv.notify_all();
     }
 };
