@@ -1,8 +1,11 @@
 #ifndef IUDSSERVICEHANDLER_H
 #define IUDSSERVICEHANDLER_H
 
+#include "IUdsModel.h"
 #include "UdsResponseCode.h"
-#include "DoIPMessage.h"
+#include "UdsServices.h"
+#include "UdsTypes.h"
+#include "util/ByteArray.h"
 #include <memory>
 
 namespace doip::uds {
@@ -27,16 +30,18 @@ inline std::ostream &operator<<(std::ostream &os, const UdsResponse &response) {
     return os;
 }
 
-class IUdsServiceHandler {
-public:
-    virtual ~IUdsServiceHandler() = default;
-    virtual UdsResponse handle(const ByteArray& request) = 0;
-protected:
-    virtual UdsResponse makeResponse(const ByteArray& request, const ByteArray& data = {});
-    virtual UdsResponse makeNegativeResponse(UdsResponseCode code, const ByteArray& request) const;
+class UdsServiceHandler {
+  public:
+    virtual ~UdsServiceHandler() = default;
+    virtual UdsResponse handle(const ByteArray &request, const UniqueUdsModelPtr &model) = 0;
+
+  protected:
+    virtual UdsResponse makeResponse(const ByteArray &request, const ByteArray &data = {});
+    virtual UdsResponse makeNegativeResponse(UdsResponseCode code, const ByteArray &request) const;
 };
 
-using IUdsServiceHandlerPtr = std::unique_ptr<IUdsServiceHandler>;
+using UniqueUdsServiceHandlerPtr = std::unique_ptr<UdsServiceHandler>;
+using IUdsServiceHandlerPtr = std::unique_ptr<UdsServiceHandler>;
 
 } // namespace doip::uds
 

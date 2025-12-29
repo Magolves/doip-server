@@ -1,17 +1,27 @@
 #pragma once
 
-#include "IUdsServiceHandler.h"
-#include "UdsServices.h"
+#include "../UdsServiceHandler.h"
 
 namespace doip::uds {
 
-class WriteDataByIdentifierHandler : public IUdsServiceHandler {
+class WriteDataByIdentifierHandler : public UdsServiceHandler {
 public:
     ~WriteDataByIdentifierHandler() override = default;
-    UdsResponse handle(const ByteArray& request) override;
+    UdsResponse handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
+        uint16_t did = (static_cast<uint16_t>(request[1]) << 8) | request[2];
+
+        if (model) {
+            UdsResponseCode result = model->setDataByIdentfier(did, request, 3);
+            if (result != UdsResponseCode::PositiveResponse) {
+                return makeNegativeResponse(result, request);
+            }
+        }
+
+        return makeResponse(request, {});
+    }
 protected:
-    using IUdsServiceHandler::makeResponse;
-    using IUdsServiceHandler::makeNegativeResponse;
+    using UdsServiceHandler::makeResponse;
+    using UdsServiceHandler::makeNegativeResponse;
 };
 
 } // namespace doip::uds

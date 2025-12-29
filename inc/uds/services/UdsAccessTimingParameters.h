@@ -1,17 +1,16 @@
 #pragma once
 
-#include "IUdsServiceHandler.h"
-#include "UdsServices.h"
+#include "../UdsServiceHandler.h"
 
 namespace doip::uds {
 
-class AccessTimingParametersHandler : public IUdsServiceHandler {
+ class AccessTimingParametersHandler : public UdsServiceHandler {
 public:
     ~AccessTimingParametersHandler() override = default;
-    UdsResponse handle(const ByteArray& request) override;
+    UdsResponse handle(const ByteArray& request, const UniqueUdsModelPtr& model) override;
 protected:
-    using IUdsServiceHandler::makeResponse;
-    using IUdsServiceHandler::makeNegativeResponse;
+    using UdsServiceHandler::makeResponse;
+    using UdsServiceHandler::makeNegativeResponse;
 };
 
 } // namespace doip::uds

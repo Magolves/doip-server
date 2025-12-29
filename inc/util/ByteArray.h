@@ -82,6 +82,31 @@ struct ByteArray : std::vector<uint8_t> {
     ByteArray(const std::initializer_list<uint8_t> &init_list) : std::vector<uint8_t>(init_list) {}
 
     /**
+     * @brief Appends a single byte to the end of the ByteArray
+     *
+     * @param value The byte value to append
+     */
+    void writeU8(uint8_t value) {
+        emplace_back(value);
+    }
+
+    /**
+     * @brief Writes a single byte at a specific index
+     *
+     * Overwrites the byte at the specified index with the given value.
+     *
+     * @param index Index where to write (must be < size())
+     * @param value The byte value to write
+     * @throws std::out_of_range if index >= size()
+     */
+    void writeU8At(size_t index, uint8_t value) {
+        if (index >= this->size()) {
+            throw std::out_of_range("Index out of range for writeU8");
+        }
+        (*this)[index] = value;
+    }
+
+    /**
      * @brief Writes a 16-bit unsigned integer in big-endian format at a specific index
      *
      * Overwrites 2 bytes starting at the specified index with the value in
@@ -279,6 +304,15 @@ struct ByteArray : std::vector<uint8_t> {
         } else {
             static_assert(sizeof(UnderlyingType) <= 4, "Enum underlying type too large (max 32-bit supported)");
         }
+    }
+
+    /**
+     * @brief Appends another ByteArray to the end of this ByteArray
+     *
+     * @param other The ByteArray to append
+     */
+    void append(const ByteArray &other) {
+        this->insert(this->end(), other.begin(), other.end());
     }
 };
 

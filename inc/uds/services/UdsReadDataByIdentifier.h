@@ -3,21 +3,32 @@
 #include <unordered_map>
 #include <cstdint>
 
-#include "IUdsServiceHandler.h"
-#include "UdsServices.h"
+#include "../UdsServiceHandler.h"
+#include "../UdsServices.h"
 
 namespace doip::uds {
 
-class ReadDataByIdentifierHandler : public IUdsServiceHandler {
+class ReadDataByIdentifierHandler : public UdsServiceHandler {
 public:
     ~ReadDataByIdentifierHandler() override = default;
-    UdsResponse handle(const ByteArray& request) override;
-protected:
-    using IUdsServiceHandler::makeResponse;
-    using IUdsServiceHandler::makeNegativeResponse;
-    virtual UdsResponse makeResponse(const ByteArray& request, const ByteArray& data) override;
-private:
-    std::unordered_map<uint16_t, ByteArray> m_didValues;
+    UdsResponse handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
+        ByteArray responseData;
+        for (size_t i = 1; i < request.size(); i += 2) {
+            uds_did did = static_cast<uds_did>((request[i] << 8) | request[i + 1]);
+            if (model && model->supportsDataByIdentifier(did)) {
+                ByteArray data;
+                UdsResponseCode result = model->getDataByIdentfier(did, data);
+                if (result != UdsResponseCode::PositiveResponse) {
+                    return makeNegativeResponse(result, request);
+                }
+                responseData.append(data);
+            } else {
+                return makeNegativeResponse(UdsResponseCode::RequestOutOfRange, request);
+            }
+        }
+
+        return makeResponse(request, responseData);
+    }
 };
 
 } // namespace doip::uds

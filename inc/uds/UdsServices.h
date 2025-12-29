@@ -1,15 +1,20 @@
 #ifndef UDSSERVICES_H
 #define UDSSERVICES_H
 
+#include "UdsTypes.h"
+
 #include <type_traits>
 #include <utility>
 #include <array>
 #include <cstdint>
 
 
+
+
 namespace doip::uds {
 
 enum class UdsService : uint8_t {
+    None = 0x00,
     DiagnosticSessionControl = 0x10,
     ECUReset = 0x11,
     SecurityAccess = 0x27,
@@ -34,7 +39,6 @@ enum class UdsService : uint8_t {
     RequestTransferExit = 0x37,
 };
 
-using uds_length = uint16_t;
 struct UdsServiceDescriptor {
     UdsService service;
     uds_length minReqLength;
@@ -42,8 +46,6 @@ struct UdsServiceDescriptor {
     uds_length minRspLength;
     uds_length maxRspLength;
 };
-
-constexpr uds_length MAX_UDS_MESSAGE_LENGTH = 4095;
 
 constexpr std::array<UdsServiceDescriptor, 22> UDS_SERVICE_DESCRIPTORS = {{
     { UdsService::DiagnosticSessionControl, 2, 2, 6, 6 },

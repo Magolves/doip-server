@@ -1,6 +1,8 @@
 #ifndef UDSRESPONSE_H
 #define UDSRESPONSE_H
 
+#include "UdsTypes.h"
+
 #include <stdint.h>
 
 #include "AnsiColors.h"
@@ -8,7 +10,7 @@
 #include <iomanip>
 
 namespace doip::uds {
-    enum class UdsResponseCode : uint8_t {
+    enum class UdsResponseCode : uds_rsp_code {
         OK = 0, // positive response
         // Negative Response Codes (NRCs) as defined in ISO14229-1:2020 Table A.1 - Negative Response
         // Code (NRC) definition and values
@@ -230,7 +232,8 @@ namespace doip::uds {
                    os << " ResourceTemporarilyNotAvailable";
                    break;
                default:
-                   os << " UnknownNRC";
+                   os << " Unknown NRC (" << std::hex << std::uppercase << std::setw(2) << std::setfill('0')
+                      << static_cast<unsigned int>(code) << std::dec << ")";
                    break;
            }
         }

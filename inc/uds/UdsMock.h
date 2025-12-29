@@ -6,11 +6,12 @@
 #include <memory>
 #include <unordered_map>
 
-#include "DoIPMessage.h"
-#include "IUdsServiceHandler.h"
+#include "UdsServiceHandler.h"
 #include "LambdaUdsHandler.h"
 #include "UdsResponseCode.h"
 #include "UdsServices.h"
+
+
 
 using namespace doip;
 
@@ -22,14 +23,23 @@ class UdsMock {
   public:
     UdsMock() = default;
 
-    // Register a handler owning pointer
-    void registerService(UdsService serviceId, IUdsServiceHandlerPtr handler) {
-        m_handlers[static_cast<uint8_t>(serviceId)] = std::move(handler);
+    template <typename HandlerT>
+    void registerService(UdsService serviceId) {
+        m_handlers[static_cast<uint8_t>(serviceId)] = std::make_unique<HandlerT>();
     }
 
     // Register a lambda/function
-    void registerService(UdsService serviceId, std::function<UdsResponse(const ByteArray &)> fn) {
+    void registerService(UdsService serviceId, std::function<UdsResponse(const ByteArray &, const UniqueUdsModelPtr&)> fn) {
         m_handlers[static_cast<uint8_t>(serviceId)] = std::make_unique<LambdaUdsHandler>(std::move(fn));
+    }
+
+    // Backward-compatible overload: register lambda without model
+    void registerService(UdsService serviceId, std::function<UdsResponse(const ByteArray &)> fn) {
+        m_handlers[static_cast<uint8_t>(serviceId)] = std::make_unique<LambdaUdsHandler>(
+            [f = std::move(fn)](const ByteArray &request, const UniqueUdsModelPtr&) {
+                return f(request);
+            }
+        );
     }
 
     // Unregister
@@ -42,39 +52,7 @@ class UdsMock {
 
     ByteArray handleDiagnosticRequest(const ByteArray &request) const;
 
-    /**
-     * @brief Register default services that respond with "Service Not Supported"
-     */
-    void registerDefaultServices() {
-        const std::array<UdsService, 19> services = {
-            UdsService::DiagnosticSessionControl,
-            UdsService::ECUReset,
-            UdsService::SecurityAccess,
-            UdsService::CommunicationControl,
-            UdsService::TesterPresent,
-            UdsService::AccessTimingParameters,
-            UdsService::SecuredDataTransmission,
-            UdsService::ControlDTCSetting,
-            UdsService::ResponseOnEvent,
-            UdsService::LinkControl,
-            UdsService::ReadDataByIdentifier,
-            UdsService::ReadMemoryByAddress,
-            UdsService::ReadScalingDataByIdentifier,
-            UdsService::ReadDataByPeriodicIdentifier,
-            UdsService::DynamicallyDefineDataIdentifier,
-            UdsService::WriteDataByIdentifier,
-            UdsService::WriteMemoryByAddress,
-            UdsService::ClearDiagnosticInformation,
-            UdsService::ReadDTCInformation,
-        };
-
-        for (auto s : services) {
-            registerService(s, [](const ByteArray &req) -> UdsResponse {
-                (void)req;
-                return {UdsResponseCode::ServiceNotSupported, {}};
-            });
-        }
-    }
+    void registerDefaultServices();
 
   private:
     static ByteArray makeResponse(const ByteArray &request, UdsResponseCode responseCode = UdsResponseCode::OK, const ByteArray &extraData = {}) {
@@ -92,7 +70,9 @@ class UdsMock {
         return positiveResponse;
     }
 
-    std::unordered_map<uint8_t, IUdsServiceHandlerPtr> m_handlers;
+    std::unordered_map<uint8_t, UniqueUdsServiceHandlerPtr> m_handlers;
+
+    UniqueUdsModelPtr m_model{nullptr};
 };
 
 } // namespace doip::uds
