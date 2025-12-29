@@ -375,7 +375,7 @@ class DoIPMessage {
      *
      * @return bool True if the message has a valid structure
      */
-    bool isValid() const noexcept {
+    bool isValid() const {
         return m_data.size() >= DOIP_HEADER_SIZE &&
                isValidProtocolVersion() &&
                getPayloadSize() == getPayloadLengthFromHeader();
