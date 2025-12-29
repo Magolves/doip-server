@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-#include "ByteArray.h"
+#include "util/ByteArray.h"
 
 namespace doip {
 

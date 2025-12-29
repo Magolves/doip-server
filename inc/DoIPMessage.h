@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #include "AnsiColors.h"
-#include "ByteArray.h"
+#include "util/ByteArray.h"
 #include "DoIPAddress.h"
 #include "DoIPFurtherAction.h"
 #include "DoIPIdentifiers.h"

@@ -42,9 +42,9 @@ class UdsMock {
 
     ByteArray handleDiagnosticRequest(const ByteArray &request) const;
 
-    // Register default handlers for all known services.
-    // By default these handlers simply return ServiceNotSupported. Tests
-    // can register custom handlers afterwards to override behavior.
+    /**
+     * @brief Register default services that respond with "Service Not Supported"
+     */
     void registerDefaultServices() {
         const std::array<UdsService, 19> services = {
             UdsService::DiagnosticSessionControl,

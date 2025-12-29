@@ -1,5 +1,5 @@
 #pragma once
-#include "ByteArray.h"
+#include "util/ByteArray.h"
 #include "IDownstreamProvider.h"
 #include "ThreadSafeQueue.h"
 #include "uds/UdsMock.h"

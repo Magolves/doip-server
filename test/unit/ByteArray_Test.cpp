@@ -2,7 +2,7 @@
 #include <sstream>
 #include <algorithm>
 
-#include "ByteArray.h"
+#include "util/ByteArray.h"
 
 using namespace doip;
 

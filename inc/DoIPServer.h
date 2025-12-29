@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "cli/ServerConfig.h"
-#include "ByteArray.h"
+#include "util/ByteArray.h"
 #include "DoIPConfig.h"
 #include "DoIPFurtherAction.h"
 #include "DoIPIdentifiers.h"
