@@ -30,7 +30,10 @@ inline std::ostream &operator<<(std::ostream &os, const UdsResponse &response) {
 class IUdsServiceHandler {
 public:
     virtual ~IUdsServiceHandler() = default;
-    virtual UdsResponse handle(const ByteArray &request) = 0;
+    virtual UdsResponse handle(const ByteArray& request) = 0;
+protected:
+    virtual UdsResponse makeResponse(const ByteArray& request, const ByteArray& data = {});
+    virtual UdsResponse makeNegativeResponse(UdsResponseCode code, const ByteArray& request) const;
 };
 
 using IUdsServiceHandlerPtr = std::unique_ptr<IUdsServiceHandler>;

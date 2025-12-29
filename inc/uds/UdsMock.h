@@ -40,31 +40,6 @@ class UdsMock {
     // Convenience: clear all
     void clear() { m_handlers.clear(); }
 
-    // --- Typed registration helpers (convenience wrappers) ---
-    // Diagnostic Session Control (0x10): handler(sessionType)
-    void registerDiagnosticSessionControlHandler(std::function<UdsResponse(uint8_t sessionType)> handler);
-
-    // ECU Reset (0x11): handler(resetType)
-    void registerEcuResetHandler(std::function<UdsResponse(uint8_t resetType)> handler);
-
-    // Read Data By Identifier (0x22): handler(did, params)
-    void registerReadDataByIdentifierHandler(std::function<UdsResponse(uint16_t did)> handler);
-
-    // Write Data By Identifier (0x2E): handler(did, data)
-    void registerWriteDataByIdentifierHandler(std::function<UdsResponse(uint16_t did, ByteArray value)> handler);
-
-    // Tester Present (0x3E): handler(subFunction)
-    void registerTesterPresentHandler(std::function<UdsResponse(uint8_t subFunction)> handler);
-
-    // Start download (0x34): handler(memoryAddress, length)
-    void registerRequestDownloadHandler(std::function<UdsResponse(uint32_t memoryAddress, uint32_t length)> handler);
-
-    // Transfer Data (0x36): handler(blockSequenceCounter, data)
-    void registerTransferDataHandler(std::function<UdsResponse(uint8_t blockSequenceCounter, const ByteArray &data)> handler);
-
-    //End dowlnload (0x37): handler()
-    void registerRequestTransferExitHandler(std::function<UdsResponse()> handler);
-
     ByteArray handleDiagnosticRequest(const ByteArray &request) const;
 
     // Register default handlers for all known services.
