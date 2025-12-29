@@ -10,6 +10,7 @@
 #include "CanIsoTpServerModel.h"
 #include "DoIPServer.h"
 #include "can/CanIsoTpProvider.h"
+#include "DoIPConnection.h"
 #include "cli/ServerConfigCLI.h"
 
 using namespace doip;

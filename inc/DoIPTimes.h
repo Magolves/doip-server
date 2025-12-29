@@ -2,6 +2,7 @@
 #define DOIPTIMES_H
 
 #include <stdint.h>
+#include <chrono>
 
 // Table 12
 namespace doip::times {

@@ -2,16 +2,22 @@
 #define DOIPDEFAULTCONNECTION_H
 
 #include "DoIPConfig.h"
-#include "DoIPServerModel.h"
-
 #include "DoIPRoutingActivationResult.h"
 #include "DoIPTimes.h"
 #include "IConnectionContext.h"
+#include "DoIPServerState.h"
+#include "DoIPServerEvent.h"
 #include "tp/IConnectionTransport.h"
 #include "TimerManager.h"
 #include <optional>
+#include <ostream>
+#include <chrono>
 
 namespace doip {
+
+class DoIPServerModel;
+using UniqueServerModelPtr = std::unique_ptr<DoIPServerModel>;
+
 
 using namespace std::chrono_literals;
 

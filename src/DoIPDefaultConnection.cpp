@@ -1,4 +1,5 @@
 #include "DoIPDefaultConnection.h"
+#include "DoIPServerModel.h"
 #include "Logger.h"
 
 #include <execinfo.h>

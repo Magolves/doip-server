@@ -1,6 +1,8 @@
 #ifndef DOIPROUTINGACTIVATIONRESULT_H
 #define DOIPROUTINGACTIVATIONRESULT_H
 
+#include <ostream>
+
 namespace doip {
 
 // Table 56 - Routing activation response codes
