@@ -361,47 +361,6 @@ void run() {
 
 ---
 
-### ⚠️ Potential Race Conditions
-
-**Issue 1: Connection Close vs Message Receive**
-```cpp
-// DoIPDefaultConnection.cpp
-void closeConnection(DoIPCloseReason reason) {
-    m_isOpen = false;  // Not atomic!
-    m_transport->close(reason);
-    transitionTo(DoIPServerState::Closed);
-}
-
-// Concurrent receiveProtocolMessage() could check m_isOpen
-// after check but before transport->close()
-```
-
-**Recommendation:**
-```cpp
-std::atomic<bool> m_isOpen{true};  // Make atomic
-```
-
----
-
-**Issue 2: DoIPServer Announcement Thread**
-```cpp
-// DoIPServer.cpp
-void startAnnouncementTask() {
-    m_announcementRunning = true;
-    m_announcementThread = std::thread([this]() {
-        while (m_announcementRunning) {  // ⚠️ Not atomic read
-            sendVehicleAnnouncement();
-            std::this_thread::sleep_for(m_announceInterval);
-        }
-    });
-}
-```
-
-**Recommendation:**
-```cpp
-std::atomic<bool> m_announcementRunning{false};
-```
-
 ---
 
 ### ✅ Deadlock Prevention
@@ -597,20 +556,6 @@ test/integration/discover/ - Integration test patterns
 ## 5) Proposed Features & Improvements
 
 ### High Priority 🔥
-
-#### 1. **Fix Atomic Flags**
-```cpp
-// DoIPDefaultConnection.h
-- bool m_isOpen;
-+ std::atomic<bool> m_isOpen{true};
-
-// DoIPServer.cpp (announcement thread)
-- bool m_announcementRunning;
-+ std::atomic<bool> m_announcementRunning{false};
-```
-**Reason:** Prevent data races in concurrent access
-
----
 
 #### 2. **Forward Declarations for Include Hygiene**
 ```cpp

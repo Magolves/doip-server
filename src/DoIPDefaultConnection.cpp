@@ -48,7 +48,7 @@ DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, UniqueC
               DoIPServerState::Closed,
               DoIPServerState::Closed,
               nullptr)} {
-    m_isOpen = true;
+    m_isOpen.store(true);
     m_serverModel->onOpenConnection(*this);
     m_state = &STATE_DESCRIPTORS[0];
 
@@ -88,7 +88,7 @@ void DoIPDefaultConnection::closeConnection(DoIPCloseReason reason) {
         }
         free(strs);
     }
-    m_isOpen = false;
+    m_isOpen.store(false);
 }
 
 DoIPAddress DoIPDefaultConnection::getServerAddress() const {

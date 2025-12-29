@@ -133,7 +133,7 @@ class DoIPDefaultConnection : public IConnectionContext {
      * @return true if open, false otherwise
      */
     bool isOpen() const noexcept override {
-        return m_isOpen;
+        return m_isOpen.load();
     }
 
     /**
@@ -293,7 +293,7 @@ class DoIPDefaultConnection : public IConnectionContext {
     std::array<StateDescriptor, 7> STATE_DESCRIPTORS;
     DoIPAddress m_routedClientAddress;
 
-    bool m_isOpen;
+    std::atomic<bool> m_isOpen{true};
     DoIPCloseReason m_closeReason = DoIPCloseReason::None;
     const StateDescriptor *m_state = nullptr;
 
