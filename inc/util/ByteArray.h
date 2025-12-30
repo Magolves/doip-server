@@ -237,6 +237,31 @@ struct ByteArray : std::vector<uint8_t> {
     }
 
     /**
+     * @brief Writes a string to the end of the ByteArray
+     *
+     * @param str the string to append
+     */
+    void writeString(const std::string &str) {
+        this->insert(this->end(), str.begin(), str.end());
+    }
+
+    /**
+     * @brief Writes a string at a specific index
+     *
+     * Overwrites bytes starting at the specified index with the string data.
+     *
+     * @param index Starting index where to write (must be < size() - str.size() + 1)
+     * @param str The string to write
+     * @throws std::out_of_range if index + str.size() > size()
+     */
+    void writeStringAt(size_t index, const std::string &str) {
+        if (index + str.size() > this->size()) {
+            throw std::out_of_range("Index out of range for writeStringAt");
+        }
+        std::copy(str.begin(), str.end(), this->begin() + static_cast<int>(index));
+    }
+
+    /**
      * @brief Reads a 16-bit unsigned integer in big-endian format from a specific index
      *
      * Reads 2 bytes starting at the specified index and interprets them as a
