@@ -7,7 +7,7 @@ namespace doip::uds {
 class ReadMemoryByAddressHandler : public UdsServiceHandler {
 public:
     ~ReadMemoryByAddressHandler() override = default;
-    UdsResponse handle(const ByteArray& request, const UniqueUdsModelPtr& model) override;
+    ByteArray handle(const ByteArray& request, const UniqueUdsModelPtr& model) override;
 protected:
     using UdsServiceHandler::makeResponse;
     using UdsServiceHandler::makeNegativeResponse;

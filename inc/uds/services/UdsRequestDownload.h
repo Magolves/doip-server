@@ -7,7 +7,7 @@ namespace doip::uds {
 class RequestDownloadHandler : public UdsServiceHandler {
 public:
     ~RequestDownloadHandler() override = default;
-    UdsResponse handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
+    ByteArray handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
         uint32_t memoryAddress = (static_cast<uint32_t>(request[1]) << 24) |
                                  (static_cast<uint32_t>(request[2]) << 16) |
                                  (static_cast<uint32_t>(request[3]) << 8) |

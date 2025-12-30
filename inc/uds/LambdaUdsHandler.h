@@ -8,10 +8,10 @@ namespace doip::uds {
 
 class LambdaUdsHandler : public UdsServiceHandler {
 public:
-    using Fn = std::function<UdsResponse(const ByteArray &, const UniqueUdsModelPtr&)>;
+    using Fn = std::function<ByteArray(const ByteArray &, const UniqueUdsModelPtr&)>;
     explicit LambdaUdsHandler(Fn fn) : m_fn(std::move(fn)) {}
 
-    UdsResponse handle(const ByteArray &request, const UniqueUdsModelPtr& model) override { return m_fn(request, model); }
+    ByteArray handle(const ByteArray &request, const UniqueUdsModelPtr& model) override { return m_fn(request, model); }
 
 private:
     Fn m_fn;

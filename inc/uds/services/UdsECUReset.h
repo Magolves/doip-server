@@ -7,7 +7,7 @@ namespace doip::uds {
 class ECUResetHandler : public UdsServiceHandler {
 public:
     ~ECUResetHandler() override = default;
-    UdsResponse handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
+    ByteArray handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
         uint8_t resetType = request[1];
 
 

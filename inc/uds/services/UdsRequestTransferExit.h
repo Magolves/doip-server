@@ -7,7 +7,7 @@ namespace doip::uds {
 class RequestTransferExitHandler : public UdsServiceHandler {
 public:
     ~RequestTransferExitHandler() override = default;
-    UdsResponse handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
+    ByteArray handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
         (void)request;
         if (model) {
             UdsResponseCode result = model->requestTransferExit();

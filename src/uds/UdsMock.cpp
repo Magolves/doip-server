@@ -3,11 +3,12 @@
 
 #include "uds/services/UdsDiagnosticSessionControl.h"
 #include "uds/services/UdsECUReset.h"
+#include "uds/services/UdsReadDataByIdentifier.h"
 #include "uds/services/UdsRequestDownload.h"
 #include "uds/services/UdsRequestTransferExit.h"
+#include "uds/services/UdsTesterPresent.h"
 #include "uds/services/UdsTransferData.h"
 #include "uds/services/UdsWriteDataByIdentifier.h"
-#include "uds/services/UdsTesterPresent.h"
 
 namespace doip::uds {
 
@@ -38,56 +39,60 @@ namespace doip::uds {
         };
 
         for (auto s : services) {
-            registerService(s, [](const ByteArray &req, const UniqueUdsModelPtr&) -> UdsResponse {
+            registerService(s, [](const ByteArray &req, const UniqueUdsModelPtr&) -> ByteArray {
                 (void)req;
-                return {UdsResponseCode::ServiceNotSupported, {}};
+                return UdsServiceHandler::makeNegativeResponse(UdsResponseCode::ServiceNotSupported, req);
             });
         }
 
         registerService<DiagnosticSessionControlHandler>(UdsService::DiagnosticSessionControl);
         registerService<ECUResetHandler>(UdsService::ECUReset);
-        registerService<RequestTransferExitHandler>(UdsService::RequestTransferExit);
+        registerService<ReadDataByIdentifierHandler>(UdsService::ReadDataByIdentifier);
         registerService<RequestDownloadHandler>(UdsService::RequestDownload);
+        registerService<RequestTransferExitHandler>(UdsService::RequestTransferExit);
+        registerService<TesterPresentHandler>(UdsService::TesterPresent);
         registerService<TransferDataHandler>(UdsService::TransferData);
         registerService<WriteDataByIdentifierHandler>(UdsService::WriteDataByIdentifier);
-        registerService<TesterPresentHandler>(UdsService::TesterPresent);
     }
 
 ByteArray UdsMock::handleDiagnosticRequest(const ByteArray &request) const {
     if (request.empty())
         return {};
     uint8_t sid = request[0];
-    UdsService service = static_cast<UdsService>(sid);
 
-    const UdsServiceDescriptor *desc = findServiceDescriptor(service);
+    const UdsServiceDescriptor *desc = findServiceDescriptor(sid);
     if (!desc) {
-        return makeResponse(request, UdsResponseCode::ServiceNotSupported, {});
+        return UdsServiceHandler::makeNegativeResponse(UdsResponseCode::ServiceNotSupported, request);
     }
 
     if (request.size() < desc->minReqLength || request.size() > desc->maxReqLength) {
         std::cerr << "UdsMock: Request length " << request.size()
-                  << " out of bounds for service 0x" << std::hex << static_cast<int>(service) << std::dec
+                  << " out of bounds for service 0x" << std::hex << +sid << std::dec
                   << " (expected " << desc->minReqLength << "-" << desc->maxReqLength << ")\n";
-        return makeResponse(request, UdsResponseCode::IncorrectMessageLengthOrInvalidFormat);
+        return UdsServiceHandler::makeNegativeResponse(UdsResponseCode::IncorrectMessageLengthOrInvalidFormat, request);
     }
 
-    UdsResponse resp = {UdsResponseCode::ServiceNotSupported, {}};
+    ByteArray response = {};
     auto it = m_handlers.find(sid);
     if (it != m_handlers.end() && it->second) {
-        resp = it->second->handle(request, m_model);
+        response = it->second->handle(request, m_model);
     } else {
-        return makeResponse(request, UdsResponseCode::ServiceNotSupported);
+        return UdsServiceHandler::makeNegativeResponse(UdsResponseCode::ServiceNotSupported, request);
     }
 
-    auto rspSize = resp.second.size() + 1; // +1 for the SID
+    if (isNegativeResponse(response)) {
+        return response; // already a negative response
+    }
+
+    auto rspSize = response.size(); // +1 for the SID
     if (rspSize < desc->minRspLength || rspSize > desc->maxRspLength) {
-        std::cerr << "UdsMock: Response length " << resp.second.size()
-                  << " out of bounds for service 0x" << std::hex << static_cast<int>(service) << std::dec
+        std::cerr << "UdsMock: Response length " << response.size()
+                  << " out of bounds for service 0x" << std::hex << +sid << std::dec
                   << " (expected " << desc->minRspLength << "-" << desc->maxRspLength << ")\n";
-        return makeResponse(request, UdsResponseCode::GeneralProgrammingFailure, {});
+        return UdsServiceHandler::makeNegativeResponse(UdsResponseCode::GeneralProgrammingFailure, request);
     }
 
-    return makeResponse(request, resp.first, resp.second);
+    return response;
 }
 
 } // namespace doip::uds

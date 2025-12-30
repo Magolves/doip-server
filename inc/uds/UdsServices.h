@@ -3,13 +3,10 @@
 
 #include "UdsTypes.h"
 
-#include <type_traits>
-#include <utility>
 #include <array>
 #include <cstdint>
-
-
-
+#include <type_traits>
+#include <utility>
 
 namespace doip::uds {
 
@@ -47,30 +44,28 @@ struct UdsServiceDescriptor {
     uds_length maxRspLength;
 };
 
-constexpr std::array<UdsServiceDescriptor, 22> UDS_SERVICE_DESCRIPTORS = {{
-    { UdsService::DiagnosticSessionControl, 2, 2, 6, 6 },
-    { UdsService::ECUReset, 2, 2, 2, 2 },
-    { UdsService::SecurityAccess, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::CommunicationControl, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::TesterPresent, 2, 2, 2, 2 },
-    { UdsService::AccessTimingParameters, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::SecuredDataTransmission, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::ControlDTCSetting, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::ResponseOnEvent, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::LinkControl, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::ReadDataByIdentifier, 3, MAX_UDS_MESSAGE_LENGTH, 4, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::ReadMemoryByAddress, 4, MAX_UDS_MESSAGE_LENGTH, 4, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::ReadScalingDataByIdentifier, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::ReadDataByPeriodicIdentifier, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::DynamicallyDefineDataIdentifier, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::WriteDataByIdentifier, 4, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::WriteMemoryByAddress, 4, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::ClearDiagnosticInformation, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::ReadDTCInformation, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::RequestDownload, 6, MAX_UDS_MESSAGE_LENGTH, 5, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::TransferData, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH },
-    { UdsService::RequestTransferExit, 2, 2, 2, 2 }
-}};
+constexpr std::array<UdsServiceDescriptor, 22> UDS_SERVICE_DESCRIPTORS = {{{UdsService::DiagnosticSessionControl, 2, 2, 6, 6},
+                                                                           {UdsService::ECUReset, 2, 2, 2, 2},
+                                                                           {UdsService::SecurityAccess, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::CommunicationControl, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::TesterPresent, 2, 2, 2, 2},
+                                                                           {UdsService::AccessTimingParameters, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::SecuredDataTransmission, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::ControlDTCSetting, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::ResponseOnEvent, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::LinkControl, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::ReadDataByIdentifier, 3, MAX_UDS_MESSAGE_LENGTH, 4, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::ReadMemoryByAddress, 4, MAX_UDS_MESSAGE_LENGTH, 4, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::ReadScalingDataByIdentifier, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::ReadDataByPeriodicIdentifier, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::DynamicallyDefineDataIdentifier, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::WriteDataByIdentifier, 4, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::WriteMemoryByAddress, 4, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::ClearDiagnosticInformation, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::ReadDTCInformation, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::RequestDownload, 6, MAX_UDS_MESSAGE_LENGTH, 5, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::TransferData, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::RequestTransferExit, 2, 2, 2, 2}}};
 
 /**
  * @brief Find service descriptor by service ID
@@ -78,15 +73,30 @@ constexpr std::array<UdsServiceDescriptor, 22> UDS_SERVICE_DESCRIPTORS = {{
  * @param sid the UDS service ID
  * @return const UdsServiceDescriptor* the service descriptor or nullptr if not found
  */
-inline const UdsServiceDescriptor* findServiceDescriptor(UdsService sid) {
+template <typename T = UdsResponseCode>
+inline const UdsServiceDescriptor *findServiceDescriptor(T sid) {
+    static_assert(std::is_enum_v<T> || std::is_integral_v<T>, "T must be an enum or integral type");
     auto it = std::find_if(UDS_SERVICE_DESCRIPTORS.begin(), UDS_SERVICE_DESCRIPTORS.end(),
-                               [sid](const UdsServiceDescriptor& desc) {
-                                   return desc.service == sid;
-                               });
+                           [sid](const UdsServiceDescriptor &desc) {
+                               return static_cast<uint8_t>(desc.service) == static_cast<uint8_t>(sid);
+                           });
     if (it != UDS_SERVICE_DESCRIPTORS.end()) {
         return &(*it);
     }
     return nullptr;
+}
+
+/**
+ * @brief Get the SID Response as byte, e. g. sid 0x22 -> 0x62.
+ *
+ * @tparam T the type of the response code (enum or integral)
+ * @param code the response code
+ * @return uint8_t
+ */
+template <typename T = UdsResponseCode>
+inline uint8_t sidResponseCode(const T &code) {
+    static_assert(std::is_enum_v<T> || std::is_integral_v<T>, "T must be an enum or integral type");
+    return static_cast<uint8_t>(code) | 0x40;
 }
 
 } // namespace doip::uds

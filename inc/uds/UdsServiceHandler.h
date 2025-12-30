@@ -33,11 +33,32 @@ inline std::ostream &operator<<(std::ostream &os, const UdsResponse &response) {
 class UdsServiceHandler {
   public:
     virtual ~UdsServiceHandler() = default;
-    virtual UdsResponse handle(const ByteArray &request, const UniqueUdsModelPtr &model) = 0;
+    virtual ByteArray handle(const ByteArray &request, const UniqueUdsModelPtr &model) = 0;
 
-  protected:
-    virtual UdsResponse makeResponse(const ByteArray &request, const ByteArray &data = {});
-    virtual UdsResponse makeNegativeResponse(UdsResponseCode code, const ByteArray &request) const;
+    static ByteArray makeResponse(const ByteArray &request, const ByteArray &data = {}) {
+        ByteArray positiveResponse;
+        positiveResponse.writeU8(sidResponseCode(request.empty() ? 0x00 : request[0]));
+        positiveResponse.insert(positiveResponse.end(), data.begin(), data.end());
+        return positiveResponse;
+    }
+
+    static ByteArray makeDidResponse(const ByteArray &request, const ByteArray &data = {}) {
+        ByteArray positiveResponse;
+        positiveResponse.writeU8(sidResponseCode(request.empty() ? 0x00 : request[0]));
+        positiveResponse.writeU8(request[1]); // DID high byte
+        positiveResponse.writeU8(request[2]); // DID low byte
+
+        positiveResponse.insert(positiveResponse.end(), data.begin(), data.end());
+        return positiveResponse;
+    }
+
+    static ByteArray makeNegativeResponse(UdsResponseCode code, const ByteArray &request) {
+        ByteArray negativeResponse;
+        negativeResponse.writeU8(UDS_NEGATIVE_RESPONSE_INDICATOR);                                // Negative response indicator
+        negativeResponse.writeU8(request.empty() ? 0x00 : request[0]); // Original service ID or 0
+        negativeResponse.writeU8(static_cast<uint8_t>(code));          // NRC
+        return negativeResponse;
+    }
 };
 
 using UniqueUdsServiceHandlerPtr = std::unique_ptr<UdsServiceHandler>;

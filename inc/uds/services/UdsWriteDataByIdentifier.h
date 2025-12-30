@@ -7,7 +7,7 @@ namespace doip::uds {
 class WriteDataByIdentifierHandler : public UdsServiceHandler {
 public:
     ~WriteDataByIdentifierHandler() override = default;
-    UdsResponse handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
+    ByteArray handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
         uint16_t did = (static_cast<uint16_t>(request[1]) << 8) | request[2];
 
         if (model) {
@@ -17,7 +17,7 @@ public:
             }
         }
 
-        return makeResponse(request, {});
+        return makeDidResponse(request, {});
     }
 protected:
     using UdsServiceHandler::makeResponse;

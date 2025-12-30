@@ -7,7 +7,7 @@ namespace doip::uds {
 class ControlDTCSettingHandler : public UdsServiceHandler {
 public:
     ~ControlDTCSettingHandler() override = default;
-    UdsResponse handle(const ByteArray& request, const UniqueUdsModelPtr& model) override;
+    ByteArray handle(const ByteArray& request, const UniqueUdsModelPtr& model) override;
 protected:
     using UdsServiceHandler::makeResponse;
     using UdsServiceHandler::makeNegativeResponse;
