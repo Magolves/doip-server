@@ -22,7 +22,7 @@ doip_client = DoIPClient(ecu_ip, ecu_logical_address)
 conn = DoIPClientUDSConnector(doip_client)
 with Client(conn, request_timeout=2, config=config) as client:
    try:
-      client.change_session(1)
+      client.change_session(0x2)
       # Read VIN once and handle response type (udsoncan may return bytes or str)
       vin_response = client.read_data_by_identifier(udsoncan.DataIdentifier.VIN)
       vin_value = vin_response.service_data.values[udsoncan.DataIdentifier.VIN]
@@ -39,7 +39,7 @@ with Client(conn, request_timeout=2, config=config) as client:
       # ping to keep session alive
       client.tester_present()
       # close diag session
-      client.change_session(0)
+      client.change_session(0x01)
    except NegativeResponseException as e:
       print('Server refused our request for service %s with code "%s" (0x%02x)' % (e.response.service.get_name(), e.response.code_name, e.response.code))
    except (InvalidResponseException, UnexpectedResponseException) as e:
