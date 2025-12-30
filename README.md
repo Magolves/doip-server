@@ -9,11 +9,29 @@
 
 C/C++ server library for ISO 13400-2 Diagnostics over IP (DoIP).
 
-**CAUTION** The current API is under construction any may change at any time.
+## Features
+
+- **ISO 13400-2:2019 Compliance**: Full implementation of DoIP protocol server-side operations
+- **Modern C++17**: RAII, smart pointers, move semantics, and template metaprogramming
+- **Transport Abstraction**: Pluggable transport layer supporting TCP, mocks, and custom implementations (TLS, WebSocket, etc.)
+- **Downstream Integration**:
+  - SocketCAN ISO-TP support for CAN bus communication
+  - UDS mock provider for testing without hardware
+  - Extensible interface for custom downstream protocols
+- **State Machine**: Clean DoIP connection lifecycle management with configurable timeouts
+- **Vehicle Announcement**: UDP broadcast/loopback support with configurable intervals
+- **Routing Activation**: Multiple routing types, socket slot management, and authorization hooks
+- **Alive Check**: Automatic keep-alive mechanism with retry support
+- **Flexible Logging**: spdlog integration with runtime level control and syslog support
+- **Daemon Mode**: Background service support with signal handling
+- **Zero-Copy Message Handling**: Efficient buffer management for high-throughput scenarios
+- **CI/CD Ready**: GitHub Actions with coverage reporting, static analysis (clang-tidy), and documentation deployment
+
+**CAUTION:** The current API is under construction and may change at any time.
 
 ## Dependencies
 
-`doip-server` uses `spdlog` for logging and `CLI11` for command line parsing. The lib is downloaded automatically. Or you may install it locally via
+`doip-server` uses `spdlog` for logging and `CLI11` for command line parsing. The library is downloaded automatically, or you may install it locally via:
 
 ```bash
 sudo apt install libspdlog-dev libcli11-dev
@@ -51,7 +69,7 @@ xdg-open docs/html/index.html
 git clone https://github.com/Magolves/doip-server.git
 ```
 
-1. Enter the directory 'doip-server' and build the library with:
+2. Enter the directory 'doip-server' and build the library with:
 
 ```bash
 cmake . -Bbuild
@@ -59,7 +77,7 @@ cd build
 make
 ```
 
-1. To install the library into `/usr/lib/doip-server` use:
+3. To install the library into `/usr/lib/doip-server`, use:
 
 ```bash
 sudo make install
@@ -103,5 +121,4 @@ The [original fork](https://github.com/Magolves/libdoip) is no longer maintained
 
 - [ISO 13400-2:2019(en) Road vehicles — Diagnostic communication over Internet Protocol (DoIP) — Part 2: Transport protocol and network layer services](<https://www.iso.org/obp/ui/#iso:std:iso:13400:-2:ed-2:v1:en>)
 - [Specification of Diagnostic over IP](<https://www.autosar.org/fileadmin/standards/R20-11/CP/AUTOSAR_SWS_DiagnosticOverIP.pdf>)
-- [Diagnostics over Internet Protocol (DoIP)](<https://cdn.vector.com/cms/content/know-how/_application-notes/AN-IND-1-026_DoIP_in_CANoe.pdf>)
 - [Diagnostics Over Internet Protocol (DoIP) in CANoe](<https://cdn.vector.com/cms/content/know-how/_application-notes/AN-IND-1-026_DoIP_in_CANoe.pdf>)
