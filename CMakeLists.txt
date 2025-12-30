@@ -122,7 +122,6 @@ set(SOURCES
     src/tp/MockServerTransport.cpp
     src/tp/MockConnectionTransport.cpp
     src/uds/UdsMock.cpp
-    src/uds/UdsServiceHandler.cpp
     src/util/Daemonize.cpp
 )
 
