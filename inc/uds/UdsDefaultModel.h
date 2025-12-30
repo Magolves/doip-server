@@ -2,6 +2,8 @@
 #define UDSDEFAULTMODEL_H
 
 #include "IUdsModel.h"
+#include "DoIPIdentifiers.h"
+#include "UdsDataIdentifiers.h"
 
 namespace doip::uds {
 
@@ -21,19 +23,56 @@ class UdsDefaultModel : public IUdsModel {
 
     UdsResponseCode getDataByIdentfier(uds_did did, ByteArray &data, size_t offset = 0) const override {
         (void)offset;
-        data.clear();
-        data.writeU16At(0, did);
-        return UdsResponseCode::PositiveResponse;
+        data.writeU16BE(did);
+
+        if (populateDidData(did, data)) {
+            return UdsResponseCode::PositiveResponse;
+        }
+
+        return UdsResponseCode::RequestOutOfRange;
     }
 
-    UdsResponseCode setDataByIdentfier(uds_did did, const ByteArray &data, size_t offset = 0) const override {
+    UdsResponseCode setDataByIdentfier(uds_did did, const ByteArray &data, size_t offset = 0) override {
         (void)did;
         (void)data;
         (void)offset;
-        return UdsResponseCode::PositiveResponse;
+
+        if (updateDidData(did, data, offset)) {
+            return UdsResponseCode::PositiveResponse;
+        }
+        return UdsResponseCode::RequestOutOfRange;
     }
 
+    private:
+        DoIpVin m_vin{"WVWZZZ1JZ4W012345"}; // Volkswagen (fictional model)
 
+        bool populateDidData(uds_did did, ByteArray &data) const {
+            switch (static_cast<UdsDataIdentifier>(did)) {
+                case UdsDataIdentifier::VIN: {
+                    // VIN is 17 bytes
+                    data.writeString(m_vin.toString());
+                    return true;
+                }
+                default:
+                    break;
+            }
+            return false;
+        }
+
+        bool updateDidData(uds_did did, const ByteArray &data, size_t offset) {
+            switch (static_cast<UdsDataIdentifier>(did)) {
+                case UdsDataIdentifier::VIN: {
+                    if (data.size() - offset < DoIpVin::VIN_LENGTH) {
+                        return false;
+                    }
+                    m_vin = DoIpVin(std::string(reinterpret_cast<const char *>(&data[offset]), DoIpVin::VIN_LENGTH));
+                    return true;
+                }
+                default:
+                    break;
+            }
+            return false;
+        }
 };
 
 } // namespace doip::uds
