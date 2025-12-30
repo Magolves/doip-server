@@ -32,12 +32,31 @@ using UdsModelEventHandler = std::function<void(UdsModelEvent event, const IUdsM
 
 class IUdsModel {
 public:
-    IUdsModel(UdsModelEventHandler handler = nullptr) : m_eventHandler(std::move(handler)) {}
+    IUdsModel(UdsModelEventHandler handler = nullptr, uint16_t p2_ms = 1000, uint16_t p2star_10ms = 500)
+        : m_eventHandler(std::move(handler)), m_p2_ms(p2_ms), m_p2star_10ms(p2star_10ms) {}
 
     virtual ~IUdsModel() = default;
 
     void registerEventHandler(UdsModelEventHandler handler) {
         m_eventHandler = std::move(handler);
+    }
+
+    /**
+     * @brief Get the P2 Timeout in milliseconds.
+     *
+     * @return uint16_t the P2 timeout in milliseconds.
+     */
+    uint16_t getP2TimeoutMs() const {
+        return m_p2_ms;
+    }
+
+    /**
+     * @brief Get the P2* Timeout in milliseconds.
+     *
+     * @return uint16_t the P2* timeout in milliseconds.
+     */
+    uint16_t getP2StarTimeoutMs() const {
+        return m_p2star_10ms * 10;
     }
 
     /**
@@ -77,7 +96,7 @@ public:
 
     virtual bool supportsDataByIdentifier(uds_did did) const = 0;
     virtual UdsResponseCode getDataByIdentfier(uds_did did, ByteArray &data, size_t offset = 0) const = 0;
-    virtual UdsResponseCode setDataByIdentfier(uds_did did, const ByteArray &data, size_t offset = 0) const = 0;
+    virtual UdsResponseCode setDataByIdentfier(uds_did did, const ByteArray &data, size_t offset = 0) = 0;
 
     virtual UdsResponseCode startSecurityAccess(uint8_t securityLevel, ByteArray &challenge) {
         (void)securityLevel;
@@ -111,6 +130,9 @@ public:
 private:
     DiagnosticSessionControlType m_currentSession = DiagnosticSessionControlType::DefaultSession;
     UdsModelEventHandler m_eventHandler;
+    uint16_t m_p2_ms = 2000;
+    uint16_t m_p2star_10ms = 400;
+
 };
 
 using UniqueUdsModelPtr = std::unique_ptr<IUdsModel>;

@@ -3,6 +3,7 @@
 #include "IDownstreamProvider.h"
 #include "ThreadSafeQueue.h"
 #include "uds/UdsMock.h"
+#include "uds/UdsDefaultModel.h"
 #include <atomic>
 #include <thread>
 
@@ -13,7 +14,7 @@ using namespace doip;
 
 class UdsMockProvider : public IDownstreamProvider {
   public:
-    UdsMockProvider() {
+    explicit UdsMockProvider(UniqueUdsModelPtr model = std::make_unique<UdsDefaultModel>()) : m_uds(std::move(model)) {
         m_uds.registerDefaultServices();
     }
 
@@ -50,8 +51,6 @@ class UdsMockProvider : public IDownstreamProvider {
 
   private:
     uds::UdsMock m_uds;
-    uint16_t m_p2_ms = 2000;
-    uint16_t m_p2star_10ms = 400;
 };
 
 } // namespace doip::uds
