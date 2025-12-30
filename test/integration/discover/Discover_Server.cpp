@@ -18,6 +18,8 @@
 
 using namespace doip;
 
+const char* PID_FILE = "/tmp/doip-discover.pid";
+
 std::unique_ptr<DoIPServer> server;
 static std::atomic<bool> g_stopRequested{false};
 
@@ -44,7 +46,7 @@ int main(int argc, char *argv[]) {
         }
         // Write PID file for integration tests cleanup
         try {
-            std::ofstream pidf("/tmp/doip-discover.pid", std::ios::trunc);
+            std::ofstream pidf(PID_FILE, std::ios::trunc);
             pidf << getpid() << std::endl;
         } catch (...) {
             // best-effort
@@ -92,7 +94,7 @@ int main(int argc, char *argv[]) {
     }
     console->info("DoIP Server Example terminated");
     if (cfg.daemonize) {
-        (void)std::remove("/tmp/doip-discover.pid");
+        (void)std::remove(PID_FILE);
     }
     // Cleanly shutdown loggers to avoid sanitizer leak reports
     doip::Logger::shutdown();
