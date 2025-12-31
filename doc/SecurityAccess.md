@@ -324,9 +324,87 @@ UdsResponseCode generateSeed(uint8_t level, ByteArray &seed) override {
 }
 ```
 
+## Difference between SID 0x27 and 0x84
+
+In UDS (Unified Diagnostic Services), both **SID 0x27 (Security Access)** and **SID 0x84 (Secured Access)** are used for authentication and access control, but they serve different purposes and are used in different contexts. Here’s a clear breakdown of their differences:
+
+---
+
+### **1. SID 0x27: Security Access**
+- **Purpose:**
+  - Used to **unlock access** to secured diagnostic services, data, or routines (e.g., flashing, calibration, or sensitive DIDs).
+  - Typically involves a **challenge-response mechanism** (e.g., seed-key algorithm).
+
+- **How It Works:**
+  - The tester requests a **seed** from the ECU.
+  - The tester calculates a **key** from the seed (using a manufacturer-specific algorithm).
+  - The tester sends the key back to the ECU.
+  - If the key is correct, the ECU grants access to secured services for the current session.
+
+- **Use Case:**
+  - Required before performing operations like **writing data (0x2E)**, **flashing (0x34/0x36)**, or accessing **protected DIDs**.
+  - Commonly used in **extended diagnostic sessions (0x03)**.
+
+- **Example Flow:**
+  ```
+  Tester: 27 01 → Request seed for level 01
+  ECU:    67 01 XX XX XX XX → Returns seed (4 bytes)
+  Tester: 27 02 YY YY YY YY → Sends calculated key
+  ECU:    67 02 → Grants access
+  ```
+
+- **Security Level:**
+  - Supports multiple **security levels** (e.g., 0x01, 0x02), each unlocking different services.
+
+---
+
+### **2. SID 0x84: Secured Access**
+- **Purpose:**
+  - Provides a **more advanced and flexible** authentication mechanism.
+  - Used for **long-term or session-independent security** (e.g., unlocking bootloader access, permanent unlocks).
+
+- **How It Works:**
+  - Similar to 0x27 but often involves **additional parameters** (e.g., certificates, signatures, or encrypted challenges).
+  - Can be used for **asymmetric cryptography** (e.g., RSA, ECC) or **secure boot processes**.
+
+- **Use Case:**
+  - Required for **high-security operations**, such as:
+    - Unlocking the **bootloader** for firmware updates.
+    - Accessing **safety-critical systems** (e.g., airbags, immobilizers).
+    - Permanent or semi-permanent unlocks (e.g., for development or manufacturing).
+
+- **Example Flow:**
+  ```
+  Tester: 84 01 XX XX XX XX → Sends signed/encrypted request
+  ECU:    C4 01 → Grants secured access
+  ```
+
+- **Security Level:**
+  - Often used for **higher security requirements** (e.g., OEM-specific cryptographic protocols).
+
+---
+
+### **Key Differences**
+| Feature                | **0x27 (Security Access)**               | **0x84 (Secured Access)**                |
+|------------------------|------------------------------------------|------------------------------------------|
+| **Scope**              | Session-based unlock                     | Long-term or high-security unlock        |
+| **Mechanism**          | Seed-key challenge-response             | Advanced (e.g., certificates, signatures)|
+| **Use Case**           | Unlocking diagnostic services            | Bootloader, safety-critical systems      |
+| **Complexity**         | Simple challenge-response                | Supports asymmetric crypto, certificates |
+| **Standardization**    | Widely used, part of ISO 14229-1         | Less common, often manufacturer-specific |
+
+---
+
+### **When to Use Which?**
+- Use **0x27** for standard diagnostic access (e.g., flashing, writing DIDs).
+- Use **0x84** for high-security operations (e.g., bootloader access, permanent unlocks).
+
+Would you like an example of how these services are implemented in a specific vehicle or tool?
+
 ## References
 
 - ISO 14229-1:2020 - Unified Diagnostic Services (UDS)
 - ISO 13400-2:2019 - DoIP Protocol Specification
 - AUTOSAR SWS DiagnosticOverIP
 - SAE J2534 - PassThru Interface
+
