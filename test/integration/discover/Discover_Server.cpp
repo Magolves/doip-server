@@ -21,11 +21,11 @@ using namespace doip;
 const char* PID_FILE = "/tmp/doip-discover.pid";
 
 std::unique_ptr<DoIPServer> server;
-static std::atomic<bool> g_stopRequested{false};
+static std::atomic<bool> stopRequested{false};
 
 static void handle_signal(int) {
     std::cerr << "Signal received, stopping server..." << std::endl;
-    g_stopRequested.store(true);
+    stopRequested.store(true);
     if (server) {
         server->stop();
     }
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     console->info("DoIP Server is running. Waiting for connections...");
 
     while (server->isRunning()) {
-        if (g_stopRequested.load()) {
+        if (stopRequested.load()) {
             server->stop();
             break;
         }
