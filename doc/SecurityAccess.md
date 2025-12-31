@@ -10,7 +10,7 @@ This implementation follows **ISO 14229-1:2020** specifications and provides a f
 
 ### Components
 
-```
+```text
 IUdsModel (Abstract Base)
     ├── Security state management (attempts, delays, unlocked levels)
     ├── Abstract methods: generateSeed(), verifyKey()
@@ -30,7 +30,7 @@ UdsSecureModel (Concrete Implementation)
 
 ### Standard Workflow
 
-```
+```text
 Client                                  ECU
   │                                      │
   ├─────(1) Request Seed (0x27 0x01)───→│
@@ -54,12 +54,12 @@ Client                                  ECU
 
 ### Security Levels
 
-| Level | Sub-function | Purpose | Typical Use Case |
-|-------|--------------|---------|------------------|
-| 1 | 0x01 (seed) / 0x02 (key) | Programming Session | ECU reprogramming, firmware updates |
-| 2 | 0x03 (seed) / 0x04 (key) | Extended Diagnostic | Advanced diagnostics, calibration |
-| 3 | 0x05 (seed) / 0x06 (key) | Safety/Security | Safety-critical operations |
-| ... | ... | ... | Manufacturer-specific levels |
+| Level | Sub-function             | Purpose             | Typical Use Case                    |
+| ----- | ------------------------ | ------------------- | ----------------------------------- |
+| 1     | 0x01 (seed) / 0x02 (key) | Programming Session | ECU reprogramming, firmware updates |
+| 2     | 0x03 (seed) / 0x04 (key) | Extended Diagnostic | Advanced diagnostics, calibration   |
+| 3     | 0x05 (seed) / 0x06 (key) | Safety/Security     | Safety-critical operations          |
+| ...   | ...                      | ...                 | Manufacturer-specific levels        |
 
 **Note:** Odd sub-functions are for requesting seed, even sub-functions are for sending key.
 
@@ -114,6 +114,7 @@ private:
 ### Step 2: Common Seed-Key Algorithms
 
 #### Simple XOR + Addition (Educational)
+
 ```cpp
 uint32_t calculateKey(uint32_t seed) {
     const uint32_t XOR_MASK = 0xA5A5A5A5;
@@ -123,6 +124,7 @@ uint32_t calculateKey(uint32_t seed) {
 ```
 
 #### Bit Rotation + XOR (Moderate)
+
 ```cpp
 uint32_t calculateKey(uint32_t seed) {
     // Rotate left 5 bits
@@ -133,6 +135,7 @@ uint32_t calculateKey(uint32_t seed) {
 ```
 
 #### Multi-stage Transformation (Advanced)
+
 ```cpp
 uint32_t calculateKey(uint32_t seed) {
     uint32_t stage1 = seed ^ 0x12345678;
@@ -143,6 +146,7 @@ uint32_t calculateKey(uint32_t seed) {
 ```
 
 ⚠️ **Production Warning:** These are educational examples only. Production systems should use:
+
 - AES-128/256 encryption
 - RSA signing
 - Hardware Security Module (HSM)
@@ -182,18 +186,19 @@ public:
 
 ### Negative Response Codes
 
-| NRC | Code | Condition |
-|-----|------|-----------|
-| InvalidKey | 0x35 | Key verification failed |
-| ExceededNumberOfAttempts | 0x36 | Too many failed attempts |
-| RequiredTimeDelayNotExpired | 0x37 | Attempt made during delay period |
-| RequestSequenceError | 0x24 | sendKey without requestSeed |
-| SubFunctionNotSupported | 0x12 | Invalid security level |
-| SecurityAccessDenied | 0x33 | Access denied (e.g., wrong session) |
+| NRC                         | Code | Condition                           |
+| --------------------------- | ---- | ----------------------------------- |
+| InvalidKey                  | 0x35 | Key verification failed             |
+| ExceededNumberOfAttempts    | 0x36 | Too many failed attempts            |
+| RequiredTimeDelayNotExpired | 0x37 | Attempt made during delay period    |
+| RequestSequenceError        | 0x24 | sendKey without requestSeed         |
+| SubFunctionNotSupported     | 0x12 | Invalid security level              |
+| SecurityAccessDenied        | 0x33 | Access denied (e.g., wrong session) |
 
 ## Testing Examples
 
 ### Test Case 1: Successful Unlock
+
 ```cpp
 // Request seed
 ByteArray seedReq = {0x27, 0x01};
@@ -217,6 +222,7 @@ assert(model->isSecurityLevelUnlocked(1));
 ```
 
 ### Test Case 2: Failed Attempts
+
 ```cpp
 for (int i = 0; i < 3; i++) {
     handler.handle({0x27, 0x01}, model); // Request seed
@@ -249,6 +255,7 @@ private:
 ## Security Best Practices
 
 ### DO ✅
+
 - Use cryptographically secure random number generators
 - Implement proper key derivation functions
 - Use HSM for key storage and verification when available
@@ -258,6 +265,7 @@ private:
 - Validate seed/key lengths strictly
 
 ### DON'T ❌
+
 - Hardcode seeds or use predictable patterns
 - Use simple XOR/addition in production
 - Allow unlimited retry attempts
@@ -269,24 +277,29 @@ private:
 ## Troubleshooting
 
 ### "RequestSequenceError" on sendKey
+
 **Problem:** Tried to send key without requesting seed first
 **Solution:** Always request seed (0x27 0x01) before sending key (0x27 0x02)
 
 ### "ExceededNumberOfAttempts" on requestSeed
+
 **Problem:** Too many failed key attempts
 **Solution:** Wait for delay period (default 10 seconds) or reset ECU
 
 ### Key calculation returns wrong value
+
 **Problem:** Algorithm mismatch between tester and ECU
 **Solution:** Verify both sides use identical transformation logic
 
 ### Security unlocked but still getting "SecurityAccessDenied"
+
 **Problem:** Protected service requires higher security level
 **Solution:** Check which security level the service requires
 
 ## Advanced Topics
 
 ### Multiple Security Levels
+
 ```cpp
 // Check required level for operations
 bool canFlash = model->isSecurityLevelUnlocked(1);
@@ -294,6 +307,7 @@ bool canCalibrate = model->isSecurityLevelUnlocked(3);
 ```
 
 ### Event Monitoring
+
 ```cpp
 model->registerEventHandler([](UdsModelEvent event, const IUdsModel& m, const IModelEventData&) {
     switch (event) {
@@ -311,6 +325,7 @@ model->registerEventHandler([](UdsModelEvent event, const IUdsModel& m, const IM
 ```
 
 ### Session-Specific Security
+
 ```cpp
 UdsResponseCode generateSeed(uint8_t level, ByteArray &seed) override {
     // Only allow certain levels in specific sessions
@@ -331,6 +346,7 @@ In UDS (Unified Diagnostic Services), both **SID 0x27 (Security Access)** and **
 ---
 
 ### **1. SID 0x27: Security Access**
+
 - **Purpose:**
   - Used to **unlock access** to secured diagnostic services, data, or routines (e.g., flashing, calibration, or sensitive DIDs).
   - Typically involves a **challenge-response mechanism** (e.g., seed-key algorithm).
@@ -346,7 +362,8 @@ In UDS (Unified Diagnostic Services), both **SID 0x27 (Security Access)** and **
   - Commonly used in **extended diagnostic sessions (0x03)**.
 
 - **Example Flow:**
-  ```
+
+  ```text
   Tester: 27 01 → Request seed for level 01
   ECU:    67 01 XX XX XX XX → Returns seed (4 bytes)
   Tester: 27 02 YY YY YY YY → Sends calculated key
@@ -359,6 +376,7 @@ In UDS (Unified Diagnostic Services), both **SID 0x27 (Security Access)** and **
 ---
 
 ### **2. SID 0x84: Secured Access**
+
 - **Purpose:**
   - Provides a **more advanced and flexible** authentication mechanism.
   - Used for **long-term or session-independent security** (e.g., unlocking bootloader access, permanent unlocks).
@@ -374,7 +392,8 @@ In UDS (Unified Diagnostic Services), both **SID 0x27 (Security Access)** and **
     - Permanent or semi-permanent unlocks (e.g., for development or manufacturing).
 
 - **Example Flow:**
-  ```
+
+  ```text
   Tester: 84 01 XX XX XX XX → Sends signed/encrypted request
   ECU:    C4 01 → Grants secured access
   ```
@@ -385,21 +404,84 @@ In UDS (Unified Diagnostic Services), both **SID 0x27 (Security Access)** and **
 ---
 
 ### **Key Differences**
-| Feature                | **0x27 (Security Access)**               | **0x84 (Secured Access)**                |
-|------------------------|------------------------------------------|------------------------------------------|
-| **Scope**              | Session-based unlock                     | Long-term or high-security unlock        |
-| **Mechanism**          | Seed-key challenge-response             | Advanced (e.g., certificates, signatures)|
-| **Use Case**           | Unlocking diagnostic services            | Bootloader, safety-critical systems      |
-| **Complexity**         | Simple challenge-response                | Supports asymmetric crypto, certificates |
-| **Standardization**    | Widely used, part of ISO 14229-1         | Less common, often manufacturer-specific |
+
+| Feature             | **0x27 (Security Access)**       | **0x84 (Secured Access)**                 |
+| ------------------- | -------------------------------- | ----------------------------------------- |
+| **Scope**           | Session-based unlock             | Long-term or high-security unlock         |
+| **Mechanism**       | Seed-key challenge-response      | Advanced (e.g., certificates, signatures) |
+| **Use Case**        | Unlocking diagnostic services    | Bootloader, safety-critical systems       |
+| **Complexity**      | Simple challenge-response        | Supports asymmetric crypto, certificates  |
+| **Standardization** | Widely used, part of ISO 14229-1 | Less common, often manufacturer-specific  |
 
 ---
 
 ### **When to Use Which?**
+
 - Use **0x27** for standard diagnostic access (e.g., flashing, writing DIDs).
 - Use **0x84** for high-security operations (e.g., bootloader access, permanent unlocks).
 
 Would you like an example of how these services are implemented in a specific vehicle or tool?
+
+## Security Levels and Servcies
+
+The **relationship between UDS operations (e.g., 0x34/0x36 for download/upload) and security levels** is **not fixed by the ISO 14229-1 standard**. Instead, it is **entirely manufacturer-dependent**. Here’s what you need to know:
+
+---
+
+### **1. No Standardized Security Levels in ISO 14229-1**
+
+- The **ISO 14229-1 standard** defines the **Security Access (0x27)** service and the concept of security levels, but it does **not** specify which operations (e.g., 0x34/0x36, 0x2E, 0x31) require which security level.
+- The standard only provides the **framework** for authentication (seed-key exchange) and leaves the **mapping of security levels to operations** to the vehicle or ECU manufacturer.
+
+---
+
+### **2. Manufacturer-Specific Rules**
+
+- Each manufacturer defines:
+  - **Which operations require authentication** (e.g., 0x34/0x36 for flashing, 0x2E for writing data).
+  - **Which security level is needed** for each operation (e.g., level 0x01 for reading data, level 0x03 for flashing).
+  - **The algorithm** used to calculate the key from the seed (e.g., XOR, CRC, AES, or proprietary methods).
+  - **Additional requirements**, such as using **0x84 (Secured Access)** for bootloader access or safety-critical operations.
+
+---
+
+### **3. Common Industry Practices (Examples)**
+
+While not standardized, some patterns are widely observed:
+
+| **Operation**                   | **Typical Security Level** | **Notes**                                                              |
+| ------------------------------- | -------------------------- | ---------------------------------------------------------------------- |
+| Read data (0x22)                | None or Level 0x01         | Often no security for standard DIDs; higher levels for sensitive data. |
+| Write data (0x2E)               | Level 0x01 or 0x02         | Depends on the DID (e.g., calibration vs. configuration).              |
+| Routine control (0x31)          | Level 0x01 or 0x02         | Actuator tests or self-tests may require authentication.               |
+| **Download/Upload (0x34/0x36)** | Level 0x03 or higher       | Flashing or memory access almost always requires authentication.       |
+| ECU reset (0x11)                | Level 0x02 or higher       | Resetting the ECU may require a higher level.                          |
+| Bootloader access               | Level 0x05+ or 0x84        | Often uses **0x84 (Secured Access)** for cryptographic verification.   |
+
+---
+
+### **4. How to Determine Requirements**
+
+- **Consult the manufacturer’s documentation** (e.g., ODX files, service manuals).
+- **Reverse-engineer** (if documentation is unavailable) by testing security levels with a diagnostic tool.
+- **Use manufacturer-specific tools** (e.g., ODIS for VW, ISTA for BMW), which often handle security levels automatically.
+
+---
+
+### **5. Example: Volkswagen (ODIS)**
+
+- **Level 0x01:** Basic diagnostics (e.g., reading DTCs).
+- **Level 0x03:** Flashing (0x34/0x36).
+- **Level 0x07:** Bootloader access (0x84).
+
+---
+
+### **Key Takeaway**
+
+- **No fixed rule**: The security level required for operations like **0x34/0x36** is defined by the manufacturer.
+- **Always check documentation** or use OEM tools to avoid trial-and-error.
+
+Would you like help finding documentation for a specific manufacturer or ECU?
 
 ## References
 
@@ -407,4 +489,3 @@ Would you like an example of how these services are implemented in a specific ve
 - ISO 13400-2:2019 - DoIP Protocol Specification
 - AUTOSAR SWS DiagnosticOverIP
 - SAE J2534 - PassThru Interface
-
