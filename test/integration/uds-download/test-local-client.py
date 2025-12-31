@@ -44,7 +44,7 @@ with Client(conn, request_timeout=2, config=config) as client:
       print('\n--- Starting firmware download example ---')
 
       # Example firmware data to download
-      firmware_data = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09' * 10  # 100 bytes of test data
+      firmware_data = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09' * 10000  # 100000 bytes of test data
       memory_address = 0x40000000  # Target memory address (example)
       memory_size = len(firmware_data)
 
