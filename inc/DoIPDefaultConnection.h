@@ -15,7 +15,7 @@
 
 namespace doip {
 
-class DoIPServerModel;
+struct DoIPServerModel;
 using UniqueServerModelPtr = std::unique_ptr<DoIPServerModel>;
 
 

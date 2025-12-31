@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "ByteArray.h"
+#include "util/ByteArray.h"
 
 namespace doip {
 

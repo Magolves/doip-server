@@ -57,18 +57,12 @@ int main(int argc, char *argv[]) {
     std::signal(SIGINT, handle_signal);
     std::signal(SIGTERM, handle_signal);
 
-
     // Configure logging
     Logger::setLevel(spdlog::level::debug);
 
     console->info("Starting DoIP Discovery Server");
 
     server = std::make_unique<DoIPServer>(cfg);
-
-    server->setFurtherActionRequired(DoIPFurtherAction::NoFurtherAction);
-    // for discovery check we use relaxed announcement settings
-    server->setAnnounceInterval(500);  // Send announcements every 500ms for faster discovery
-    server->setAnnounceNum(100);       // Send 100 announcements = 50 seconds of announcements (enough for parallel test execution)
 
     // Set up TCP first to ensure transport creates/binds both TCP and UDP sockets
     if (!server->setupTcpSocket([]() { return std::make_unique<ExampleDoIPServerModel>(); })) {

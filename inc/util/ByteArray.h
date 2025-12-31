@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <type_traits>
 #include <vector>
+#include <limits>
 
 namespace doip {
 
@@ -27,7 +28,7 @@ namespace util {
  * @param index Starting index in the array
  * @return uint16_t The 16-bit value read from the array
  */
-inline uint16_t readU16BE(const uint8_t *data, size_t index) {
+inline uint16_t readU16(const uint8_t *data, size_t index) {
     return (static_cast<uint16_t>(data[index]) << 8) |
            static_cast<uint16_t>(data[index + 1]);
 }
@@ -39,7 +40,7 @@ inline uint16_t readU16BE(const uint8_t *data, size_t index) {
  * @param index Starting index in the array
  * @return uint32_t The 32-bit value read from the array
  */
-inline uint32_t readU32BE(const uint8_t *data, size_t index) {
+inline uint32_t readU32(const uint8_t *data, size_t index) {
     return (static_cast<uint32_t>(data[index]) << 24) |
            (static_cast<uint32_t>(data[index + 1]) << 16) |
            (static_cast<uint32_t>(data[index + 2]) << 8) |
@@ -59,6 +60,10 @@ inline uint32_t readU32BE(const uint8_t *data, size_t index) {
  */
 struct ByteArray : std::vector<uint8_t> {
     /**
+     * @brief Sentinel value for "until the end" length
+     */
+    static constexpr size_t npos = std::numeric_limits<size_t>::max();
+    /**
      * @brief Default constructor - creates an empty ByteArray
      */
     ByteArray() = default;
@@ -71,6 +76,47 @@ struct ByteArray : std::vector<uint8_t> {
      */
     explicit ByteArray(const uint8_t *data, size_t size) : std::vector<uint8_t>(data, data + size) {}
 
+    ByteArray &operator=(const ByteArray &other) = default;
+    ByteArray &operator=(ByteArray &&other) noexcept = default;
+
+    /**
+     * @brief Construct a new Byte Array object by copying a subset of another ByteArray.
+     *
+     * @param other the source ByteArray to copy from
+     * @param offset starting index in the source ByteArray. If offset >= other.size(),
+     * an empty ByteArray is created.
+     * @param length number of bytes to copy (if -1, copies until the end)
+     */
+    ByteArray(const ByteArray &other, size_t offset = 0, size_t length = npos) : std::vector<uint8_t>() {
+        if (offset >= other.size()) {
+            return; // Empty
+        }
+        const size_t max_len = other.size() - offset;
+        const size_t len = (length == npos || length > max_len) ? max_len : length;
+        const auto start = other.begin() + static_cast<std::ptrdiff_t>(offset);
+        const auto finish = start + static_cast<std::ptrdiff_t>(len);
+        this->insert(this->end(), start, finish);
+    }
+
+    /**
+     * @brief Construct a new Byte Array object by moving a subset of another ByteArray.
+     *
+     * @param other the source ByteArray to move from
+     * @param offset starting index in the source ByteArray. If offset >= other.size(),
+     * an empty ByteArray is created.
+     * @param length number of bytes to move (if -1, moves until the end)
+     */
+    ByteArray(ByteArray &&other, size_t offset = 0, size_t length = npos) {
+        if (offset >= other.size()) {
+            return; // Empty
+        }
+        const size_t max_len = other.size() - offset;
+        const size_t len = (length == npos || length > max_len) ? max_len : length;
+        const auto start = std::make_move_iterator(other.begin() + static_cast<std::ptrdiff_t>(offset));
+        const auto finish = std::make_move_iterator(other.begin() + static_cast<std::ptrdiff_t>(offset + len));
+        this->insert(this->end(), start, finish);
+    }
+
     /**
      * @brief Constructs a ByteArray from an initializer list
      *
@@ -80,6 +126,31 @@ struct ByteArray : std::vector<uint8_t> {
      * ByteArray arr = {0x01, 0x02, 0x03, 0xFF};
      */
     ByteArray(const std::initializer_list<uint8_t> &init_list) : std::vector<uint8_t>(init_list) {}
+
+    /**
+     * @brief Appends a single byte to the end of the ByteArray
+     *
+     * @param value The byte value to append
+     */
+    void writeU8(uint8_t value) {
+        emplace_back(value);
+    }
+
+    /**
+     * @brief Writes a single byte at a specific index
+     *
+     * Overwrites the byte at the specified index with the given value.
+     *
+     * @param index Index where to write (must be < size())
+     * @param value The byte value to write
+     * @throws std::out_of_range if index >= size()
+     */
+    void writeU8At(size_t index, uint8_t value) {
+        if (index >= this->size()) {
+            throw std::out_of_range("Index out of range for writeU8");
+        }
+        (*this)[index] = value;
+    }
 
     /**
      * @brief Writes a 16-bit unsigned integer in big-endian format at a specific index
@@ -93,7 +164,7 @@ struct ByteArray : std::vector<uint8_t> {
      */
     void writeU16At(size_t index, uint16_t value) {
         if (index + 1 >= this->size()) {
-            throw std::out_of_range("Index out of range for writeU16BE");
+            throw std::out_of_range("Index out of range for writeU16");
         }
         (*this)[index] = static_cast<uint8_t>((value >> 8) & 0xFF);
         (*this)[index + 1] = static_cast<uint8_t>(value & 0xFF);
@@ -107,7 +178,7 @@ struct ByteArray : std::vector<uint8_t> {
      *
      * @param value The 16-bit value to append
      */
-    void writeU16BE(uint16_t value) {
+    void writeU16(uint16_t value) {
         emplace_back(static_cast<uint8_t>((value >> 8) & 0xFF));
         emplace_back(static_cast<uint8_t>(value & 0xFF));
     }
@@ -124,7 +195,7 @@ struct ByteArray : std::vector<uint8_t> {
      */
     void writeU32At(size_t index, uint32_t value) {
         if (index + 3 >= this->size()) {
-            throw std::out_of_range("Index out of range for writeU32BE");
+            throw std::out_of_range("Index out of range for writeU32");
         }
         (*this)[index] = static_cast<uint8_t>((value >> 24) & 0xFF);
         (*this)[index + 1] = static_cast<uint8_t>((value >> 16) & 0xFF);
@@ -140,7 +211,7 @@ struct ByteArray : std::vector<uint8_t> {
      *
      * @param value The 32-bit value to append
      */
-    void writeU32BE(uint32_t value) {
+    void writeU32(uint32_t value) {
         emplace_back(static_cast<uint8_t>((value >> 24) & 0xFF));
         emplace_back(static_cast<uint8_t>((value >> 16) & 0xFF));
         emplace_back(static_cast<uint8_t>((value >> 8) & 0xFF));
@@ -171,9 +242,9 @@ struct ByteArray : std::vector<uint8_t> {
         if constexpr (sizeof(UnderlyingType) == 1) {
             emplace_back(static_cast<uint8_t>(integral_value));
         } else if constexpr (sizeof(UnderlyingType) == 2) {
-            writeU16BE(static_cast<uint16_t>(integral_value));
+            writeU16(static_cast<uint16_t>(integral_value));
         } else if constexpr (sizeof(UnderlyingType) == 4) {
-            writeU32BE(static_cast<uint32_t>(integral_value));
+            writeU32(static_cast<uint32_t>(integral_value));
         } else {
             static_assert(sizeof(UnderlyingType) <= 4, "Enum underlying type too large (max 32-bit supported)");
         }
@@ -212,6 +283,31 @@ struct ByteArray : std::vector<uint8_t> {
     }
 
     /**
+     * @brief Writes a string to the end of the ByteArray
+     *
+     * @param str the string to append
+     */
+    void writeString(const std::string &str) {
+        this->insert(this->end(), str.begin(), str.end());
+    }
+
+    /**
+     * @brief Writes a string at a specific index
+     *
+     * Overwrites bytes starting at the specified index with the string data.
+     *
+     * @param index Starting index where to write (must be < size() - str.size() + 1)
+     * @param str The string to write
+     * @throws std::out_of_range if index + str.size() > size()
+     */
+    void writeStringAt(size_t index, const std::string &str) {
+        if (index + str.size() >= this->size()) {
+            throw std::out_of_range("Index out of range for writeStringAt");
+        }
+        std::copy(str.begin(), str.end(), this->begin() + static_cast<int>(index));
+    }
+
+    /**
      * @brief Reads a 16-bit unsigned integer in big-endian format from a specific index
      *
      * Reads 2 bytes starting at the specified index and interprets them as a
@@ -221,11 +317,11 @@ struct ByteArray : std::vector<uint8_t> {
      * @return uint16_t The 16-bit value read from the array
      * @throws std::out_of_range if index + 1 >= size()
      */
-    uint16_t readU16BE(size_t index) const {
+    uint16_t readU16(size_t index) const {
         if (index + 1 >= this->size()) {
-            throw std::out_of_range("Index out of range for readU16BE");
+            throw std::out_of_range("Index out of range for readU16");
         }
-        return util::readU16BE(this->data(), index);
+        return util::readU16(this->data(), index);
     }
 
     /**
@@ -238,11 +334,11 @@ struct ByteArray : std::vector<uint8_t> {
      * @return uint32_t The 32-bit value read from the array
      * @throws std::out_of_range if index + 3 >= size()
      */
-    uint32_t readU32BE(size_t index) const {
+    uint32_t readU32(size_t index) const {
         if (index + 3 >= this->size()) {
-            throw std::out_of_range("Index out of range for readU32BE");
+            throw std::out_of_range("Index out of range for readU32");
         }
-        return util::readU32BE(this->data(), index);
+        return util::readU32(this->data(), index);
     }
 
     /**
@@ -273,12 +369,21 @@ struct ByteArray : std::vector<uint8_t> {
             }
             return static_cast<E>((*this)[index]);
         } else if constexpr (sizeof(UnderlyingType) == 2) {
-            return static_cast<E>(readU16BE(index));
+            return static_cast<E>(readU16(index));
         } else if constexpr (sizeof(UnderlyingType) == 4) {
-            return static_cast<E>(readU32BE(index));
+            return static_cast<E>(readU32(index));
         } else {
             static_assert(sizeof(UnderlyingType) <= 4, "Enum underlying type too large (max 32-bit supported)");
         }
+    }
+
+    /**
+     * @brief Appends another ByteArray to the end of this ByteArray
+     *
+     * @param other The ByteArray to append
+     */
+    void append(const ByteArray &other) {
+        this->insert(this->end(), other.begin(), other.end());
     }
 };
 

@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #include "AnsiColors.h"
-#include "ByteArray.h"
+#include "util/ByteArray.h"
 #include "DoIPAddress.h"
 #include "DoIPFurtherAction.h"
 #include "DoIPIdentifiers.h"
@@ -422,7 +422,7 @@ class DoIPMessage {
         }
 
         // Extract payload length from header
-        uint32_t payloadLength = util::readU32BE(data, 4);
+        uint32_t payloadLength = util::readU32(data, 4);
 
         return std::make_pair(payloadType.value(), payloadLength);
     }
@@ -474,7 +474,7 @@ class DoIPMessage {
 
         // Payload length (big-endian uint32_t)
         uint32_t payloadLength = static_cast<uint32_t>(payload.size());
-        m_data.writeU32BE(payloadLength);
+        m_data.writeU32(payloadLength);
 
         // Payload data
         m_data.insert(m_data.end(), payload.begin(), payload.end());
@@ -505,7 +505,7 @@ class DoIPMessage {
             return 0;
         }
 
-        return m_data.readU32BE(4);
+        return m_data.readU32(4);
     }
 };
 
@@ -549,7 +549,7 @@ inline DoIPMessage makeVehicleIdentificationResponse(
     payload.reserve(vin.size() + sizeof(logicalAddress) + entityType.size() + groupId.size() + 2);
 
     payload.insert(payload.end(), vin.begin(), vin.end());
-    payload.writeU16BE(logicalAddress);
+    payload.writeU16(logicalAddress);
     payload.insert(payload.end(), entityType.begin(), entityType.end());
     payload.insert(payload.end(), groupId.begin(), groupId.end());
     payload.writeEnum(furtherAction);
@@ -584,8 +584,8 @@ inline DoIPMessage makeDiagnosticMessage(
     ByteArray payload;
     payload.reserve(sizeof(sa) + sizeof(ta) + msg_payload.size());
 
-    payload.writeU16BE(sa);
-    payload.writeU16BE(ta);
+    payload.writeU16(sa);
+    payload.writeU16(ta);
     payload.insert(payload.end(), msg_payload.begin(), msg_payload.end());
 
     return DoIPMessage(DoIPPayloadType::DiagnosticMessage, std::move(payload));
@@ -607,8 +607,8 @@ inline DoIPMessage makeDiagnosticPositiveResponse(
     ByteArray payload;
     payload.reserve(sizeof(sa) + sizeof(ta) + msg_payload.size() + 1);
 
-    payload.writeU16BE(sa);
-    payload.writeU16BE(ta);
+    payload.writeU16(sa);
+    payload.writeU16(ta);
     payload.emplace_back(DIAGNOSTIC_MESSAGE_ACK);
     payload.insert(payload.end(), msg_payload.begin(), msg_payload.end());
 
@@ -633,8 +633,8 @@ inline DoIPMessage makeDiagnosticNegativeResponse(
     ByteArray payload;
     payload.reserve(sizeof(sa) + sizeof(ta) + msg_payload.size() + 1);
 
-    payload.writeU16BE(sa);
-    payload.writeU16BE(ta);
+    payload.writeU16(sa);
+    payload.writeU16(ta);
     payload.emplace_back(static_cast<uint8_t>(nack));
     payload.insert(payload.end(), msg_payload.begin(), msg_payload.end());
 
@@ -658,7 +658,7 @@ inline DoIPMessage makeAliveCheckRequest() {
  */
 inline DoIPMessage makeAliveCheckResponse(const DoIPAddress &sa) {
     ByteArray payload;
-    payload.writeU16BE(sa);
+    payload.writeU16(sa);
     return DoIPMessage(DoIPPayloadType::AliveCheckResponse, std::move(payload));
 }
 
@@ -675,7 +675,7 @@ inline DoIPMessage makeRoutingActivationRequest(
 
     ByteArray payload;
     payload.reserve(sizeof(ea) + 1 + 4);
-    payload.writeU16BE(ea);
+    payload.writeU16(ea);
     payload.writeEnum(actType);
     // Reserved 4 bytes for future use
     payload.insert(payload.end(), {0, 0, 0, 0});
@@ -701,10 +701,10 @@ inline DoIPMessage makeRoutingActivationResponse(
 
     auto optSourceAddress = routingReq.getSourceAddress();
     if (optSourceAddress) {
-        payload.writeU16BE(optSourceAddress.value());
+        payload.writeU16(optSourceAddress.value());
     }
 
-    payload.writeU16BE(ea);
+    payload.writeU16(ea);
     payload.emplace_back(static_cast<uint8_t>(actType));
     // Reserved 4 bytes for future use
     payload.insert(payload.end(), {0, 0, 0, 0});
