@@ -14,30 +14,24 @@ class UdsDefaultModel : public IUdsModel {
 
     std::string_view getModelName() const override { return "UDS Default Model"; }
 
+    const UdsTransferInfo& getTransferInfo() const {
+        return m_transferInfo;
+    }
+
     virtual UdsResponseCode requestDownload(uint32_t memoryAddress, uint32_t memorySize, const ByteArray &transferParameters) override {
-        (void)transferParameters;
-        (void)memoryAddress;
-
-        if (memorySize == 0) {
-            return UdsResponseCode::RequestOutOfRange;
-        }
-
-        m_imageMemory.resize(memorySize, 0xFF); // Initialize memory with 0xFF
-        return UdsResponseCode::PositiveResponse;
+        return m_transferInfo.startTransfer(TransferMode::Download, memoryAddress, memorySize, MAX_UDS_MESSAGE_LENGTH, transferParameters);
     }
 
     virtual UdsResponseCode transferData(uint8_t blockSequenceCounter, const ByteArray &data) override {
         (void)blockSequenceCounter;
-        // TODO: Error handling for exceeding memory size
-        m_imageMemory.insert(m_imageMemory.end(), data.begin(), data.end());
-        return UdsResponseCode::PositiveResponse;
+
+        return m_transferInfo.recordBlockTransfer(data);
     }
 
     virtual UdsResponseCode requestTransferExit() override {
-        // Finalize transfer (no-op in this mock)
-        // TODO: Validate image
-        return UdsResponseCode::PositiveResponse;
+        return m_transferInfo.endTransfer();
     }
+
 
     bool supportsDataByIdentifier(uds_did did) const override {
         (void)did;
@@ -67,7 +61,8 @@ class UdsDefaultModel : public IUdsModel {
     }
 
     private:
-        std::vector<uint8_t> m_imageMemory{};
+        UdsTransferInfo m_transferInfo{};
+
         DoIpVin m_vin{"WVWZZZ1JZ4W012345"}; // Volkswagen (fictional model)
 
         bool populateDidData(uds_did did, ByteArray &data) const {

@@ -25,7 +25,7 @@ public:
     ~UdsSecureModel() override = default;
 
     std::string_view getModelName() const override {
-        return "UDS Secure Model (Example)";
+        return "UDS Secure Model";
     }
 
 protected:

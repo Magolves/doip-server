@@ -4,6 +4,7 @@
 #include "util/ByteArray.h"
 #include "uds/UdsTypes.h"
 #include "uds/UdsResponseCode.h"
+#include "Logger.h"
 
 namespace doip::uds {
 
@@ -30,6 +31,7 @@ struct UdsTransferInfo {
 
         resetTransfer();
 
+        m_imageMemory.resize(size, 0xFF); // Initialize memory with 0xFF
         m_transferMode = mode;
         m_memoryAddress = address;
         m_memorySize = size;
@@ -41,14 +43,23 @@ struct UdsTransferInfo {
     }
 
     [[nodiscard]]
-    UdsResponseCode recordBlockTransfer(uint32_t bytesTransferred) {
+    UdsResponseCode recordBlockTransfer(const ByteArray &data) {
         if (m_transferMode == TransferMode::None) {
             resetTransfer();
             return UdsResponseCode::RequestSequenceError;
         }
 
+        if (data.size() > m_blockSize) {
+            resetTransfer();
+            return UdsResponseCode::RequestOutOfRange; // Block size exceeded
+        }
+
         ++m_transferredBlocks;
-        m_transferredBytes += bytesTransferred;
+        m_transferredBytes += data.size();
+        m_imageMemory.insert(m_imageMemory.end(), data.begin(), data.end());
+
+        m_logger->debug("Recorded block {} ({} bytes). Total transferred: {}/{} bytes in {} blocks.",
+                       m_transferredBlocks, data.size(), m_transferredBytes, m_memorySize, m_transferredBlocks, m_expectedBlocks);
 
         return UdsResponseCode::PositiveResponse;
     }
@@ -58,6 +69,9 @@ struct UdsTransferInfo {
         if (m_transferMode == TransferMode::None) {
             return UdsResponseCode::RequestSequenceError; // No active transfer
         }
+
+        m_logger->info("Transfer completed. Total transferred: {}/{} bytes in {} blocks.",
+                      m_transferredBytes, m_memorySize, m_transferredBlocks);
 
         resetTransfer();
         return m_expectedBlocks == m_transferredBlocks ? UdsResponseCode::PositiveResponse : UdsResponseCode::ConditionsNotCorrect;
@@ -111,6 +125,8 @@ struct UdsTransferInfo {
     }
 
     private:
+    std::shared_ptr<spdlog::logger> m_logger = Logger::get("uds-transfer");
+    std::vector<uint8_t> m_imageMemory{};
     TransferMode m_transferMode = TransferMode::None;
     uint32_t m_memoryAddress = 0;
     uint32_t m_memorySize = 0;
@@ -129,6 +145,7 @@ struct UdsTransferInfo {
         m_expectedBlocks = 0;
         m_transferredBlocks = 0;
         m_transferredBytes = 0;
+        m_imageMemory.clear();
     }
 };
 

@@ -197,22 +197,22 @@ class IUdsModel {
         }
     }
 
-    const UdsTransferInfo& getTransferInfo() const {
-        return m_transferInfo;
-    }
-
     virtual UdsResponseCode requestDownload(uint32_t memoryAddress, uint32_t memorySize, const ByteArray &transferParameters) {
-        return m_transferInfo.startTransfer(TransferMode::Download, memoryAddress, memorySize, MAX_UDS_MESSAGE_LENGTH, transferParameters);
+        (void)memoryAddress;
+        (void)memorySize;
+        (void)transferParameters;
+        return UdsResponseCode::ServiceNotSupported;
     }
 
     virtual UdsResponseCode transferData(uint8_t blockSequenceCounter, const ByteArray &data) {
         (void)blockSequenceCounter;
+        (void)data;
 
-        return m_transferInfo.recordBlockTransfer(data.size());
+        return UdsResponseCode::ServiceNotSupported;
     }
 
     virtual UdsResponseCode requestTransferExit() {
-        return m_transferInfo.endTransfer();
+        return UdsResponseCode::ServiceNotSupported;
     }
 
     // Security Access State Query Methods
@@ -352,7 +352,7 @@ class IUdsModel {
     UdsModelEventHandler m_eventHandler;
     uint16_t m_p2_ms = 2000;
     uint16_t m_p2star_10ms = 400;
-    UdsTransferInfo m_transferInfo{};
+
 
     // Security Access State
     std::map<uint8_t, bool> m_unlockedSecurityLevels;                               // level -> unlocked
