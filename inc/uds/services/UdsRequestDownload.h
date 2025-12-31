@@ -53,7 +53,7 @@ class RequestDownloadHandler : public UdsServiceHandler {
         ByteArray responseData;
         responseData.writeU8(sidResponseCode(request));
         responseData.writeU8(0x20); // currently only 4-byte maxNumberOfBlockLength supported
-        responseData.writeU16(MAX_UDS_MESSAGE_LENGTH); // maxNumberOfBlockLength = 4095 bytes
+        responseData.writeU16(MAX_UDS_MESSAGE_LENGTH - 12); // maxNumberOfBlockLength = 4095 bytes
 
         return responseData;
     }
