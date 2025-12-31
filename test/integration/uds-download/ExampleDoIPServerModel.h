@@ -3,6 +3,9 @@
  *
  */
 
+#ifndef EXAMPLEDOIPSERVERMODEL_H
+#define EXAMPLEDOIPSERVERMODEL_H
+
 #ifndef DoIPServerMODEL_H
 #define DoIPServerMODEL_H
 
@@ -17,7 +20,7 @@ using namespace doip::uds;
 
 class ExampleDoIPServerModel : public DoIPDownstreamServerModel {
   public:
-    ExampleDoIPServerModel() : DoIPDownstreamServerModel("exmod", m_uds) {
+    ExampleDoIPServerModel() : DoIPDownstreamServerModel("uds-session", m_uds) {
         // Customize callbacks if needed
 
     }
@@ -25,7 +28,10 @@ class ExampleDoIPServerModel : public DoIPDownstreamServerModel {
     virtual std::string_view getModelName() const override { return "ExampleDoIPServerModel"; }
 
   private:
-    uds::UdsMockProvider m_uds; // TODO: Implement a NULL provider for testing
+    uds::UdsMockProvider m_uds;
 };
 
 #endif /* DoIPServerMODEL_H */
+
+
+#endif /* EXAMPLEDOIPSERVERMODEL_H */
