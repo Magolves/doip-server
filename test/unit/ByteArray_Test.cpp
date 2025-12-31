@@ -35,6 +35,22 @@ TEST_SUITE("ByteArray Stream Operator") {
         CHECK(oss.str() == "01.02");
     }
 
+    TEST_CASE("Copy range") {
+        ByteArray arr1 = {0xDE, 0xAD, 0xBE, 0xEF};
+        ByteArray arr2(arr1, 1, 2); // Should copy 0xAD, 0xBE
+        ByteArray arr3(arr1, 3, 2); // Should copy 0xEF only (length exceeds)
+        ByteArray arr4(arr1, 6, 2); // Empty (offset exceeds size)
+
+        std::ostringstream oss2, oss3, oss4;
+        oss2 << arr2;
+        oss3 << arr3;
+        oss4 << arr4;
+
+        CHECK(oss2.str() == "AD.BE");
+        CHECK(oss3.str() == "EF");
+        CHECK(oss4.str() == "");
+    }
+
     TEST_CASE("Multiple bytes with leading zeros") {
         ByteArray arr = {0x00, 0x01, 0x0A, 0x10};
         std::ostringstream oss;

@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <type_traits>
 #include <vector>
+#include <limits>
 
 namespace doip {
 
@@ -59,6 +60,10 @@ inline uint32_t readU32(const uint8_t *data, size_t index) {
  */
 struct ByteArray : std::vector<uint8_t> {
     /**
+     * @brief Sentinel value for "until the end" length
+     */
+    static constexpr size_t npos = std::numeric_limits<size_t>::max();
+    /**
      * @brief Default constructor - creates an empty ByteArray
      */
     ByteArray() = default;
@@ -82,14 +87,15 @@ struct ByteArray : std::vector<uint8_t> {
      * an empty ByteArray is created.
      * @param length number of bytes to copy (if -1, copies until the end)
      */
-    ByteArray(const ByteArray &other, size_t offset = 0, ssize_t length = -1) {
+    ByteArray(const ByteArray &other, size_t offset = 0, size_t length = npos) : std::vector<uint8_t>() {
         if (offset >= other.size()) {
             return; // Empty
         }
-        size_t len = (length < 0 || static_cast<size_t>(length) > other.size() - offset)
-                         ? other.size() - offset
-                         : static_cast<size_t>(length);
-        this->insert(this->end(), other.begin() + offset, other.begin() + offset + len);
+        const size_t max_len = other.size() - offset;
+        const size_t len = (length == npos || length > max_len) ? max_len : length;
+        const auto start = other.begin() + static_cast<std::ptrdiff_t>(offset);
+        const auto finish = start + static_cast<std::ptrdiff_t>(len);
+        this->insert(this->end(), start, finish);
     }
 
     /**
@@ -100,16 +106,15 @@ struct ByteArray : std::vector<uint8_t> {
      * an empty ByteArray is created.
      * @param length number of bytes to move (if -1, moves until the end)
      */
-    ByteArray(ByteArray &&other, size_t offset = 0, ssize_t length = -1) {
+    ByteArray(ByteArray &&other, size_t offset = 0, size_t length = npos) {
         if (offset >= other.size()) {
             return; // Empty
         }
-        size_t len = (length < 0 || static_cast<size_t>(length) > other.size() - offset)
-                         ? other.size() - offset
-                         : static_cast<size_t>(length);
-        this->insert(this->end(),
-                     std::make_move_iterator(other.begin() + offset),
-                     std::make_move_iterator(other.begin() + offset + len));
+        const size_t max_len = other.size() - offset;
+        const size_t len = (length == npos || length > max_len) ? max_len : length;
+        const auto start = std::make_move_iterator(other.begin() + static_cast<std::ptrdiff_t>(offset));
+        const auto finish = std::make_move_iterator(other.begin() + static_cast<std::ptrdiff_t>(offset + len));
+        this->insert(this->end(), start, finish);
     }
 
     /**
