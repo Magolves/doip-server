@@ -8,10 +8,10 @@ class TransferDataHandler : public UdsServiceHandler {
 public:
     ~TransferDataHandler() override = default;
     ByteArray handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
-        uint8_t blockSequenceCounter = request[1];
-        ByteArray data(&request[2], request.size() - 2);
 
         if (model) {
+            uint8_t blockSequenceCounter = request[1];
+            ByteArray data(request, 2, request.size() - 2);
             UdsResponseCode result = model->transferData(blockSequenceCounter, data);
             if (result != UdsResponseCode::PositiveResponse) {
                 return makeNegativeResponse(result, request);
