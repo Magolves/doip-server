@@ -26,10 +26,13 @@ public:
         }
 
         ByteArray responseData;
+        responseData.writeU8(sidResponseCode(request));
+        responseData.writeU8(0x20);
+        responseData.writeU16(MAX_UDS_MESSAGE_LENGTH); // maxNumberOfBlockLength = 4096 bytes
         responseData.writeU32(memoryAddress); // Echo back the memory address
         responseData.writeU32(memoryLength);  // Echo back the memory length
 
-        return makeResponse(request, responseData);
+        return responseData;
     }
 
 protected:

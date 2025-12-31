@@ -5,9 +5,9 @@
 namespace doip::uds {
 
 class TransferDataHandler : public UdsServiceHandler {
-public:
+  public:
     ~TransferDataHandler() override = default;
-    ByteArray handle(const ByteArray& request, const UniqueUdsModelPtr& model) override {
+    ByteArray handle(const ByteArray &request, const UniqueUdsModelPtr &model) override {
 
         if (model) {
             uint8_t blockSequenceCounter = request[1];
@@ -18,11 +18,12 @@ public:
             }
         }
 
-        return makeResponse(request, {});
+        return makeResponse(request);
     }
-protected:
-    using UdsServiceHandler::makeResponse;
+
+  protected:
     using UdsServiceHandler::makeNegativeResponse;
+    using UdsServiceHandler::makeResponse;
 };
 
 } // namespace doip::uds

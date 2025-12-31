@@ -17,35 +17,6 @@ namespace doip::uds {
      * @brief Register default services that respond with "Service Not Supported"
      */
     void UdsMock::registerDefaultServices() {
-        const std::array<UdsService, 19> services = {
-            UdsService::DiagnosticSessionControl,
-            UdsService::ECUReset,
-            UdsService::SecurityAccess,
-            UdsService::CommunicationControl,
-            UdsService::TesterPresent,
-            UdsService::AccessTimingParameters,
-            UdsService::SecuredDataTransmission,
-            UdsService::ControlDTCSetting,
-            UdsService::ResponseOnEvent,
-            UdsService::LinkControl,
-            UdsService::ReadDataByIdentifier,
-            UdsService::ReadMemoryByAddress,
-            UdsService::ReadScalingDataByIdentifier,
-            UdsService::ReadDataByPeriodicIdentifier,
-            UdsService::DynamicallyDefineDataIdentifier,
-            UdsService::WriteDataByIdentifier,
-            UdsService::WriteMemoryByAddress,
-            UdsService::ClearDiagnosticInformation,
-            UdsService::ReadDTCInformation,
-        };
-
-        for (auto s : services) {
-            registerService(s, [](const ByteArray &req, const UniqueUdsModelPtr&) -> ByteArray {
-                (void)req;
-                return UdsServiceHandler::makeNegativeResponse(UdsResponseCode::ServiceNotSupported, req);
-            });
-        }
-
         registerService<DiagnosticSessionControlHandler>(UdsService::DiagnosticSessionControl);
         registerService<ECUResetHandler>(UdsService::ECUReset);
         registerService<ReadDataByIdentifierHandler>(UdsService::ReadDataByIdentifier);
@@ -64,6 +35,7 @@ ByteArray UdsMock::handleDiagnosticRequest(const ByteArray &request) const {
 
     const UdsServiceDescriptor *desc = findServiceDescriptor(sid);
     if (!desc) {
+        std::cerr << "UdsMock: Unknown service ID 0x" << std::hex << +sid << std::dec << "\n";
         return UdsServiceHandler::makeNegativeResponse(UdsResponseCode::ServiceNotSupported, request);
     }
 
@@ -79,6 +51,7 @@ ByteArray UdsMock::handleDiagnosticRequest(const ByteArray &request) const {
     if (it != m_handlers.end() && it->second) {
         response = it->second->handle(request, m_model);
     } else {
+        std::cerr << "UdsMock: Unsupported service ID 0x" << std::hex << +sid << std::dec << "\n";
         return UdsServiceHandler::makeNegativeResponse(UdsResponseCode::ServiceNotSupported, request);
     }
 

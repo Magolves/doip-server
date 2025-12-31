@@ -99,6 +99,14 @@ inline uint8_t sidResponseCode(const T &code) {
     return static_cast<uint8_t>(code) | 0x40;
 }
 
+inline uint8_t sidResponseCode(const ByteArray &request) {
+    if (request.empty()) {
+        return 0x00;
+    }
+    return sidResponseCode(request[0]);
+}
+
+
 } // namespace doip::uds
 
 #endif /* UDSSERVICES_H */
