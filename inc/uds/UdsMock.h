@@ -1,15 +1,17 @@
 #ifndef UDSMOCK_H
 #define UDSMOCK_H
 
-#include <array>
-#include <functional>
-#include <memory>
-#include <unordered_map>
 
 #include "UdsServiceHandler.h"
 #include "LambdaUdsHandler.h"
 #include "UdsResponseCode.h"
 #include "UdsServices.h"
+#include "Logger.h"
+
+#include <array>
+#include <functional>
+#include <memory>
+#include <unordered_map>
 
 
 
@@ -56,8 +58,8 @@ class UdsMock {
 
   private:
     std::unordered_map<uint8_t, UniqueUdsServiceHandlerPtr> m_handlers;
-
     UniqueUdsModelPtr m_model{nullptr};
+    std::shared_ptr<spdlog::logger> m_logger = Logger::get("uds-mock");
 };
 
 } // namespace doip::uds

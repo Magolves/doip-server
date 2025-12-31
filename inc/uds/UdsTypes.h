@@ -24,6 +24,14 @@ using uds_rsp_code = uint8_t;
 // Maximum UDS message length (ISO-14229)
 constexpr uds_length MAX_UDS_MESSAGE_LENGTH = 4095;
 
+inline uint8_t highNibble(uint8_t byte) {
+    return (byte >> 4) & 0x0F;
+}
+
+inline uint8_t lowNibble(uint8_t byte) {
+    return byte & 0x0F;
+}
+
 /**
  * @brief Diagnostic Session Control Types (SID 0x10).
  */
@@ -38,6 +46,12 @@ enum class EcuResetType : uint8_t {
     HardReset = 0x01,
     KeyOffOnReset = 0x02,
     SoftReset = 0x03
+};
+
+enum class TransferMode : uint8_t {
+    None = 0x00,
+    Download = 0x01,
+    Upload = 0x02
 };
 
 } // namespace doip::uds

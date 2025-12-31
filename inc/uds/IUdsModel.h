@@ -1,16 +1,16 @@
 #ifndef IUDSMODEL_H
 #define IUDSMODEL_H
 
-#include "util/ByteArray.h"
-#include "uds/UdsTypes.h"
 #include "uds/UdsResponseCode.h"
-// Removed to avoid circular includes; DiagnosticSessionControlType is in UdsTypes.h
+#include "uds/UdsTransferInfo.h"
+#include "uds/UdsTypes.h"
+#include "util/ByteArray.h"
 
-#include <string_view>
-#include <functional>
-#include <memory>
 #include <chrono>
+#include <functional>
 #include <map>
+#include <memory>
+#include <string_view>
 
 namespace doip::uds {
 
@@ -26,16 +26,14 @@ enum class UdsModelEvent : uint8_t {
 
 /** Event data passed to UdsModelEventHandler callbacks */
 struct IModelEventData {
-
 };
-
 
 class IUdsModel;
 
-using UdsModelEventHandler = std::function<void(UdsModelEvent event, const IUdsModel& model, IModelEventData const &data)>;
+using UdsModelEventHandler = std::function<void(UdsModelEvent event, const IUdsModel &model, IModelEventData const &data)>;
 
 class IUdsModel {
-public:
+  public:
     IUdsModel(UdsModelEventHandler handler = nullptr, uint16_t p2_ms = 1000, uint16_t p2star_10ms = 500)
         : m_eventHandler(std::move(handler)), m_p2_ms(p2_ms), m_p2star_10ms(p2star_10ms) {}
 
@@ -99,6 +97,12 @@ public:
         return UdsResponseCode::PositiveResponse;
     }
 
+    /**
+     * @brief Perform an ECU reset.
+     *
+     * @param resetType Type of ECU reset to perform.
+     * @return UdsResponseCode indicating success or specific error condition.
+     */
     virtual UdsResponseCode reset(EcuResetType resetType) {
         (void)resetType;
         return UdsResponseCode::PositiveResponse;
@@ -193,21 +197,22 @@ public:
         }
     }
 
+    const UdsTransferInfo& getTransferInfo() const {
+        return m_transferInfo;
+    }
+
     virtual UdsResponseCode requestDownload(uint32_t memoryAddress, uint32_t memorySize, const ByteArray &transferParameters) {
-        (void)memoryAddress;
-        (void)memorySize;
-        (void)transferParameters;
-        return UdsResponseCode::ServiceNotSupported;
+        return m_transferInfo.startTransfer(TransferMode::Download, memoryAddress, memorySize, MAX_UDS_MESSAGE_LENGTH, transferParameters);
     }
 
     virtual UdsResponseCode transferData(uint8_t blockSequenceCounter, const ByteArray &data) {
         (void)blockSequenceCounter;
-        (void)data;
-        return UdsResponseCode::ServiceNotSupported;
+
+        return m_transferInfo.recordBlockTransfer(data.size());
     }
 
     virtual UdsResponseCode requestTransferExit() {
-        return UdsResponseCode::ServiceNotSupported;
+        return m_transferInfo.endTransfer();
     }
 
     // Security Access State Query Methods
@@ -258,7 +263,7 @@ public:
         return 4; // Default: 4-byte seed
     }
 
-protected:
+  protected:
     // Methods to be implemented by derived classes
 
     /**
@@ -324,7 +329,7 @@ protected:
         m_pendingSeeds.erase(level);
     }
 
-    const ByteArray* getPendingSeed(uint8_t level) const {
+    const ByteArray *getPendingSeed(uint8_t level) const {
         auto it = m_pendingSeeds.find(level);
         return it != m_pendingSeeds.end() ? &it->second : nullptr;
     }
@@ -341,18 +346,19 @@ protected:
         return std::chrono::steady_clock::now() >= it->second;
     }
 
-private:
+
+  private:
     DiagnosticSessionControlType m_currentSession = DiagnosticSessionControlType::DefaultSession;
     UdsModelEventHandler m_eventHandler;
     uint16_t m_p2_ms = 2000;
     uint16_t m_p2star_10ms = 400;
+    UdsTransferInfo m_transferInfo{};
 
     // Security Access State
-    std::map<uint8_t, bool> m_unlockedSecurityLevels;           // level -> unlocked
-    std::map<uint8_t, uint8_t> m_securityAttempts;              // level -> attempt count
-    std::map<uint8_t, ByteArray> m_pendingSeeds;                // level -> last sent seed
+    std::map<uint8_t, bool> m_unlockedSecurityLevels;                               // level -> unlocked
+    std::map<uint8_t, uint8_t> m_securityAttempts;                                  // level -> attempt count
+    std::map<uint8_t, ByteArray> m_pendingSeeds;                                    // level -> last sent seed
     std::map<uint8_t, std::chrono::steady_clock::time_point> m_securityDelayExpiry; // level -> delay expiry time
-
 };
 
 using UniqueUdsModelPtr = std::unique_ptr<IUdsModel>;

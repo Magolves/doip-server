@@ -8,6 +8,7 @@
 #include "AnsiColors.h"
 #include <iomanip>
 #include <iostream>
+#include <vector>
 
 namespace doip::uds {
 enum class UdsResponseCode : uds_rsp_code {
@@ -249,7 +250,7 @@ const uint8_t UDS_NEGATIVE_RESPONSE_INDICATOR = 0x7F;
  * @return true if the response is a negative response
  * @return false otherwise
  */
-inline bool isNegativeResponse(const ByteArray &response) {
+inline bool isNegativeResponse(const std::vector<uint8_t> &response) {
     return response.size() >= 3 && response[0] == UDS_NEGATIVE_RESPONSE_INDICATOR;
 }
 } // namespace doip::uds

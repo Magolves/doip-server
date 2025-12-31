@@ -63,9 +63,9 @@ constexpr std::array<UdsServiceDescriptor, 22> UDS_SERVICE_DESCRIPTORS = {{{UdsS
                                                                            {UdsService::WriteMemoryByAddress, 4, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
                                                                            {UdsService::ClearDiagnosticInformation, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
                                                                            {UdsService::ReadDTCInformation, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
-                                                                           {UdsService::RequestDownload, 6, MAX_UDS_MESSAGE_LENGTH, 5, MAX_UDS_MESSAGE_LENGTH},
-                                                                           {UdsService::TransferData, 3, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
-                                                                           {UdsService::RequestTransferExit, 2, 2, 2, 2}}};
+                                                                           {UdsService::RequestDownload, 6, MAX_UDS_MESSAGE_LENGTH, 3, 6},
+                                                                           {UdsService::TransferData, 3, MAX_UDS_MESSAGE_LENGTH, 2, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::RequestTransferExit, 1, MAX_UDS_MESSAGE_LENGTH, 1, MAX_UDS_MESSAGE_LENGTH}}};
 
 /**
  * @brief Find service descriptor by service ID
