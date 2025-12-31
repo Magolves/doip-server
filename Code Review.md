@@ -833,7 +833,7 @@ class TemperatureSensorHandler : public UdsServiceHandler {
         // 2. Generate response data (simulate temperature)
         int16_t temp_celsius = 23;  // Mock data
         ByteArray data;
-        data.writeU16BE(temp_celsius);
+        data.writeU16(temp_celsius);
 
         // 3. Return positive response
         return makePositiveResponse(UdsService::ReadDataByIdentifier, data);

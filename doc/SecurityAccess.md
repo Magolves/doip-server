@@ -79,7 +79,7 @@ protected:
         std::mt19937 gen(rd());
         std::uniform_int_distribution<uint32_t> dist(1, 0xFFFFFFFE);
         uint32_t randomSeed = dist(gen);
-        seed.writeU32BE(randomSeed);
+        seed.writeU32(randomSeed);
 
         // Store for verification
         storePendingSeed(level, seed);
@@ -94,8 +94,8 @@ protected:
             return false;
         }
 
-        uint32_t seedValue = seed->readU32BE(0);
-        uint32_t keyValue = key.readU32BE(0);
+        uint32_t seedValue = seed->readU32(0);
+        uint32_t keyValue = key.readU32(0);
         uint32_t expectedKey = calculateKey(level, seedValue);
 
         return keyValue == expectedKey;
@@ -201,14 +201,14 @@ ByteArray seedRsp = handler.handle(seedReq, model);
 
 // Extract seed
 ByteArray seed(seedRsp.begin() + 2, seedRsp.end());
-uint32_t seedValue = seed.readU32BE(0);
+uint32_t seedValue = seed.readU32(0);
 
 // Calculate key
 uint32_t keyValue = calculateKey(seedValue);
 
 // Send key
 ByteArray keyReq = {0x27, 0x02};
-keyReq.writeU32BE(keyValue);
+keyReq.writeU32(keyValue);
 ByteArray keyRsp = handler.handle(keyReq, model);
 
 // Verify success

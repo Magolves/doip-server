@@ -26,8 +26,8 @@ public:
         }
 
         ByteArray responseData;
-        responseData.writeU32BE(memoryAddress); // Echo back the memory address
-        responseData.writeU32BE(memoryLength);  // Echo back the memory length
+        responseData.writeU32(memoryAddress); // Echo back the memory address
+        responseData.writeU32(memoryLength);  // Echo back the memory length
 
         return makeResponse(request, responseData);
     }

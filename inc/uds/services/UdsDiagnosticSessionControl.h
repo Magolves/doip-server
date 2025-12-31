@@ -39,8 +39,8 @@ public:
         ByteArray responseData;
         responseData.writeU8(sidResponseCode(request[0]));
         responseData.writeU8(sessionType);
-        responseData.writeU16BE(model->getP2TimeoutMs());
-        responseData.writeU16BE(model->getP2StarTimeoutMs());
+        responseData.writeU16(model->getP2TimeoutMs());
+        responseData.writeU16(model->getP2StarTimeoutMs());
 
         return responseData;
     }

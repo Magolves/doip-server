@@ -23,7 +23,7 @@ class UdsDefaultModel : public IUdsModel {
 
     UdsResponseCode getDataByIdentfier(uds_did did, ByteArray &data, size_t offset = 0) const override {
         (void)offset;
-        data.writeU16BE(did);
+        data.writeU16(did);
 
         if (populateDidData(did, data)) {
             return UdsResponseCode::PositiveResponse;

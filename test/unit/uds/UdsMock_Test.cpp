@@ -80,11 +80,11 @@ TEST_SUITE("UdsMock") {
                                     if (request.size() < 3) {
                                         return ByteArray{};
                                     }
-                                    uint16_t did = request.readU16BE(1);
+                                    uint16_t did = request.readU16(1);
                                     // Custom handler that returns positive response with dummy data
                                     ByteArray responseData;
                                     responseData.writeU8(0x62); // Positive response SID for RDBI
-                                    responseData.writeU16BE(did); // Echo back the DID
+                                    responseData.writeU16(did); // Echo back the DID
                                     responseData.writeU8(0x12); // Dummy data byte 1
                                     responseData.writeU8(0x34); // Dummy data byte 2
                                     return responseData;

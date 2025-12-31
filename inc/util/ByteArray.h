@@ -27,7 +27,7 @@ namespace util {
  * @param index Starting index in the array
  * @return uint16_t The 16-bit value read from the array
  */
-inline uint16_t readU16BE(const uint8_t *data, size_t index) {
+inline uint16_t readU16(const uint8_t *data, size_t index) {
     return (static_cast<uint16_t>(data[index]) << 8) |
            static_cast<uint16_t>(data[index + 1]);
 }
@@ -39,7 +39,7 @@ inline uint16_t readU16BE(const uint8_t *data, size_t index) {
  * @param index Starting index in the array
  * @return uint32_t The 32-bit value read from the array
  */
-inline uint32_t readU32BE(const uint8_t *data, size_t index) {
+inline uint32_t readU32(const uint8_t *data, size_t index) {
     return (static_cast<uint32_t>(data[index]) << 24) |
            (static_cast<uint32_t>(data[index + 1]) << 16) |
            (static_cast<uint32_t>(data[index + 2]) << 8) |
@@ -159,7 +159,7 @@ struct ByteArray : std::vector<uint8_t> {
      */
     void writeU16At(size_t index, uint16_t value) {
         if (index + 1 >= this->size()) {
-            throw std::out_of_range("Index out of range for writeU16BE");
+            throw std::out_of_range("Index out of range for writeU16");
         }
         (*this)[index] = static_cast<uint8_t>((value >> 8) & 0xFF);
         (*this)[index + 1] = static_cast<uint8_t>(value & 0xFF);
@@ -173,7 +173,7 @@ struct ByteArray : std::vector<uint8_t> {
      *
      * @param value The 16-bit value to append
      */
-    void writeU16BE(uint16_t value) {
+    void writeU16(uint16_t value) {
         emplace_back(static_cast<uint8_t>((value >> 8) & 0xFF));
         emplace_back(static_cast<uint8_t>(value & 0xFF));
     }
@@ -190,7 +190,7 @@ struct ByteArray : std::vector<uint8_t> {
      */
     void writeU32At(size_t index, uint32_t value) {
         if (index + 3 >= this->size()) {
-            throw std::out_of_range("Index out of range for writeU32BE");
+            throw std::out_of_range("Index out of range for writeU32");
         }
         (*this)[index] = static_cast<uint8_t>((value >> 24) & 0xFF);
         (*this)[index + 1] = static_cast<uint8_t>((value >> 16) & 0xFF);
@@ -206,7 +206,7 @@ struct ByteArray : std::vector<uint8_t> {
      *
      * @param value The 32-bit value to append
      */
-    void writeU32BE(uint32_t value) {
+    void writeU32(uint32_t value) {
         emplace_back(static_cast<uint8_t>((value >> 24) & 0xFF));
         emplace_back(static_cast<uint8_t>((value >> 16) & 0xFF));
         emplace_back(static_cast<uint8_t>((value >> 8) & 0xFF));
@@ -237,9 +237,9 @@ struct ByteArray : std::vector<uint8_t> {
         if constexpr (sizeof(UnderlyingType) == 1) {
             emplace_back(static_cast<uint8_t>(integral_value));
         } else if constexpr (sizeof(UnderlyingType) == 2) {
-            writeU16BE(static_cast<uint16_t>(integral_value));
+            writeU16(static_cast<uint16_t>(integral_value));
         } else if constexpr (sizeof(UnderlyingType) == 4) {
-            writeU32BE(static_cast<uint32_t>(integral_value));
+            writeU32(static_cast<uint32_t>(integral_value));
         } else {
             static_assert(sizeof(UnderlyingType) <= 4, "Enum underlying type too large (max 32-bit supported)");
         }
@@ -296,7 +296,7 @@ struct ByteArray : std::vector<uint8_t> {
      * @throws std::out_of_range if index + str.size() > size()
      */
     void writeStringAt(size_t index, const std::string &str) {
-        if (index + str.size() > this->size()) {
+        if (index + str.size() >= this->size()) {
             throw std::out_of_range("Index out of range for writeStringAt");
         }
         std::copy(str.begin(), str.end(), this->begin() + static_cast<int>(index));
@@ -312,11 +312,11 @@ struct ByteArray : std::vector<uint8_t> {
      * @return uint16_t The 16-bit value read from the array
      * @throws std::out_of_range if index + 1 >= size()
      */
-    uint16_t readU16BE(size_t index) const {
+    uint16_t readU16(size_t index) const {
         if (index + 1 >= this->size()) {
-            throw std::out_of_range("Index out of range for readU16BE");
+            throw std::out_of_range("Index out of range for readU16");
         }
-        return util::readU16BE(this->data(), index);
+        return util::readU16(this->data(), index);
     }
 
     /**
@@ -329,11 +329,11 @@ struct ByteArray : std::vector<uint8_t> {
      * @return uint32_t The 32-bit value read from the array
      * @throws std::out_of_range if index + 3 >= size()
      */
-    uint32_t readU32BE(size_t index) const {
+    uint32_t readU32(size_t index) const {
         if (index + 3 >= this->size()) {
-            throw std::out_of_range("Index out of range for readU32BE");
+            throw std::out_of_range("Index out of range for readU32");
         }
-        return util::readU32BE(this->data(), index);
+        return util::readU32(this->data(), index);
     }
 
     /**
@@ -364,9 +364,9 @@ struct ByteArray : std::vector<uint8_t> {
             }
             return static_cast<E>((*this)[index]);
         } else if constexpr (sizeof(UnderlyingType) == 2) {
-            return static_cast<E>(readU16BE(index));
+            return static_cast<E>(readU16(index));
         } else if constexpr (sizeof(UnderlyingType) == 4) {
-            return static_cast<E>(readU32BE(index));
+            return static_cast<E>(readU32(index));
         } else {
             static_assert(sizeof(UnderlyingType) <= 4, "Enum underlying type too large (max 32-bit supported)");
         }

@@ -42,11 +42,11 @@ TEST_SUITE("SecurityAccess") {
 
         // Extract seed and calculate key
         ByteArray seed(seedRsp.data() + 2, seedRsp.size() - 2);
-        uint32_t seedValue = seed.readU32BE(0);
+        uint32_t seedValue = seed.readU32(0);
         uint32_t keyValue = (seedValue ^ 0xA5A5A5A5) + 0x12345678;
 
         ByteArray keyReq = {0x27, 0x02};
-        keyReq.writeU32BE(keyValue);
+        keyReq.writeU32(keyValue);
         ByteArray keyRsp = handler.handle(keyReq, model);
         CHECK(keyRsp[0] == 0x67); // Unlocked
 
@@ -69,14 +69,14 @@ TEST_SUITE("SecurityAccess") {
 
         // Extract seed
         ByteArray seed(seedRsp.data() + 2, seedRsp.size() - 2);
-        uint32_t seedValue = seed.readU32BE(0);
+        uint32_t seedValue = seed.readU32(0);
 
         // Calculate expected key (Level 1 algorithm)
         uint32_t expectedKey = (seedValue ^ 0xA5A5A5A5) + 0x12345678;
 
         // Send key
         ByteArray keyReq = {0x27, 0x02};
-        keyReq.writeU32BE(expectedKey);
+        keyReq.writeU32(expectedKey);
         ByteArray keyRsp = handler.handle(keyReq, model);
 
         // Check positive response
@@ -144,11 +144,11 @@ TEST_SUITE("SecurityAccess") {
         ByteArray seedRsp = handler.handle(seedReq, model);
 
         ByteArray seed(seedRsp.data() + 2, seedRsp.size() - 2);
-        uint32_t seedValue = seed.readU32BE(0);
+        uint32_t seedValue = seed.readU32(0);
         uint32_t keyValue = (seedValue ^ 0xA5A5A5A5) + 0x12345678;
 
         ByteArray keyReq = {0x27, 0x02};
-        keyReq.writeU32BE(keyValue);
+        keyReq.writeU32(keyValue);
         handler.handle(keyReq, model);
 
         CHECK(model->isSecurityLevelUnlocked(1));
@@ -186,7 +186,7 @@ TEST_SUITE("SecurityAccess") {
 
         // Extract seed
         ByteArray seed(seedRsp.data() + 2, seedRsp.size() - 2);
-        uint32_t seedValue = seed.readU32BE(0);
+        uint32_t seedValue = seed.readU32(0);
 
         // Calculate key using Level 3 algorithm (rotate left 5 bits + XOR mask)
         uint32_t rotated = (seedValue << 5) | (seedValue >> 27);
@@ -194,7 +194,7 @@ TEST_SUITE("SecurityAccess") {
 
         // Send key
         ByteArray keyReq = {0x27, 0x04};
-        keyReq.writeU32BE(expectedKey);
+        keyReq.writeU32(expectedKey);
         ByteArray keyRsp = handler.handle(keyReq, model);
 
         CHECK(keyRsp[0] == 0x67);

@@ -44,7 +44,7 @@ protected:
         m_lastSeed = randomSeed;
 
         // Convert to bytes (big-endian)
-        seed.writeU32BE(randomSeed);
+        seed.writeU32(randomSeed);
 
         // Mark as pending
         storePendingSeed(level, seed);
@@ -76,8 +76,8 @@ protected:
             return false;
         }
 
-        uint32_t seedValue = pendingSeed->readU32BE(0);
-        uint32_t keyValue = key.readU32BE(0);
+        uint32_t seedValue = pendingSeed->readU32(0);
+        uint32_t keyValue = key.readU32(0);
         uint32_t expectedKey = 0;
 
         switch (level) {
