@@ -1,4 +1,5 @@
 #include "DoIPDefaultConnection.h"
+#include "DoIPServerModel.h"
 #include "Logger.h"
 
 #include <execinfo.h>
@@ -48,7 +49,7 @@ DoIPDefaultConnection::DoIPDefaultConnection(UniqueServerModelPtr model, UniqueC
               DoIPServerState::Closed,
               DoIPServerState::Closed,
               nullptr)} {
-    m_isOpen = true;
+    m_isOpen.store(true);
     m_serverModel->onOpenConnection(*this);
     m_state = &STATE_DESCRIPTORS[0];
 
@@ -88,7 +89,7 @@ void DoIPDefaultConnection::closeConnection(DoIPCloseReason reason) {
         }
         free(strs);
     }
-    m_isOpen = false;
+    m_isOpen.store(false);
 }
 
 DoIPAddress DoIPDefaultConnection::getServerAddress() const {
@@ -365,8 +366,8 @@ ssize_t DoIPDefaultConnection::sendRoutingActivationResponse(const DoIPAddress &
 
     // Build response payload manually
     ByteArray payload;
-    payload.writeU16BE(source_address);
-    payload.writeU16BE(serverAddr);
+    payload.writeU16(source_address);
+    payload.writeU16(serverAddr);
     payload.push_back(static_cast<uint8_t>(response_code));
     // Reserved 4 bytes
     payload.insert(payload.end(), {0x00, 0x00, 0x00, 0x00});

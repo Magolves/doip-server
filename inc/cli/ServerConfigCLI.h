@@ -5,8 +5,7 @@
 #include <string>
 #include <array>
 
-#include "DoIPServer.h"
-#include "DoIPIdentifiers.h"
+#include "cli/ServerConfig.h"
 
 namespace doip::cli {
 

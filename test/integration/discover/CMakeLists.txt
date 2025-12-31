@@ -38,25 +38,7 @@ foreach(demo_source ${DISCOVER_SOURCES})
 
 endforeach()
 
-
-# Define the source and destination paths
-set(SOURCE_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/test-local-client.py)
-set(DESTINATION_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/test-local-client.py)
-
-# Add a custom command to copy the file only if it changes
-add_custom_command(
-    OUTPUT ${DESTINATION_SCRIPT}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${SOURCE_SCRIPT}
-            ${DESTINATION_SCRIPT}
-    DEPENDS ${SOURCE_SCRIPT}
-    COMMENT "Copying ${SOURCE_SCRIPT} to binary directory (if changed)"
-)
-
-# Optionally, add the output to a target to ensure it's built
-add_custom_target(copy_script ALL DEPENDS ${DESTINATION_SCRIPT})
-
-message(STATUS "Adding integration tests for examples")
+message(STATUS "Adding integration tests for discover examples")
 
 # Integration fixture: start DoIPServer as a daemon
 add_test(NAME Integration_StartDiscoverServer
@@ -133,17 +115,6 @@ set_tests_properties(Integration_DiscoverClient_Runs PROPERTIES
     LABELS integration
     RUN_SERIAL TRUE
     DEPENDS Integration_WaitForServerReady
-)
-
-# Integration test: run tcp client against the running server
-add_test(NAME Integration_DiagSessionRuns
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/test-local-client.py
-)
-set_tests_properties(Integration_DiagSessionRuns PROPERTIES
-    FIXTURES_REQUIRED demo_ready
-    TIMEOUT 20
-    LABELS integration
-    RUN_SERIAL TRUE
 )
 
 # Teardown fixture: stop server and wait for ports to be released

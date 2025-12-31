@@ -25,7 +25,7 @@ class ExampleDoIPServerModel : public DoIPDownstreamServerModel {
     virtual std::string_view getModelName() const override { return "ExampleDoIPServerModel"; }
 
   private:
-    uds::UdsMockProvider m_uds;
+    uds::UdsMockProvider m_uds; // TODO: Implement a NULL provider for testing
 };
 
 #endif /* DoIPServerMODEL_H */

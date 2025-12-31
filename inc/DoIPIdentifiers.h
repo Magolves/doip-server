@@ -1,7 +1,7 @@
 #ifndef DOIP_IDENTIFIERS_H
 #define DOIP_IDENTIFIERS_H
 
-#include "ByteArray.h"
+#include "util/ByteArray.h"
 #include <algorithm>
 #include <array>
 #include <cstring>

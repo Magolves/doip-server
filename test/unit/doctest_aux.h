@@ -1,7 +1,7 @@
 #ifndef DOCTEST_AUX_H
 #define DOCTEST_AUX_H
 
-#include "ByteArray.h"
+#include "util/ByteArray.h"
 #include <doctest/doctest.h>
 #include <iomanip>
 #include <sstream>

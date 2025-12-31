@@ -1,16 +1,17 @@
 #ifndef LAMBDAUDSHANDLER_H
 #define LAMBDAUDSHANDLER_H
 
-#include "IUdsServiceHandler.h"
+#include "UdsServiceHandler.h"
 #include <functional>
 
 namespace doip::uds {
 
-class LambdaUdsHandler : public IUdsServiceHandler {
+class LambdaUdsHandler : public UdsServiceHandler {
 public:
-    using Fn = std::function<UdsResponse(const ByteArray &)>;
+    using Fn = std::function<ByteArray(const ByteArray &, const UniqueUdsModelPtr&)>;
     explicit LambdaUdsHandler(Fn fn) : m_fn(std::move(fn)) {}
-    UdsResponse handle(const ByteArray &request) override { return m_fn(request); }
+
+    ByteArray handle(const ByteArray &request, const UniqueUdsModelPtr& model) override { return m_fn(request, model); }
 
 private:
     Fn m_fn;
