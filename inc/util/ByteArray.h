@@ -71,6 +71,47 @@ struct ByteArray : std::vector<uint8_t> {
      */
     explicit ByteArray(const uint8_t *data, size_t size) : std::vector<uint8_t>(data, data + size) {}
 
+    ByteArray &operator=(const ByteArray &other) = default;
+    ByteArray &operator=(ByteArray &&other) noexcept = default;
+
+    /**
+     * @brief Construct a new Byte Array object by copying a subset of another ByteArray.
+     *
+     * @param other the source ByteArray to copy from
+     * @param offset starting index in the source ByteArray. If offset >= other.size(),
+     * an empty ByteArray is created.
+     * @param length number of bytes to copy (if -1, copies until the end)
+     */
+    ByteArray(const ByteArray &other, size_t offset = 0, ssize_t length = -1) {
+        if (offset >= other.size()) {
+            return; // Empty
+        }
+        size_t len = (length < 0 || static_cast<size_t>(length) > other.size() - offset)
+                         ? other.size() - offset
+                         : static_cast<size_t>(length);
+        this->insert(this->end(), other.begin() + offset, other.begin() + offset + len);
+    }
+
+    /**
+     * @brief Construct a new Byte Array object by moving a subset of another ByteArray.
+     *
+     * @param other the source ByteArray to move from
+     * @param offset starting index in the source ByteArray. If offset >= other.size(),
+     * an empty ByteArray is created.
+     * @param length number of bytes to move (if -1, moves until the end)
+     */
+    ByteArray(ByteArray &&other, size_t offset = 0, ssize_t length = -1) {
+        if (offset >= other.size()) {
+            return; // Empty
+        }
+        size_t len = (length < 0 || static_cast<size_t>(length) > other.size() - offset)
+                         ? other.size() - offset
+                         : static_cast<size_t>(length);
+        this->insert(this->end(),
+                     std::make_move_iterator(other.begin() + offset),
+                     std::make_move_iterator(other.begin() + offset + len));
+    }
+
     /**
      * @brief Constructs a ByteArray from an initializer list
      *

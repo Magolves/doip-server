@@ -15,6 +15,7 @@ add_executable(${DOIP_SERVER_LIB_NAME}_tests
     TimerManager_Test.cpp
     VehicleIdentification_Test.cpp
     uds/UdsMock_Test.cpp
+    uds/UdsSecurityAccess_Test.cpp
 )
 
 target_link_libraries(${DOIP_SERVER_LIB_NAME}_tests

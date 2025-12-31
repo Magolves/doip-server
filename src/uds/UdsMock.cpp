@@ -6,6 +6,7 @@
 #include "uds/services/UdsReadDataByIdentifier.h"
 #include "uds/services/UdsRequestDownload.h"
 #include "uds/services/UdsRequestTransferExit.h"
+#include "uds/services/UdsSecurityAccess.h"
 #include "uds/services/UdsTesterPresent.h"
 #include "uds/services/UdsTransferData.h"
 #include "uds/services/UdsWriteDataByIdentifier.h"
@@ -50,6 +51,7 @@ namespace doip::uds {
         registerService<ReadDataByIdentifierHandler>(UdsService::ReadDataByIdentifier);
         registerService<RequestDownloadHandler>(UdsService::RequestDownload);
         registerService<RequestTransferExitHandler>(UdsService::RequestTransferExit);
+        registerService<SecurityAccessHandler>(UdsService::SecurityAccess);
         registerService<TesterPresentHandler>(UdsService::TesterPresent);
         registerService<TransferDataHandler>(UdsService::TransferData);
         registerService<WriteDataByIdentifierHandler>(UdsService::WriteDataByIdentifier);

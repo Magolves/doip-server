@@ -33,7 +33,7 @@ enum class UdsResponseCode : uds_rsp_code {
     SecurityAccessDenied = 0x33,
     AuthenticationRequired = 0x34,
     InvalidKey = 0x35,
-    ExceedNumberOfAttempts = 0x36,
+    ExceededNumberOfAttempts = 0x36,
     RequiredTimeDelayNotExpired = 0x37,
     SecureDataTransmissionRequired = 0x38,
     SecureDataTransmissionNotAllowed = 0x39,
@@ -137,8 +137,8 @@ inline std::ostream &operator<<(std::ostream &os, const UdsResponseCode &code) {
         case UdsResponseCode::InvalidKey:
             os << " InvalidKey";
             break;
-        case UdsResponseCode::ExceedNumberOfAttempts:
-            os << " ExceedNumberOfAttempts";
+        case UdsResponseCode::ExceededNumberOfAttempts:
+            os << " ExceededNumberOfAttempts";
             break;
         case UdsResponseCode::RequiredTimeDelayNotExpired:
             os << " RequiredTimeDelayNotExpired";

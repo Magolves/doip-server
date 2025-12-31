@@ -35,6 +35,34 @@ class UdsServiceHandler {
     virtual ~UdsServiceHandler() = default;
     virtual ByteArray handle(const ByteArray &request, const UniqueUdsModelPtr &model) = 0;
 
+  protected:
+    /**
+     * @brief Check if request has minimum required length
+     */
+    static bool checkMinLength(const ByteArray &request, size_t minLength) {
+        return request.size() >= minLength;
+    }
+
+    /**
+     * @brief Extract uint16_t value from request at given offset (big-endian)
+     */
+    static uint16_t extractU16(const ByteArray &request, size_t offset) {
+        if (offset + 1 >= request.size()) return 0;
+        return (static_cast<uint16_t>(request[offset]) << 8) | request[offset + 1];
+    }
+
+    /**
+     * @brief Extract uint32_t value from request at given offset (big-endian)
+     */
+    static uint32_t extractU32(const ByteArray &request, size_t offset) {
+        if (offset + 3 >= request.size()) return 0;
+        return (static_cast<uint32_t>(request[offset]) << 24) |
+               (static_cast<uint32_t>(request[offset + 1]) << 16) |
+               (static_cast<uint32_t>(request[offset + 2]) << 8) |
+               static_cast<uint32_t>(request[offset + 3]);
+    }
+
+  public:
     static ByteArray makeResponse(const ByteArray &request, const ByteArray &data = {}) {
         ByteArray positiveResponse;
         positiveResponse.writeU8(sidResponseCode(request.empty() ? 0x00 : request[0]));
