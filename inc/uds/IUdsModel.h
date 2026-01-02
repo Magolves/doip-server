@@ -2,7 +2,6 @@
 #define IUDSMODEL_H
 
 #include "uds/UdsResponseCode.h"
-#include "uds/UdsTransferInfo.h"
 #include "uds/UdsTypes.h"
 #include "util/ByteArray.h"
 

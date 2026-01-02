@@ -3,6 +3,7 @@
 
 #include "IUdsModel.h"
 #include "DoIPIdentifiers.h"
+#include "UdsTransferInfo.h"
 #include "UdsDataIdentifiers.h"
 
 namespace doip::uds {

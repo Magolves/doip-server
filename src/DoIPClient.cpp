@@ -50,7 +50,12 @@ void DoIPClient::startUdpConnection() {
         m_clientAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 
         // binds the socket to any IP DoIPAddress and the Port Number 13400
-        bind(m_udpSocket, reinterpret_cast<struct sockaddr *>(&m_clientAddress), sizeof(m_clientAddress));
+        auto rc = bind(m_udpSocket, reinterpret_cast<struct sockaddr *>(&m_clientAddress), sizeof(m_clientAddress));
+        if (!rc) {
+            m_log->error("Bind failed: {}", strerror(errno));
+            close(m_udpSocket);
+            m_udpSocket = -1;
+        }
     }
 }
 

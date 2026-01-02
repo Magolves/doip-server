@@ -4,11 +4,9 @@
 
 #include "UdsServiceHandler.h"
 #include "LambdaUdsHandler.h"
-#include "UdsResponseCode.h"
 #include "UdsServices.h"
 #include "Logger.h"
 
-#include <array>
 #include <functional>
 #include <memory>
 #include <unordered_map>

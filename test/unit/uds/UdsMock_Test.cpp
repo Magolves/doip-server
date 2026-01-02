@@ -1,14 +1,10 @@
-#include "MacAddress.h"
 #include <doctest/doctest.h>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <memory>
 
 #include "../doctest_aux.h"
 #include "uds/UdsMock.h"
 #include "uds/IUdsModel.h"
-#include "uds/UdsMockProvider.h"
+#include "uds/UdsDefaultModel.h"
 
 using namespace doip;
 using namespace doip::uds;
