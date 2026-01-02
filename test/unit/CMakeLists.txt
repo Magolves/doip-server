@@ -1,6 +1,5 @@
 
 add_executable(${DOIP_SERVER_LIB_NAME}_tests
-    ByteArray_Test.cpp
     DoIPDefaultConnection_Test.cpp
     DoIPMessage_Test.cpp
     DoIPServer_Test.cpp
@@ -8,15 +7,16 @@ add_executable(${DOIP_SERVER_LIB_NAME}_tests
     MacAddress_Test.cpp
     Main_Test.cpp
     Misc_Test.cpp
-    MockTransport_Test.cpp
-    cli/ServerConfigCLI_Test.cpp
     Stream_Test.cpp
     ThreadSafeQueue_Test.cpp
     TimerManager_Test.cpp
     VehicleIdentification_Test.cpp
-    uds/UdsMock_Test.cpp
+    cli/ServerConfigCLI_Test.cpp
+    tp/MockTransport_Test.cpp
     uds/UdsMockProvider_Test.cpp
+    uds/UdsMock_Test.cpp
     uds/UdsSecurityAccess_Test.cpp
+    util/ByteArray_Test.cpp
 )
 
 target_link_libraries(${DOIP_SERVER_LIB_NAME}_tests
