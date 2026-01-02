@@ -15,6 +15,7 @@ add_executable(${DOIP_SERVER_LIB_NAME}_tests
     TimerManager_Test.cpp
     VehicleIdentification_Test.cpp
     uds/UdsMock_Test.cpp
+    uds/UdsMockProvider_Test.cpp
     uds/UdsSecurityAccess_Test.cpp
 )
 
@@ -33,4 +34,3 @@ doctest_discover_tests(${DOIP_SERVER_LIB_NAME}_tests
         LABELS "${DOIP_SERVER_LIB_NAME}"
         TIMEOUT 30
 )
-

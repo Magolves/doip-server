@@ -106,10 +106,4 @@ TEST_SUITE("UdsMock") {
         INFO(response);
         CHECK_BYTE_ARRAY_EQ(response, expectedResponse);
     }
-
-     TEST_CASE_FIXTURE(UdsFixture, "UdsMock custom RDBI handler returns positive response") {
-        UdsMockProvider udsProvider(std::make_unique<UdsTestModel>());
-        // TODO: implement test cases for UdsMockProvider
-
-     }
 }
