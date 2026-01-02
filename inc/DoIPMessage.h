@@ -466,8 +466,8 @@ class DoIPMessage {
         m_data.reserve(DOIP_HEADER_SIZE + payload.size());
 
         // Protocol version
-        m_data.emplace_back(PROTOCOL_VERSION);
-        m_data.emplace_back(PROTOCOL_VERSION_INV);
+        m_data.writeU8(PROTOCOL_VERSION);
+        m_data.writeU8(PROTOCOL_VERSION_INV);
 
         // Payload type (big-endian uint16_t)
         m_data.writeEnum(payloadType);
