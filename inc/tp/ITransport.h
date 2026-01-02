@@ -2,7 +2,7 @@
 #define ITRANSPORT_H
 
 #include "DoIPMessage.h"
-#include <cstddef>
+#include <memory>
 #include <optional>
 
 #include "DoIPCloseReason.h"

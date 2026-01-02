@@ -2,7 +2,7 @@
 #define MOCKCONNECTIONTRANSPORT_H
 
 #include "tp/IConnectionTransport.h"
-#include "ThreadSafeQueue.h"
+#include "util/ThreadSafeQueue.h"
 #include <atomic>
 #include <string>
 

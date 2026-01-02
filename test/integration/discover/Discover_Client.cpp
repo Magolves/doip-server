@@ -1,14 +1,9 @@
 #include "DoIPClient.h"
-#include "DoIPMessage.h"
-#include "Logger.h"
-
-#include <iomanip>
-#include <iostream>
-#include <thread>
+#include "util/Logger.h"
 
 using namespace doip;
 using std::string;
-using std::cout;
+
 
 DoIPClient client;
 

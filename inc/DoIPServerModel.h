@@ -10,7 +10,7 @@
 #include "DoIPNegativeDiagnosticAck.h"
 #include "DoIPServerEvent.h"
 #include "DoIPServerState.h"
-#include "Logger.h"
+#include "util/Logger.h"
 
 namespace doip {
 

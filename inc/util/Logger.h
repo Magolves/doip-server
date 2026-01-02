@@ -1,6 +1,4 @@
 #pragma once
-
-#include "AnsiColors.h"
 #include <cstdlib>
 #include <memory>
 #include <mutex>
@@ -12,7 +10,6 @@
 #include <spdlog/spdlog.h>
 #include <string>
 #include <unordered_map>
-#include <iostream>
 
 #if !defined(FMT_VERSION) || FMT_VERSION < 90000
 #include <optional>

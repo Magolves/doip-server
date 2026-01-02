@@ -3,11 +3,9 @@
 
 #include "tp/IServerTransport.h"
 #include "tp/MockConnectionTransport.h"
-#include "ThreadSafeQueue.h"
+#include "util/ThreadSafeQueue.h"
 #include <atomic>
 #include <memory>
-#include <queue>
-#include <vector>
 
 namespace doip {
 

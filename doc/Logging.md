@@ -16,7 +16,7 @@ This library uses [spdlog](https://github.com/gabime/spdlog) for high-performanc
 ### Configuration
 
 ```cpp
-#include "Logger.h"
+#include "util/Logger.h"
 
 // Set log level (only messages at this level or higher will be shown)
 doip::Logger::setLevel(spdlog::level::debug);

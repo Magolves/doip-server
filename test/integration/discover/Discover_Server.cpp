@@ -1,18 +1,12 @@
-#include <chrono>
 #include <csignal>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
-#include <thread>
-
-#include "DoIPAddress.h"
-#include "DoIPServer.h"
-#include "Logger.h"
 
 #include "DoIPServer.h"
-#include "DoIPServerModel.h"
+#include "util/Logger.h"
+
+#include "DoIPServer.h"
 #include "ExampleDoIPServerModel.h"
-#include "cli/ServerConfigCLI.h"
 
 #include "util/Daemonize.h"
 

@@ -11,7 +11,7 @@
 
 #include "DoIPServerModel.h"
 #include "DoIPDownstreamServerModel.h"
-#include "ThreadSafeQueue.h"
+#include "util/ThreadSafeQueue.h"
 #include "uds/UdsMockProvider.h"
 #include "uds/UdsResponseCode.h"
 

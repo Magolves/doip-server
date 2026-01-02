@@ -1,7 +1,8 @@
 #ifndef DOIPDOWNSTREAMRESULT_H
 #define DOIPDOWNSTREAMRESULT_H
 
-#include "AnsiColors.h"
+#include "util/AnsiColors.h"
+#include <iostream> 
 
 namespace doip {
 

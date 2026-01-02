@@ -1,7 +1,7 @@
 #include "DoIPClient.h"
 #include "DoIPMessage.h"
 #include "DoIPPayloadType.h"
-#include "Logger.h"
+#include "util/Logger.h"
 #include <cerrno>  // for errno
 #include <cstring> // for strerror
 
@@ -11,9 +11,7 @@ using namespace doip;
  *Set up the connection between client and server
  */
 void DoIPClient::startTcpConnection() {
-
     m_tcpSocket = socket(AF_INET, SOCK_STREAM, 0);
-
 
     if (m_tcpSocket >= 0) {
         m_log->info("Client TCP-Socket created successfully");

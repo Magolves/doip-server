@@ -11,9 +11,7 @@
 #include <vector>
 #include <exception>
 
-#include "DoIPTimes.h"
-#include "Logger.h"
-
+#include "util/Logger.h"
 namespace doip {
 
 template <typename TimerIdType = uint8_t>

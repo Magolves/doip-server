@@ -5,7 +5,7 @@
 
 #include "DoIPServerModel.h"
 #include "IDownstreamProvider.h"
-#include "ThreadSafeQueue.h"
+#include "util/ThreadSafeQueue.h"
 
 using namespace doip;
 using namespace std::chrono_literals;

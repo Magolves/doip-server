@@ -4,12 +4,10 @@
 #include <arpa/inet.h>
 #include <atomic>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <optional>
-#include <string.h>
 #include <string>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -18,16 +16,11 @@
 #include <vector>
 
 #include "cli/ServerConfig.h"
-#include "util/ByteArray.h"
-#include "DoIPConfig.h"
 #include "DoIPFurtherAction.h"
 #include "DoIPIdentifiers.h"
-#include "DoIPNegativeAck.h"
 #include "DoIPServerModel.h"
 #include "tp/IServerTransport.h"
 #include "DoIPDefaultConnection.h"
-#include "MacAddress.h"
-#include "Socket.h"
 
 namespace doip {
 

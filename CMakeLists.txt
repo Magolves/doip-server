@@ -108,24 +108,22 @@ configure_file(
 
 set(DOIP_SERVER_LIB_NAME doip-server CACHE STRING "DoIP library name")
 
-
 set(SOURCES
-    src/cli/ServerConfigCLI.cpp
     src/DoIPClient.cpp
     src/DoIPConnection.cpp
     src/DoIPDefaultConnection.cpp
     src/DoIPServer.cpp
-    src/Logger.cpp
     src/MacAddress.cpp
-    src/tp/TcpServerTransport.cpp
-    src/tp/TcpConnectionTransport.cpp
-    src/tp/MockServerTransport.cpp
+    src/cli/ServerConfigCLI.cpp
     src/tp/MockConnectionTransport.cpp
+    src/tp/MockServerTransport.cpp
+    src/tp/TcpConnectionTransport.cpp
+    src/tp/TcpServerTransport.cpp
     src/uds/UdsMock.cpp
     src/uds/services/UdsSecurityAccess.cpp
     src/util/Daemonize.cpp
+    src/util/Logger.cpp
 )
-
 
 # Create the library
 add_library(${DOIP_SERVER_LIB_NAME}

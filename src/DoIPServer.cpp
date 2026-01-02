@@ -2,14 +2,12 @@
 #include "DoIPConnection.h"
 #include "DoIPMessage.h"
 #include "DoIPServerModel.h"
-#include "MacAddress.h"
+#include "util/MacAddress.h"
 #include "tp/TcpServerTransport.h"
-#include <algorithm> // for std::remove_if
 #include <cerrno>    // for errno
 #include <cstdio>
 #include <cstring> // for strerror
 #include <fcntl.h>
-#include <fstream> // for PID file writing
 #include <pthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
