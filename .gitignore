@@ -55,3 +55,4 @@ docs/
 inc/gen/DoIPConfig.h
 *.log
 test/reports/*
+.cache/*
