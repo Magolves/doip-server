@@ -2,6 +2,13 @@
 #ifndef DOIPCLIENT_H
 #define DOIPCLIENT_H
 
+#include "DoIPConfig.h"
+#include "DoIPClientModel.h"
+#include "DoIPMessage.h"
+#include "util/Logger.h"
+#include "util/Socket.h"
+#include "util/ThreadSafeQueue.h"
+
 #include <arpa/inet.h>
 #include <cstddef>
 #include <cstdlib>
@@ -9,34 +16,37 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "DoIPConfig.h"
-#include "DoIPMessage.h"
-#include "util/Logger.h"
-
 namespace doip {
 
 const int _maxDataSize = 64;
 
-using DoIPRequest = std::pair<size_t, const uint8_t *>;
+
 
 class DoIPClient {
 
   public:
-    DoIPClient() {m_receiveBuf.reserve(DOIP_MAXIMUM_MTU);}
+    DoIPClient(UniqueDoIPClientModelPtr model = std::make_unique<DoIPClientModel>()) : m_model(std::move(model)) { m_receiveBuf.reserve(DOIP_MAXIMUM_MTU); }
 
-    void startTcpConnection();
+    [[nodiscard]] bool startTcpConnection();
+
+    [[nodiscard]] bool isTcpConnected() const noexcept { return m_connected.valid(); }
+    [[nodiscard]] bool reconnectServer();
+    void closeTcpConnection();
+
+    void sendMessage(const DoIPMessage &msg);
+
     void startUdpConnection();
     void startAnnouncementListener();
+    void closeUdpConnection();
+
+
     ssize_t sendRoutingActivationRequest();
-    ssize_t sendVehicleIdentificationRequest(const char *inet_address);
-    void receiveRoutingActivationResponse();
+    std::optional<DoIPMessage> receiveRoutingActivationResponse();
+
     void receiveUdpMessage();
+    ssize_t sendVehicleIdentificationRequest(const char *inet_address);
     [[nodiscard]]
     bool receiveVehicleAnnouncement();
-    /*
-     * Send the builded request over the tcp-connection to server
-     */
-    void receiveMessage();
 
     /**
      * Sends a diagnostic message to the server
@@ -50,29 +60,34 @@ class DoIPClient {
     ssize_t sendAliveCheckResponse();
     void setSourceAddress(const DoIPAddress &address);
     void printVehicleInformationResponse();
-    void closeTcpConnection();
-    void closeUdpConnection();
-    void reconnectServer();
-
-    int getSockFd();
-    int getConnected();
 
   private:
+    UniqueDoIPClientModelPtr m_model;
     ByteArray m_receiveBuf;
-    int m_tcpSocket{-1}, m_udpSocket{-1}, m_udpAnnouncementSocket{-1}, m_connected{-1};
+    Socket m_tcpSocket, m_udpSocket, m_udpAnnouncementSocket, m_connected;
+    ThreadSafeQueue<DoIPMessage> m_messageQueue;
+    std::atomic<bool> m_tcpRunning{false};
+    std::thread m_tcpThread{};
     int m_broadcast = 1;
     struct sockaddr_in m_serverAddress, m_clientAddress, m_announcementAddress;
-    DoIPAddress m_sourceAddress = DoIPAddress(0xE000);
+
 
     std::shared_ptr<spdlog::logger> m_log = spdlog::stdout_color_mt("doip-client");
 
+    DoIPAddress m_sourceAddress = DoIPAddress(0xE000);
     Vin m_vin{0};
     DoIPAddress m_logicalAddress = ZERO_ADDRESS;
     EntityId m_eid{0};
     GroupId m_gid{0};
     DoIPFurtherAction m_furtherActionReqResult = DoIPFurtherAction::NoFurtherAction;
 
-    void parseVehicleIdentificationResponse(const DoIPMessage& msg);
+    void tcpThreadFunction();
+    bool activateRouting();
+    ssize_t sendDoIPMessage(const DoIPMessage &msg);
+    std::optional<DoIPMessage> receiveMessage();
+
+
+    void parseVehicleIdentificationResponse(const DoIPMessage &msg);
 
     int emptyMessageCounter = 0;
 };

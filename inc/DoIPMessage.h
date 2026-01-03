@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <optional>
+#include <functional>
 #include <stdint.h>
 
 #include "util/AnsiColors.h"
@@ -509,6 +510,8 @@ class DoIPMessage {
         return m_data.readU32(4);
     }
 };
+
+using DoIPMessageHandler = std::function<void(const DoIPMessage&)>;
 
 /**
  * @brief Factory functions for creating specific DoIP message types.
