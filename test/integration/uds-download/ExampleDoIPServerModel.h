@@ -6,9 +6,6 @@
 #ifndef EXAMPLEDOIPSERVERMODEL_H
 #define EXAMPLEDOIPSERVERMODEL_H
 
-#ifndef DoIPServerMODEL_H
-#define DoIPServerMODEL_H
-
 #include "DoIPServerModel.h"
 #include "DoIPDownstreamServerModel.h"
 #include "util/ThreadSafeQueue.h"
@@ -30,8 +27,6 @@ class ExampleDoIPServerModel : public DoIPDownstreamServerModel {
   private:
     uds::UdsMockProvider m_uds;
 };
-
-#endif /* DoIPServerMODEL_H */
 
 
 #endif /* EXAMPLEDOIPSERVERMODEL_H */
