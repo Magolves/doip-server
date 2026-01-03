@@ -3,6 +3,8 @@
 
 #include "tp/IServerTransport.h"
 #include "util/Logger.h"
+#include "util/Socket.h"
+
 #include <atomic>
 #include <memory>
 #include <netinet/in.h>
@@ -41,8 +43,8 @@ class TcpServerTransport : public IServerTransport {
     std::string getIdentifier() const override;
 
   private:
-    int m_tcpServerSocket{-1};
-    int m_udpSocket{-1};
+    Socket m_tcpServerSocket{-1};
+    Socket m_udpSocket{-1};
     uint16_t m_port{0};
     bool m_loopback;
     std::atomic<bool> m_isActive{false};

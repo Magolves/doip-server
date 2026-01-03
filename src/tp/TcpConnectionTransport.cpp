@@ -9,11 +9,11 @@
 
 namespace doip {
 
-TcpConnectionTransport::TcpConnectionTransport(int socket)
-    : m_socket(socket),
+TcpConnectionTransport::TcpConnectionTransport(int socket_fd)
+    : m_socket(socket_fd),
       m_log(Logger::get("TcpConnectionTransport")) {
     initializeIdentifier();
-    m_log->debug("TcpConnectionTransport created for socket {}, identifier: {}", m_socket, m_identifier);
+    m_log->debug("TcpConnectionTransport created for socket {}, identifier: {}", fmt::streamed(m_socket), m_identifier);
 }
 
 TcpConnectionTransport::~TcpConnectionTransport() {
@@ -25,12 +25,12 @@ void TcpConnectionTransport::initializeIdentifier() {
     struct sockaddr_in addr{};
     socklen_t addrLen = sizeof(addr);
 
-    if (getpeername(m_socket, reinterpret_cast<struct sockaddr *>(&addr), &addrLen) == 0) {
+    if (getpeername(m_socket.get(), reinterpret_cast<struct sockaddr *>(&addr), &addrLen) == 0) {
         char ipStr[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &addr.sin_addr, ipStr, sizeof(ipStr));
         m_identifier = std::string(ipStr) + ":" + std::to_string(static_cast<unsigned int>(ntohs(addr.sin_port)));
     } else {
-        m_identifier = "socket_" + std::to_string(m_socket);
+        m_identifier = "socket_" + std::to_string(m_socket.get());
     }
 }
 
@@ -40,7 +40,7 @@ ssize_t TcpConnectionTransport::sendMessage(const DoIPMessage &msg) {
         return -1;
     }
 
-    ssize_t result = write(m_socket, msg.data(), msg.size());
+    ssize_t result = write(m_socket.get(), msg.data(), msg.size());
     if (result < 0) {
         m_log->error("Failed to send {} bytes on {}: {}", msg.size(), m_identifier, strerror(errno));
         m_isActive = false;
@@ -115,7 +115,7 @@ ssize_t TcpConnectionTransport::receiveExactly(uint8_t *buffer, size_t length) {
     size_t remaining = length;
 
     while (remaining > 0) {
-        ssize_t result = recv(m_socket, buffer + totalReceived, remaining, 0);
+        ssize_t result = recv(m_socket.get(), buffer + totalReceived, remaining, 0);
 
         if (result < 0) {
             // Handle non-blocking or interrupted system call
@@ -142,8 +142,7 @@ void TcpConnectionTransport::close(DoIPCloseReason reason) {
     bool expected = true;
     if (m_isActive.compare_exchange_strong(expected, false)) {
         m_log->debug("Closing connection transport: {} (reason: {})", m_identifier, fmt::streamed(reason));
-        ::close(m_socket);
-        m_socket = -1;
+        m_socket.close();
     }
 }
 
@@ -159,9 +158,8 @@ void TcpConnectionTransport::shutdownSocket() noexcept {
     bool expected = true;
     if (m_isActive.compare_exchange_strong(expected, false)) {
         // Best-effort close without relying on virtual dispatch
-        if (m_socket >= 0) {
-            ::close(m_socket);
-            m_socket = -1;
+        if (m_socket.get() > 0) {
+            m_socket.close();
         }
     }
 }

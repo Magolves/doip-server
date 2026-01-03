@@ -117,6 +117,19 @@ class Socket {
     int m_fd{-1};
 };
 
+/**
+ * @brief Stream output operator for Socket
+ *
+ * @param os the operation stream
+ * @param socket the Socket to output
+ * @return std::ostream& the operation stream
+ */
+inline std::ostream &operator<<(std::ostream &os, const Socket &socket) {
+    os << "fd:" << socket.get();
+    return os;
+}
+
+
 } // namespace doip
 
 #endif /* SOCKET_H */

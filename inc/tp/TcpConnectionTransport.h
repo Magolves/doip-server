@@ -2,8 +2,9 @@
 #define TCPCONNECTIONTRANSPORT_H
 
 #include "tp/IConnectionTransport.h"
-#include "util/Logger.h"
 #include "gen/DoIPConfig.h"
+#include "util/Logger.h"
+#include "util/Socket.h"
 #include <array>
 #include <atomic>
 #include <memory>
@@ -20,9 +21,9 @@ class TcpConnectionTransport : public IConnectionTransport {
     /**
      * @brief Construct a TCP connection transport from an existing socket
      *
-     * @param socket The connected TCP socket (takes ownership)
+     * @param socket_fd The connected TCP socket (takes ownership)
      */
-    explicit TcpConnectionTransport(int socket);
+    explicit TcpConnectionTransport(int socket_fd);
 
     /**
      * @brief Destructor - closes the socket
@@ -41,7 +42,7 @@ class TcpConnectionTransport : public IConnectionTransport {
     std::string getIdentifier() const override;
 
   private:
-    int m_socket;
+    Socket m_socket;
     std::array<uint8_t, DOIP_MAXIMUM_MTU> m_receiveBuffer{};
     std::atomic<bool> m_isActive{true};
     std::shared_ptr<spdlog::logger> m_log;
