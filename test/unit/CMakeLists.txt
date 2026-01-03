@@ -13,6 +13,7 @@ add_executable(${DOIP_SERVER_LIB_NAME}_tests
     VehicleIdentification_Test.cpp
     cli/ServerConfigCLI_Test.cpp
     tp/MockTransport_Test.cpp
+    uds/UdsDiagnosticTroubleCode_Test.cpp
     uds/UdsMockProvider_Test.cpp
     uds/UdsMock_Test.cpp
     uds/UdsSecurityAccess_Test.cpp

@@ -120,6 +120,7 @@ set(SOURCES
     src/tp/TcpConnectionTransport.cpp
     src/tp/TcpServerTransport.cpp
     src/uds/UdsMock.cpp
+    src/uds/UdsDiagnosticTroubleCode.cpp
     src/uds/services/UdsSecurityAccess.cpp
     src/util/Daemonize.cpp
     src/util/Logger.cpp
