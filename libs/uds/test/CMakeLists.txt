@@ -2,6 +2,7 @@
 add_executable(${UDS_LIB_NAME}-tests
     Main_Test.cpp
     UdsDiagnosticTroubleCode_Test.cpp
+    Vin_Test.cpp
     UdsMock_Test.cpp
     UdsSecurityAccess_Test.cpp
 )

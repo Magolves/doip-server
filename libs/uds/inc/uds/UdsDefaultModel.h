@@ -2,7 +2,7 @@
 #define UDSDEFAULTMODEL_H
 
 #include "IUdsModel.h"
-#include "DoIPIdentifiers.h"
+#include "Vin.h"
 #include "UdsTransferInfo.h"
 #include "UdsDataIdentifiers.h"
 
@@ -64,7 +64,7 @@ class UdsDefaultModel : public IUdsModel {
     private:
         UdsTransferInfo m_transferInfo{};
 
-        DoIpVin m_vin{"WVWZZZ1JZ4W012345"}; // Volkswagen (fictional model)
+        Vin m_vin{"WVWZZZ1JZ4W012345"}; // Volkswagen (fictional model)
 
         bool populateDidData(uds_did did, ByteArray &data) const {
             switch (static_cast<UdsDataIdentifier>(did)) {
@@ -82,10 +82,10 @@ class UdsDefaultModel : public IUdsModel {
         bool updateDidData(uds_did did, const ByteArray &data, size_t offset) {
             switch (static_cast<UdsDataIdentifier>(did)) {
                 case UdsDataIdentifier::VIN: {
-                    if (data.size() - offset < DoIpVin::VIN_LENGTH) {
+                    if (data.size() - offset < Vin::VIN_LENGTH) {
                         return false;
                     }
-                    m_vin = DoIpVin(std::string(reinterpret_cast<const char *>(&data[offset]), DoIpVin::VIN_LENGTH));
+                    m_vin = Vin(std::string(reinterpret_cast<const char *>(&data[offset]), Vin::VIN_LENGTH));
                     return true;
                 }
                 default:

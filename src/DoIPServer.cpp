@@ -133,20 +133,20 @@ bool DoIPServer::setDefaultEid() {
     MacAddress mac = {0};
     if (!getFirstMacAddress(mac)) {
         m_doipLog->error("Failed to get MAC address, using default EID");
-        m_config.eid = DoIpEid::Zero;
+        m_config.eid = EntityId::Zero;
         return false;
     }
     // Set EID based on MAC address (last 6 bytes)
-    m_config.eid = DoIpEid(mac.data(), m_config.eid.ID_LENGTH);
+    m_config.eid = EntityId(mac.data(), m_config.eid.ID_LENGTH);
     return true;
 }
 
 void DoIPServer::setVin(const std::string &VINString) {
 
-    m_config.vin = DoIpVin(VINString);
+    m_config.vin = Vin(VINString);
 }
 
-void DoIPServer::setVin(const DoIpVin &vin) {
+void DoIPServer::setVin(const Vin &vin) {
     if (!isValidVin(vin)) {
         m_doipLog->warn("Invalid VIN provided {}", fmt::streamed(vin));
     }
@@ -158,11 +158,11 @@ void DoIPServer::setLogicalGatewayAddress(DoIPAddress logicalAddress) {
 }
 
 void DoIPServer::setEid(const uint64_t inputEID) {
-    m_config.eid = DoIpEid(inputEID);
+    m_config.eid = EntityId(inputEID);
 }
 
 void DoIPServer::setGid(const uint64_t inputGID) {
-    m_config.gid = DoIpGid(inputGID);
+    m_config.gid = GroupId(inputGID);
 }
 
 void DoIPServer::setFurtherActionRequired(DoIPFurtherAction furtherActionRequired) {
