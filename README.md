@@ -2,6 +2,7 @@
 
 [![CI/CD Pipeline](https://github.com/Magolves/doip-server/actions/workflows/ci.yml/badge.svg)](https://github.com/Magolves/doip-server/actions/workflows/ci.yml)
 [![Coverage](https://raw.githubusercontent.com/Magolves/doip-server/badges/coverage-badge.svg)](https://github.com/Magolves/doip-server/actions/workflows/badge.yml)
+[![Codecov logo][codecov-image]][codecov-link]
 [![License](https://img.shields.io/github/license/Magolves/doip-server)](LICENSE)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/std/the-standard)
 [![CMake](https://img.shields.io/badge/CMake-3.15+-blue.svg)](https://cmake.org/)
@@ -122,3 +123,8 @@ The [original fork](https://github.com/Magolves/libdoip) is no longer maintained
 - [ISO 13400-2:2019(en) Road vehicles — Diagnostic communication over Internet Protocol (DoIP) — Part 2: Transport protocol and network layer services](<https://www.iso.org/obp/ui/#iso:std:iso:13400:-2:ed-2:v1:en>)
 - [Specification of Diagnostic over IP](<https://www.autosar.org/fileadmin/standards/R20-11/CP/AUTOSAR_SWS_DiagnosticOverIP.pdf>)
 - [Diagnostics Over Internet Protocol (DoIP) in CANoe](<https://cdn.vector.com/cms/content/know-how/_application-notes/AN-IND-1-026_DoIP_in_CANoe.pdf>)
+
+[1]: https://codecov.io/
+[codecov-badge]:   https://codecov.io/gh/codecov/Magolves/doip-server/branch/main/graph/badge.svg
+[codecov-link]:    https://codecov.io/gh/codecov/Magolves/doip-server
+[codecov-image]:   https://github.com/codecov/example-cpp1-cmake/blob/master/img/Codecov.png
