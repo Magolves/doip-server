@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
     console->info("DoIP Server is running. Waiting for connections...");
 
-    while (server->isRunning()) {
+    while (server->isUdpRunnining()) {
         if (stopRequested.load()) {
             server->stop();
             break;

@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 
     console->info("DoIP Minimal Server is running");
 
-    while (server->isRunning()) {
+    while (server->isTcpRunnining()) {
         // Main loop can perform other tasks or just sleep
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }

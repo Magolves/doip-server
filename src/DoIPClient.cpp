@@ -4,6 +4,7 @@
 #include "util/Logger.h"
 #include <cerrno>  // for errno
 #include <cstring> // for strerror
+#include <thread>
 
 using namespace doip;
 
@@ -141,7 +142,10 @@ void DoIPClient::tcpThreadFunction() {
             continue;
         } else {
             receiveRetries = 5;
-            m_model->messageReceived(*this, optMsg.value());
+            if (!m_model->messageReceived(*this, optMsg.value())) {
+                m_log->info("Model requested to close TCP connection");
+                m_tcpRunning.store(false);
+            }
         }
     }
 }
@@ -165,7 +169,7 @@ bool DoIPClient::activateRouting() {
         return false;
     }
 
-    auto optLogicalAddress = msg.getLogicalAddress();
+    auto optLogicalAddress = msg.getSourceAddress();
     if (!optLogicalAddress) {
         m_log->error("Routing Activation Response missing logical address");
         return false;
@@ -176,13 +180,15 @@ bool DoIPClient::activateRouting() {
     return true;
 }
 
-void DoIPClient::sendMessage(const DoIPMessage &msg) {
-    m_messageQueue.push(msg);
-}
-
 void DoIPClient::closeTcpConnection() {
     m_tcpRunning.store(false);
-    m_tcpThread.join();
+
+    // Only join if we're not being called from the TCP thread itself
+    // This prevents deadlock when called from within a callback
+    if (m_tcpThread.get_id() != std::this_thread::get_id() && m_tcpThread.joinable()) {
+        m_tcpThread.join();
+    }
+
     m_connected.close();
     m_tcpSocket.close();
 }
@@ -199,6 +205,10 @@ bool DoIPClient::reconnectServer() {
     return startTcpConnection();
 }
 
+void DoIPClient::sendMessage(const DoIPMessage &msg) {
+    m_messageQueue.push(msg);
+}
+
 ssize_t DoIPClient::sendDoIPMessage(const DoIPMessage &msg) {
     m_log->info("TX: {}", fmt::streamed(msg));
     return write(m_tcpSocket.get(), msg.data(), msg.size());
@@ -208,8 +218,8 @@ ssize_t DoIPClient::sendRoutingActivationRequest() {
     return sendDoIPMessage(message::makeRoutingActivationRequest(m_sourceAddress));
 }
 
-ssize_t DoIPClient::sendDiagnosticMessage(const ByteArray &payload) {
-    return sendDoIPMessage(message::makeDiagnosticMessage(m_sourceAddress, m_logicalAddress, payload));
+void DoIPClient::sendDiagnosticMessage(const ByteArray &payload) {
+    sendMessage(message::makeDiagnosticMessage(m_sourceAddress, m_logicalAddress, payload));
 }
 
 ssize_t DoIPClient::sendAliveCheckResponse() {

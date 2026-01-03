@@ -20,8 +20,6 @@ namespace doip {
 
 const int _maxDataSize = 64;
 
-
-
 class DoIPClient {
 
   public:
@@ -52,7 +50,7 @@ class DoIPClient {
      * Sends a diagnostic message to the server
      * @param payload          data that will be given to the ecu
      */
-    ssize_t sendDiagnosticMessage(const ByteArray &payload);
+    void sendDiagnosticMessage(const ByteArray &payload);
 
     /**
      * Sends a alive check response containing the clients source address to the server
@@ -82,9 +80,9 @@ class DoIPClient {
     DoIPFurtherAction m_furtherActionReqResult = DoIPFurtherAction::NoFurtherAction;
 
     void tcpThreadFunction();
-    bool activateRouting();
-    ssize_t sendDoIPMessage(const DoIPMessage &msg);
-    std::optional<DoIPMessage> receiveMessage();
+    [[nodiscard]] bool activateRouting();
+    [[nodiscard]] ssize_t sendDoIPMessage(const DoIPMessage &msg);
+    [[nodiscard]] std::optional<DoIPMessage> receiveMessage();
 
 
     void parseVehicleIdentificationResponse(const DoIPMessage &msg);

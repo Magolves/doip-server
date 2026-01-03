@@ -69,7 +69,8 @@ int main(int argc, char *argv[]) {
     doipReceiver.push_back(thread(&listenTcp));
     logger->info("Starting TCP listener threads");
 
-    while (server->isRunning()) {
+    while (server->isUdpRunning()) {
+        FIXME: std::this_thread::, check for tcp, too
         sleep(1);
     }
 

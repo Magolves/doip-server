@@ -20,9 +20,10 @@ namespace doip {
             (void)logicalAddress;
         }
 
-        virtual void messageReceived(DoIPClient& client, const DoIPMessage& msg) {
+        virtual bool messageReceived(DoIPClient& client, const DoIPMessage& msg) {
             (void)client;
             (void)msg;
+            return false; // return false to indicate quit
         }
 
         virtual void messageSent(DoIPClient& client, const DoIPMessage& msg) {
