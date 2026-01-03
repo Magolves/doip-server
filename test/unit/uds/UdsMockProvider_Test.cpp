@@ -1,10 +1,12 @@
-#include <doctest/doctest.h>
-#include <memory>
 
-#include "../doctest_aux.h"
 #include "uds/UdsMockProvider.h"
 #include "uds/UdsDefaultModel.h"
 #include "uds/IUdsModel.h"
+
+#include "doctest_aux.h"
+
+#include <doctest/doctest.h>
+#include <memory>
 
 using namespace doip;
 using namespace doip::uds;
