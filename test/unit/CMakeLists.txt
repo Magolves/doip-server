@@ -4,7 +4,6 @@ add_executable(${DOIP_SERVER_LIB_NAME}_tests
     DoIPMessage_Test.cpp
     DoIPServer_Test.cpp
     Identifiers_Test.cpp
-    MacAddress_Test.cpp
     Main_Test.cpp
     Misc_Test.cpp
     Stream_Test.cpp
@@ -13,17 +12,14 @@ add_executable(${DOIP_SERVER_LIB_NAME}_tests
     VehicleIdentification_Test.cpp
     cli/ServerConfigCLI_Test.cpp
     tp/MockTransport_Test.cpp
-    uds/UdsDiagnosticTroubleCode_Test.cpp
     uds/UdsMockProvider_Test.cpp
-    uds/UdsMock_Test.cpp
-    uds/UdsSecurityAccess_Test.cpp
-    util/ByteArray_Test.cpp
 )
 
 target_link_libraries(${DOIP_SERVER_LIB_NAME}_tests
     PRIVATE
-        ${DOIP_SERVER_LIB_NAME}
-        doctest::doctest
+    doctest::doctest
+    doctest::doctest-aux
+    ${DOIP_SERVER_LIB_NAME}
 )
 
 # Configure relaxed clang-tidy settings for tests (disable magic-numbers and nodiscard warnings)

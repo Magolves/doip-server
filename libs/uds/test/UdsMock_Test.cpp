@@ -1,7 +1,7 @@
 #include <doctest/doctest.h>
 #include <memory>
 
-#include "../doctest_aux.h"
+#include "doctest_aux.h"
 #include "uds/UdsMock.h"
 #include "uds/IUdsModel.h"
 #include "uds/UdsDefaultModel.h"

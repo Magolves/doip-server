@@ -66,10 +66,10 @@ class DoIPClient {
 
     std::shared_ptr<spdlog::logger> m_log = spdlog::stdout_color_mt("doip-client");
 
-    DoIpVin m_vin{0};
+    Vin m_vin{0};
     DoIPAddress m_logicalAddress = ZERO_ADDRESS;
-    DoIpEid m_eid{0};
-    DoIpGid m_gid{0};
+    EntityId m_eid{0};
+    GroupId m_gid{0};
     DoIPFurtherAction m_furtherActionReqResult = DoIPFurtherAction::NoFurtherAction;
 
     void parseVehicleIdentificationResponse(const DoIPMessage& msg);

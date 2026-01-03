@@ -17,7 +17,7 @@
 
 #include "cli/ServerConfig.h"
 #include "DoIPFurtherAction.h"
-#include "DoIPIdentifiers.h"
+#include "Vin.h"
 #include "DoIPServerModel.h"
 #include "tp/IServerTransport.h"
 #include "DoIPDefaultConnection.h"
@@ -148,15 +148,15 @@ class DoIPServer {
      */
     void setVin(const std::string &VINString);
     /**
-     * @brief Set VIN from a `DoIpVin` instance.
+     * @brief Set VIN from a `Vin` instance.
      * @param vin VIN value.
      */
-    void setVin(const DoIpVin &vin);
+    void setVin(const Vin &vin);
     /**
      * @brief Get current VIN.
      * @return Reference to configured VIN.
      */
-    const DoIpVin &getVin() const { return m_config.vin; }
+    const Vin &getVin() const { return m_config.vin; }
 
     /**
      * @brief Set EID value.
@@ -167,7 +167,7 @@ class DoIPServer {
      * @brief Get current EID.
      * @return Reference to configured EID.
      */
-    const DoIpEid &getEid() const { return m_config.eid; }
+    const EntityId &getEid() const { return m_config.eid; }
 
     /**
      * @brief Set GID value.
@@ -178,7 +178,7 @@ class DoIPServer {
      * @brief Get current GID.
      * @return Reference to configured GID.
      */
-    const DoIpGid &getGid() const { return m_config.gid; }
+    const GroupId &getGid() const { return m_config.gid; }
 
     /**
      * @brief Get current further action requirement status.

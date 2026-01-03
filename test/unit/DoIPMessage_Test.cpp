@@ -154,10 +154,10 @@ TEST_SUITE("DoIPMessage") {
     }
 
     TEST_CASE("Message factory - makeVehicleIdentificationResponse") {
-        DoIpVin vin = DoIpVin("1HGCM82633A123456");
+        Vin vin = Vin("1HGCM82633A123456");
         DoIPAddress logicalAddress = DoIPAddress(1234);
-        DoIpEid entityType = DoIpEid("EID123");
-        DoIpGid groupId = DoIpGid("GID456");
+        EntityId entityType = EntityId("EID123");
+        GroupId groupId = GroupId("GID456");
         DoIPFurtherAction furtherAction = DoIPFurtherAction::RoutingActivationForCentralSecurity;
         DoIPMessage msg = message::makeVehicleIdentificationResponse(vin, logicalAddress, entityType, groupId, furtherAction);
 

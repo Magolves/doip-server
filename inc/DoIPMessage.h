@@ -10,6 +10,8 @@
 #include "util/ByteArray.h"
 #include "DoIPAddress.h"
 #include "DoIPFurtherAction.h"
+#include "Vin.h"
+
 #include "DoIPIdentifiers.h"
 #include "DoIPNegativeAck.h"
 #include "DoIPNegativeDiagnosticAck.h"
@@ -322,10 +324,10 @@ class DoIPMessage {
      *
      * @return std::optional<DoIPAddress> The VIN if present, std::nullopt otherwise
      */
-    std::optional<DoIpVin> getVin() const {
+    std::optional<Vin> getVin() const {
         auto payloadRef = getPayload();
         if (getPayloadType() == DoIPPayloadType::VehicleIdentificationResponse && payloadRef.second >= 17) {
-            return DoIpVin(payloadRef.first, 17);
+            return Vin(payloadRef.first, 17);
         }
         return std::nullopt;
     }
@@ -335,10 +337,10 @@ class DoIPMessage {
      *
      * @return std::optional<DoIPAddress> The VIN if present, std::nullopt otherwise
      */
-    std::optional<DoIpEid> getEid() const {
+    std::optional<EntityId> getEid() const {
         auto payloadRef = getPayload();
         if (getPayloadType() == DoIPPayloadType::VehicleIdentificationResponse && payloadRef.second >= 25) {
-            return DoIpEid(payloadRef.first + 19, 6);
+            return EntityId(payloadRef.first + 19, 6);
         }
         return std::nullopt;
     }
@@ -348,10 +350,10 @@ class DoIPMessage {
      *
      * @return std::optional<DoIPAddress> The VIN if present, std::nullopt otherwise
      */
-    std::optional<DoIpGid> getGid() const {
+    std::optional<GroupId> getGid() const {
         auto payloadRef = getPayload();
         if (getPayloadType() == DoIPPayloadType::VehicleIdentificationResponse && payloadRef.second >= 31) {
-            return DoIpGid(payloadRef.first + 25, 6);
+            return GroupId(payloadRef.first + 25, 6);
         }
         return std::nullopt;
     }
@@ -537,10 +539,10 @@ inline DoIPMessage makeVehicleIdentificationRequest() {
  * @return DoIPMessage the vehicle identification response message
  */
 inline DoIPMessage makeVehicleIdentificationResponse(
-    const DoIpVin &vin,
+    const Vin &vin,
     const DoIPAddress &logicalAddress,
-    const DoIpEid &entityType,
-    const DoIpGid &groupId,
+    const EntityId &entityType,
+    const GroupId &groupId,
     DoIPFurtherAction furtherAction = DoIPFurtherAction::NoFurtherAction,
     DoIPSyncStatus syncStatus = DoIPSyncStatus::GidVinSynchronized) {
 

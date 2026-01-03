@@ -1,6 +1,7 @@
 #ifndef SERVERCONFIG_H
 #define SERVERCONFIG_H
 
+#include "Vin.h"
 #include "DoIPIdentifiers.h"
 #include "DoIPAddress.h"
 
@@ -10,11 +11,11 @@ namespace doip {
  */
 struct ServerConfig {
     // EID and GID as fixed identifiers (6 bytes). Default: zeros.
-    DoIpEid eid = DoIpEid::Zero;
-    DoIpGid gid = DoIpGid::Zero;
+    EntityId eid = EntityId::Zero;
+    GroupId gid = GroupId::Zero;
 
     // VIN as fixed identifier (17 bytes). Default: zeros.
-    DoIpVin vin = DoIpVin::Zero;
+    Vin vin = Vin::Zero;
 
     // Logical/server address (default 0x0028)
     DoIPAddress logicalAddress = DoIPAddress(0x0028);
