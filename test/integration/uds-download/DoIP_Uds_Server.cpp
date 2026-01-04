@@ -1,6 +1,6 @@
 #include "DoIPAddress.h"
 #include "DoIPServer.h"
-#include "ExampleDoIPServerModel.h"
+#include "uds/UdsServerModel.h"
 
 #include <csignal>
 #include <fstream>
@@ -31,6 +31,7 @@ static void handle_signal(int) {
 int main(int argc, char *argv[]) {
     ServerConfig cfg;
     cfg.loopback = true;                                            // For testing, use loopback announcements
+    cfg.logicalAddress = DoIPAddress(0x00E0);                       // Match client logical address used in tests
     cfg.daemonize = argc > 1 && std::string(argv[1]) == "--daemon"; // For testing, run as daemon
     auto console = spdlog::stdout_color_mt("doip-server");
 
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]) {
     server = std::make_unique<DoIPServer>(cfg);
 
     // Set up TCP first to ensure transport creates/binds both TCP and UDP sockets
-    if (!server->setupTcpSocket([]() { return std::make_unique<ExampleDoIPServerModel>(); })) {
+    if (!server->setupTcpSocket([]() { return std::make_unique<uds::UdsServerModel>(); })) {
         console->critical("Failed to set up TCP socket");
         return 1;
     }
