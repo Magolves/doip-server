@@ -757,19 +757,19 @@ inline std::ostream &operator<<(std::ostream &os, const DoIPMessage &msg) {
         os << ansi::green << "|Alive Check " << sa.value() << " ✓";
     } else if (msg.getPayloadType() == DoIPPayloadType::RoutingActivationRequest) {
         auto sa = msg.getSourceAddress();
-        os << ansi::yellow << "|Routing activation? " << sa.value();
+        os << ansi::yellow << "|Routing activation? " << std::hex << sa.value() << std::dec;
     } else if (msg.getPayloadType() == DoIPPayloadType::RoutingActivationResponse) {
         auto sa = msg.getSourceAddress();
 
-        os << ansi::green << "|Routing activation " << sa.value() << " ✓";
+        os << ansi::green << "|Routing activation " << std::hex << sa.value() << std::dec << " ✓";
     } else if (msg.getPayloadType() == DoIPPayloadType::DiagnosticMessage) {
         auto payload = msg.getDiagnosticMessagePayload();
         auto sa = msg.getSourceAddress();
         auto ta = msg.getTargetAddress();
         os << "|Diag ";
-        os << ansi::bold_magenta << sa.value();
+        os << ansi::bold_magenta << std::hex << sa.value() << std::dec;
         os << ansi::reset << " -> ";
-        os << ansi::bold_magenta << ta.value();
+        os << ansi::bold_magenta << std::hex << ta.value() << std::dec;
 
         os << ansi::reset << ": ";
         os << ansi::bold_blue;
