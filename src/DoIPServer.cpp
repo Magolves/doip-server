@@ -81,14 +81,14 @@ void DoIPServer::connectionHandlerThread(std::unique_ptr<DoIPDefaultConnection> 
  * Set up a tcp socket, so the socket is ready to accept a connection
  */
 bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFactory) {
-    m_doipLog->debug("Setting up TCP transport on port {}", DOIP_SERVER_TCP_PORT);
+    m_doipLog->debug("Setting up TCP transport on port {}", DOIP_TCP_DEFAULT_PORT);
 
     if (!m_transport) {
         m_doipLog->error("Transport not initialized");
         return false;
     }
 
-    if (!m_transport->setup(DOIP_SERVER_TCP_PORT)) {
+    if (!m_transport->setup(DOIP_TCP_DEFAULT_PORT)) {
         m_doipLog->error("Failed to setup transport");
         return false;
     }
@@ -100,7 +100,7 @@ bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFacto
         tcpListenerThread(std::move(factory));
     });
 
-    m_tcpLog->info("TCP transport ready and listening on port {}", DOIP_SERVER_TCP_PORT);
+    m_tcpLog->info("TCP transport ready and listening on port {}", DOIP_TCP_DEFAULT_PORT);
     return true;
 }
 
@@ -230,6 +230,10 @@ std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(std::function<U
     }
 
     auto model = modelFactory ? modelFactory() : std::make_unique<DefaultDoIPServerModel>();
+    // Ensure server model uses configured logical address
+    if (model) {
+        model->serverAddress = m_config.logicalAddress;
+    }
     m_tcpLog->info("Accepted new TCP connection, model {} (factory {})",
                    model->getModelName(),
                    modelFactory ? "provided" : "default");

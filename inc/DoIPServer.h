@@ -30,8 +30,6 @@ class DoIPDefaultConnection;
 
 const ServerConfig DefaultServerConfig{};
 
-constexpr int DOIP_SERVER_TCP_PORT = 13400;
-
 /**
  * @brief Callback invoked when a new TCP connection is established
  * @return DoIPServerModel to use for this connection, or std::nullopt to reject
