@@ -242,7 +242,7 @@ void DoIPDefaultConnection::handleRoutingActivated(DoIPServerEvent event, OptDoI
         return;
     default:
         m_log->warn("Received unsupported message type {} in Routing Activated state", fmt::streamed(message.getPayloadType()));
-        sendDiagnosticMessageResponse(ZERO_ADDRESS, DoIPNegativeDiagnosticAck::TransportProtocolError);
+        sendDiagnosticMessageResponse(ZERO_ADDRESS, DoIPDiagnosticAck::TransportProtocolError);
         // closeConnection(DoIPCloseReason::InvalidMessage);
         return;
     }
@@ -253,7 +253,7 @@ void DoIPDefaultConnection::handleRoutingActivated(DoIPServerEvent event, OptDoI
     }
     if (sourceAddress.value() != getClientAddress()) {
         m_log->warn("Received diagnostic message from unexpected source address {}", fmt::streamed(sourceAddress.value()));
-        sendDiagnosticMessageResponse(sourceAddress.value(), DoIPNegativeDiagnosticAck::InvalidSourceAddress);
+        sendDiagnosticMessageResponse(sourceAddress.value(), DoIPDiagnosticAck::InvalidSourceAddress);
         // closeConnection(DoIPCloseReason::InvalidMessage);
         return;
     }
@@ -265,7 +265,7 @@ void DoIPDefaultConnection::handleRoutingActivated(DoIPServerEvent event, OptDoI
     restartStateTimer();
 
     // nack -> stop here
-    if (ack.has_value()) {
+    if (ack != DoIPDiagnosticAck::PositiveAck) {
         transitionTo(DoIPServerState::RoutingActivated);
         return;
     }
@@ -281,7 +281,7 @@ void DoIPDefaultConnection::handleRoutingActivated(DoIPServerEvent event, OptDoI
             transitionTo(DoIPServerState::RoutingActivated);
         } else if (result == DoIPDownstreamResult::Error) {
             // request could not be handled -> issue error and back to idle
-            sendDiagnosticMessageResponse(sourceAddress.value(), DoIPNegativeDiagnosticAck::TargetUnreachable);
+            sendDiagnosticMessageResponse(sourceAddress.value(), DoIPDiagnosticAck::TargetUnreachable);
             transitionTo(DoIPServerState::RoutingActivated);
         }
     }
@@ -308,7 +308,7 @@ void DoIPDefaultConnection::handleWaitAliveCheckResponse(DoIPServerEvent event, 
         return;
     default:
         m_log->warn("Received unsupported message type {} in Wait Alive Check Response state", fmt::streamed(message.getPayloadType()));
-        sendDiagnosticMessageResponse(ZERO_ADDRESS, DoIPNegativeDiagnosticAck::TransportProtocolError);
+        sendDiagnosticMessageResponse(ZERO_ADDRESS, DoIPDiagnosticAck::TransportProtocolError);
         return;
     }
 }
@@ -386,11 +386,11 @@ ssize_t DoIPDefaultConnection::sendDiagnosticMessageResponse(const DoIPAddress &
     DoIPAddress targetAddress = getServerAddress();
     DoIPMessage message;
 
-    if (ack.has_value()) {
+    if (ack != DoIPDiagnosticAck::PositiveAck) {
         message = message::makeDiagnosticNegativeResponse(
             sourceAddress,
             targetAddress,
-            ack.value(),
+            ack,
             ByteArray{} // Empty payload
         );
     } else {
@@ -416,7 +416,7 @@ DoIPDiagnosticAck DoIPDefaultConnection::notifyDiagnosticMessage(const DoIPMessa
     if (m_serverModel->onDiagnosticMessage) {
         return m_serverModel->onDiagnosticMessage(*this, msg);
     }
-    return std::nullopt;
+    return DoIPDiagnosticAck::PositiveAck;
 }
 
 void DoIPDefaultConnection::notifyConnectionClosed(DoIPCloseReason reason) {
@@ -452,7 +452,7 @@ void DoIPDefaultConnection::receiveDownstreamResponse(const ByteArray &response,
     if (result == DoIPDownstreamResult::Handled) {
         sendProtocolMessage(message::makeDiagnosticMessage(sa, ta, response));
     } else {
-        sendProtocolMessage(message::makeDiagnosticNegativeResponse(sa, ta, DoIPNegativeDiagnosticAck::TargetUnreachable, {}));
+        sendProtocolMessage(message::makeDiagnosticNegativeResponse(sa, ta, DoIPDiagnosticAck::TargetUnreachable, {}));
     }
     transitionTo(DoIPServerState::RoutingActivated);
 }

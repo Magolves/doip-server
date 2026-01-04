@@ -15,7 +15,7 @@
 
 #include "DoIPIdentifiers.h"
 #include "DoIPNegativeAck.h"
-#include "DoIPNegativeDiagnosticAck.h"
+#include "DoIPDiagnosticAck.h"
 #include "DoIPPayloadType.h"
 #include "DoIPRoutingActivationType.h"
 #include "DoIPSyncStatus.h"
@@ -193,6 +193,18 @@ class DoIPMessage {
             return {nullptr, 0};
         }
         return {m_data.data() + DOIP_DIAG_HEADER_SIZE, m_data.size() - DOIP_DIAG_HEADER_SIZE};
+    }
+
+    std::optional<DoIPDiagnosticAck> getDiagnosticAck() const noexcept {
+        auto payloadRef = getPayload();
+        if (getPayloadType() == DoIPPayloadType::DiagnosticMessageNegativeAck && payloadRef.second >= 1) {
+            return static_cast<DoIPDiagnosticAck>(payloadRef.first[0]);
+        }
+
+        if (getPayloadType() == DoIPPayloadType::DiagnosticMessageAck && payloadRef.second >= 1) {
+            return DoIPDiagnosticAck::PositiveAck;
+        }
+        return std::nullopt;
     }
 
     /**
@@ -631,7 +643,7 @@ inline DoIPMessage makeDiagnosticPositiveResponse(
 inline DoIPMessage makeDiagnosticNegativeResponse(
     const DoIPAddress &sa,
     const DoIPAddress &ta,
-    DoIPNegativeDiagnosticAck nack,
+    DoIPDiagnosticAck nack,
     const ByteArray &msg_payload) {
 
     ByteArray payload;
@@ -737,7 +749,7 @@ inline std::ostream &operator<<(std::ostream &os, const DoIPMessage &msg) {
             os << ansi::red << "|Diag NACK <invalid>";
             return os;
         }
-        os << ansi::red << "|Diag NACK " << static_cast<DoIPNegativeDiagnosticAck>(payload.first[0]);
+        os << ansi::red << "|Diag NACK " << static_cast<DoIPDiagnosticAck>(payload.first[0]);
     } else if (msg.getPayloadType() == DoIPPayloadType::AliveCheckRequest) {
         os << ansi::yellow << "|Alive Check?";
     } else if (msg.getPayloadType() == DoIPPayloadType::AliveCheckResponse) {

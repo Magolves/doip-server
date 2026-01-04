@@ -63,7 +63,7 @@ DoIPDiagnosticAck DoIPConnection::notifyDiagnosticMessage(const DoIPMessage &msg
         return m_serverModel->onDiagnosticMessage(*this, msg);
     }
     // Default: ACK
-    return std::nullopt;
+    return DoIPDiagnosticAck::PositiveAck;
 }
 
 void DoIPConnection::notifyConnectionClosed(DoIPCloseReason reason) {
