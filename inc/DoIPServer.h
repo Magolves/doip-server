@@ -88,15 +88,19 @@ class DoIPServer {
      * @brief Check if the UDP server is currently running
      */
     [[nodiscard]]
-    bool isUdpRunnining() const noexcept { return m_udpRunning.load(); }
+    bool isUdpRunning() const noexcept { return m_udpRunning.load(); }
 
     /**
      * @brief Check if the TCP server is currently running
      */
     [[nodiscard]]
-    bool isTcpRunnining() const noexcept { return m_tcpRunning.load(); }
+    bool isTcpRunning() const noexcept { return m_tcpRunning.load(); }
 
-    FIXME: Add isRunning()
+    /**
+     * @brief Check if UDP and/or TCP server is currently running
+     */
+    [[nodiscard]]
+    bool isRunning() const noexcept { return isTcpRunning() || isUdpRunning(); }
 
     /**
      * @brief Set the number of vehicle announcements to send.

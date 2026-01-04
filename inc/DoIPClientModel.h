@@ -4,6 +4,7 @@
 #include "DoIPMessage.h"
 
 #include <memory>
+#include <iostream>
 
 namespace doip {
     class DoIPClient;
@@ -20,7 +21,12 @@ namespace doip {
             (void)logicalAddress;
         }
 
-        virtual bool messageReceived(DoIPClient& client, const DoIPMessage& msg) {
+        virtual void diagMessageAcked(DoIPClient& client, DoIPDiagnosticAck ack) {
+            (void)client;
+            (void)ack;
+        }
+
+        virtual bool diagMessageReceived(DoIPClient& client, const DoIPMessage& msg) {
             (void)client;
             (void)msg;
             return false; // return false to indicate quit
@@ -29,6 +35,11 @@ namespace doip {
         virtual void messageSent(DoIPClient& client, const DoIPMessage& msg) {
             (void)client;
             (void)msg;
+        }
+
+        virtual void error(DoIPClient& client, const std::string& errorMsg) {
+            (void)client;
+            std::cerr << "DoIPClientModel Error: " << errorMsg << std::endl;
         }
     };
 

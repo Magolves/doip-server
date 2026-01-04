@@ -16,7 +16,7 @@ TEST_SUITE("DoIPServer Tests") {
 
         DoIPServerFixture() {
             // Setup code here if needed
-            CHECK(server.isUdpRunnining() == false);
+            CHECK(server.isUdpRunning() == false);
             CHECK(server.getVin() == Vin::Zero);
             CHECK(server.getEid() == EntityId::Zero);
             CHECK(server.getGid() == GroupId::Zero);

@@ -20,7 +20,7 @@ struct  MyDoIPClientModel : public DoIPClientModel {
         std::cout << "Message sent: " << msg << std::endl;
     }
 
-    bool messageReceived(DoIPClient& client, const DoIPMessage& msg) override {
+    bool diagMessageReceived(DoIPClient& client, const DoIPMessage& msg) override {
         (void)client;
         std::cout << "Message received: " << msg << std::endl;
 

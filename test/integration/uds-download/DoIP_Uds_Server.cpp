@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
     console->info("DoIP Server is running. Waiting for connections...");
 
-    while (server->isUdpRunnining()) {
+    while (server->isUdpRunning()) {
         if (stopRequested.load()) {
             server->stop();
             break;

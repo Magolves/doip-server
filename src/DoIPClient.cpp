@@ -33,8 +33,9 @@ bool DoIPClient::startTcpConnection() {
                 m_log->info("Connection to server established");
 
                 if (!activateRouting()) {
+                    m_log->error("Routing activation failed - connection closed");
+                    m_connected.close();
                     m_model->routingActivated(*this, false, m_logicalAddress);
-                    m_log->error("Routing activation failed");
                     return false;
                 }
 
@@ -115,7 +116,7 @@ void DoIPClient::tcpThreadFunction() {
     int sendRetries = 5;
     int receiveRetries = 5;
 
-    while (m_tcpRunning.load() && sendRetries > 0 && receiveRetries > 0) {
+    while (m_tcpRunning.load()) {
         if (m_messageQueue.empty()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
@@ -125,6 +126,11 @@ void DoIPClient::tcpThreadFunction() {
         m_messageQueue.pop(msg);
         if (sendDoIPMessage(msg) < 0) {
             --sendRetries;
+            if (sendRetries == 0) {
+                m_log->error("Exceeded maximum send retries, close connection");
+                m_tcpRunning.store(false);
+                break;
+            }
             m_log->error("Failed to send DoIP message from queue, retries left: {}", sendRetries);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
@@ -134,20 +140,82 @@ void DoIPClient::tcpThreadFunction() {
 
         sendRetries = 5;
 
+        // Receive response (ack or alive check)
+        auto optAck = receiveMessage();
+        if (optAck == std::nullopt) {
+            m_log->error("Failed to receive DoIP ack");
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        } else {
+            reactToMessage(optAck.value());
+        }
+
+        if (m_receiveState == ReceiveState::Quit) {
+            m_log->info("Receive state set to Quit, closing TCP thread");
+            break;
+        }
+
+        if (m_receiveState == ReceiveState::WaitForAckOrAliveCheck) {
+            continue;
+        }
+
         auto optMsg = receiveMessage();
         if (optMsg == std::nullopt) {
             --receiveRetries;
-            m_log->error("Failed to receive DoIP message in TCP thread, retries left: {}", receiveRetries);
+            if (receiveRetries == 0) {
+                m_log->error("Exceeded maximum receive retries, close connection");
+                m_tcpRunning.store(false);
+                break;
+            }
+            m_log->error("Failed to receive DoIP message, retries left: {}", receiveRetries);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
         } else {
             receiveRetries = 5;
-            if (!m_model->messageReceived(*this, optMsg.value())) {
-                m_log->info("Model requested to close TCP connection");
-                m_tcpRunning.store(false);
-            }
+            reactToMessage(optMsg.value());
         }
     }
+}
+
+void DoIPClient::reactToMessage(const DoIPMessage &msg) {
+    if (m_receiveState == ReceiveState::WaitForAckOrAliveCheck) {
+        switch (msg.getPayloadType()) {
+        case DoIPPayloadType::AliveCheckRequest:
+            m_log->info("Received Alive Check Request, sending Alive Check Response");
+            if (sendAliveCheckResponse() <= 0) {
+                m_log->error("Failed to send Alive Check Response");
+                m_model->error(*this, "Failed to send Alive Check Response");
+            }
+            break;
+        case DoIPPayloadType::DiagnosticMessageNegativeAck:
+            m_model->diagMessageAcked(*this, msg.getDiagnosticAck().value_or(DoIPDiagnosticAck::TransportProtocolError));
+            break;
+        case DoIPPayloadType::DiagnosticMessageAck:
+            // received diag msg ack -> proceed to receive diag messages
+            updateReceiveState(ReceiveState::WaitForDiagnosticMessage);
+            m_model->diagMessageAcked(*this, DoIPDiagnosticAck::PositiveAck);
+            break;
+        default:
+            m_log->warn("Received unexpected message type ({}) while waiting for Ack or Alive Check", fmt::streamed(msg.getPayloadType()));
+            m_model->error(*this, "Received unexpected message type");
+            break;
+        }
+    } else if (m_receiveState == ReceiveState::WaitForDiagnosticMessage) {
+        // Process diagnostic message
+        auto payloadType = msg.getPayloadType();
+        switch (payloadType) {
+        case DoIPPayloadType::DiagnosticMessage: {
+            m_model->diagMessageReceived(*this, msg);
+            break;
+        }
+        default:
+            m_log->warn("Received unhandled DoIP message type: {}", fmt::streamed(payloadType));
+            m_model->error(*this, "Received unexpected message type");
+            break;
+        }
+        updateReceiveState(ReceiveState::WaitForAckOrAliveCheck);
+    }
+
 }
 
 bool DoIPClient::activateRouting() {

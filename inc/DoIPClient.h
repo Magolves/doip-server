@@ -2,8 +2,8 @@
 #ifndef DOIPCLIENT_H
 #define DOIPCLIENT_H
 
-#include "DoIPConfig.h"
 #include "DoIPClientModel.h"
+#include "DoIPConfig.h"
 #include "DoIPMessage.h"
 #include "util/Logger.h"
 #include "util/Socket.h"
@@ -21,6 +21,11 @@ namespace doip {
 const int _maxDataSize = 64;
 
 class DoIPClient {
+    enum class ReceiveState {
+        WaitForAckOrAliveCheck,
+        WaitForDiagnosticMessage,
+        Quit,
+    };
 
   public:
     DoIPClient(UniqueDoIPClientModelPtr model = std::make_unique<DoIPClientModel>()) : m_model(std::move(model)) { m_receiveBuf.reserve(DOIP_MAXIMUM_MTU); }
@@ -36,7 +41,6 @@ class DoIPClient {
     void startUdpConnection();
     void startAnnouncementListener();
     void closeUdpConnection();
-
 
     ssize_t sendRoutingActivationRequest();
     std::optional<DoIPMessage> receiveRoutingActivationResponse();
@@ -59,6 +63,14 @@ class DoIPClient {
     void setSourceAddress(const DoIPAddress &address);
     void printVehicleInformationResponse();
 
+  protected:
+    void updateReceiveState(ReceiveState newState) {
+        if (m_receiveState != newState) {
+            m_log->info("Receive state changed from {} to {}", static_cast<int>(m_receiveState), static_cast<int>(newState));
+            m_receiveState = newState;
+        }
+    }
+
   private:
     UniqueDoIPClientModelPtr m_model;
     ByteArray m_receiveBuf;
@@ -69,7 +81,6 @@ class DoIPClient {
     int m_broadcast = 1;
     struct sockaddr_in m_serverAddress, m_clientAddress, m_announcementAddress;
 
-
     std::shared_ptr<spdlog::logger> m_log = spdlog::stdout_color_mt("doip-client");
 
     DoIPAddress m_sourceAddress = DoIPAddress(0xE000);
@@ -79,11 +90,14 @@ class DoIPClient {
     GroupId m_gid{0};
     DoIPFurtherAction m_furtherActionReqResult = DoIPFurtherAction::NoFurtherAction;
 
+    ReceiveState m_receiveState = ReceiveState::WaitForAckOrAliveCheck;
+
     void tcpThreadFunction();
     [[nodiscard]] bool activateRouting();
     [[nodiscard]] ssize_t sendDoIPMessage(const DoIPMessage &msg);
     [[nodiscard]] std::optional<DoIPMessage> receiveMessage();
 
+    void reactToMessage(const DoIPMessage &msg);
 
     void parseVehicleIdentificationResponse(const DoIPMessage &msg);
 
