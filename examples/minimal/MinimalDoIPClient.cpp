@@ -5,7 +5,7 @@
 using namespace doip;
 
 struct  MyDoIPClientModel : public DoIPClientModel {
-    void routingActivated(DoIPClient& client, bool activated, DoIPAddress logicalAddress) override {
+    void routingActivationFinished(DoIPClient& client, bool activated, DoIPAddress logicalAddress) override {
         (void)client;
         if (activated) {
             std::cout << "Routing activated with logical address: " << logicalAddress << std::endl;
@@ -20,11 +20,19 @@ struct  MyDoIPClientModel : public DoIPClientModel {
         std::cout << "Message sent: " << msg << std::endl;
     }
 
-    bool diagMessageReceived(DoIPClient& client, const DoIPMessage& msg) override {
+    void diagMessageAcked(DoIPClient& client, DoIPDiagnosticAck ack) override {
+        (void)client;
+        std::cout << "Diagnostic message acknowledged with: " << static_cast<int>(ack) << std::endl;
+    }
+
+    void diagMessageReceived(DoIPClient& client, const DoIPMessage& msg) override {
         (void)client;
         std::cout << "Message received: " << msg << std::endl;
+    }
 
-        return false; // return false to indicate quit
+    void error(DoIPClient& client, const std::string& errorMsg) override {
+        (void)client;
+        std::cerr << "Error: " << errorMsg << std::endl;
     }
 };
 

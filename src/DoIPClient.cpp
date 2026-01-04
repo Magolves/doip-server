@@ -11,7 +11,7 @@ using namespace doip;
 /*
  *Set up the connection between client and server
  */
-bool DoIPClient::startTcpConnection() {
+bool DoIPClient::startTcpConnection(const char *inet_address, uint16_t port) {
     int tmpSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (tmpSocket >= 0) {
@@ -19,9 +19,9 @@ bool DoIPClient::startTcpConnection() {
         m_log->info("Client TCP-Socket created successfully");
 
         bool connectedFlag = false;
-        const char *ipAddr = "127.0.0.1";
+        const char *ipAddr = inet_address;
         m_serverAddress.sin_family = AF_INET;
-        m_serverAddress.sin_port = htons(DOIP_UDP_DISCOVERY_PORT);
+        m_serverAddress.sin_port = htons(port);
         inet_aton(ipAddr, &(m_serverAddress.sin_addr));
 
         int retries = 3;
@@ -35,11 +35,11 @@ bool DoIPClient::startTcpConnection() {
                 if (!activateRouting()) {
                     m_log->error("Routing activation failed - connection closed");
                     m_connected.close();
-                    m_model->routingActivated(*this, false, m_logicalAddress);
+                    m_model->routingActivationFinished(*this, false, m_logicalAddress);
                     return false;
                 }
 
-                m_model->routingActivated(*this, true, m_logicalAddress);
+                m_model->routingActivationFinished(*this, true, m_logicalAddress);
 
                 m_tcpRunning.store(true);
                 m_tcpThread = std::thread(&DoIPClient::tcpThreadFunction, this);
@@ -299,7 +299,7 @@ ssize_t DoIPClient::sendAliveCheckResponse() {
  */
 std::optional<DoIPMessage> DoIPClient::receiveMessage() {
 
-    ssize_t bytesRead = recv(m_tcpSocket.get(), m_receiveBuf.data(), _maxDataSize, 0);
+    ssize_t bytesRead = recv(m_tcpSocket.get(), m_receiveBuf.data(), DOIP_MAXIMUM_DIAG_PAYLOAD, 0);
 
     if (bytesRead < 0) {
         m_log->error("Error receiving data from server");
@@ -342,7 +342,7 @@ void DoIPClient::receiveUdpMessage() {
     setsockopt(m_udpSocket.get(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
     int bytesRead;
-    bytesRead = recvfrom(m_udpSocket.get(), m_receiveBuf.data(), _maxDataSize, 0, reinterpret_cast<struct sockaddr *>(&m_clientAddress), &length);
+    bytesRead = recvfrom(m_udpSocket.get(), m_receiveBuf.data(), DOIP_MAXIMUM_MTU, 0, reinterpret_cast<struct sockaddr *>(&m_clientAddress), &length);
 
     if (bytesRead < 0) {
         if (errno == EAGAIN) {
@@ -372,13 +372,13 @@ bool DoIPClient::receiveVehicleAnnouncement() {
 
     m_log->debug("Listening for Vehicle Announcements on port {}", DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
 
-    // Set socket to non-blocking mode for timeout
+    // Set socket timeout for announcement reception
     struct timeval timeout;
-    timeout.tv_sec = 2; // 2 second timeout
+    timeout.tv_sec = 5; // increase to 5 seconds for robustness in CI
     timeout.tv_usec = 0;
     setsockopt(m_udpAnnouncementSocket.get(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
-    bytesRead = recvfrom(m_udpAnnouncementSocket.get(), m_receiveBuf.data(), _maxDataSize, 0,
+    bytesRead = recvfrom(m_udpAnnouncementSocket.get(), m_receiveBuf.data(), DOIP_MAXIMUM_MTU, 0,
                          reinterpret_cast<struct sockaddr *>(&m_announcementAddress), &length);
     if (bytesRead < 0) {
         if (errno == EAGAIN) {
