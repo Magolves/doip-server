@@ -6,7 +6,6 @@
 #include "util/Logger.h"
 
 #include "DoIPServer.h"
-#include "ExampleDoIPServerModel.h"
 
 #include "util/Daemonize.h"
 
@@ -65,7 +64,7 @@ int main(int argc, char *argv[]) {
     server->setAnnounceNum(100);       // Send 100 announcements = 50 seconds of announcements (enough for parallel test execution)
 
     // Set up TCP first to ensure transport creates/binds both TCP and UDP sockets
-    if (!server->setupTcpSocket([]() { return std::make_unique<ExampleDoIPServerModel>(); })) {
+    if (!server->setupTcpSocket()) {
         console->critical("Failed to set up TCP socket");
         return 1;
     }
