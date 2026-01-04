@@ -1,24 +1,26 @@
 #ifndef DOIPMESSAGE_IMPROVED_H
 #define DOIPMESSAGE_IMPROVED_H
 
+
+#include "DoIPConfig.h"
+#include "DoIPAddress.h"
+#include "DoIPDiagnosticAck.h"
+#include "DoIPFurtherAction.h"
+#include "DoIPIdentifiers.h"
+#include "DoIPIdentifiers.h"
+#include "DoIPNegativeAck.h"
+#include "DoIPPayloadType.h"
+#include "DoIPRoutingActivationType.h"
+#include "DoIPSyncStatus.h"
+#include "util/AnsiColors.h"
+#include "util/ByteArray.h"
+#include "Vin.h"
+
 #include <iomanip>
 #include <iostream>
 #include <optional>
 #include <functional>
 #include <stdint.h>
-
-#include "util/AnsiColors.h"
-#include "util/ByteArray.h"
-#include "DoIPAddress.h"
-#include "DoIPFurtherAction.h"
-#include "Vin.h"
-
-#include "DoIPIdentifiers.h"
-#include "DoIPNegativeAck.h"
-#include "DoIPDiagnosticAck.h"
-#include "DoIPPayloadType.h"
-#include "DoIPRoutingActivationType.h"
-#include "DoIPSyncStatus.h"
 
 namespace doip {
 
@@ -48,20 +50,6 @@ constexpr uint8_t ISO_13400_2025 = 4;
 constexpr uint8_t PROTOCOL_VERSION = ISO_13400_2019;
 constexpr uint8_t PROTOCOL_VERSION_INV = static_cast<uint8_t>(~PROTOCOL_VERSION);
 
-/**
- * @brief Positive ack for diagnostic message (table 24)
- */
-constexpr uint8_t DIAGNOSTIC_MESSAGE_ACK = 0;
-
-/**
- * @brief Size of the DoIP header
- */
-constexpr size_t DOIP_HEADER_SIZE = 8;
-
-/**
- * @brief Size of the DoIP diagnostic message header
- */
-constexpr size_t DOIP_DIAG_HEADER_SIZE = DOIP_HEADER_SIZE + 4;
 
 class DoIPMessage;
 using OptDoIPMessage = std::optional<DoIPMessage>;
