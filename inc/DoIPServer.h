@@ -240,6 +240,11 @@ class DoIPServer {
     // Automatic mode state
     std::atomic<bool> m_udpRunning{false};
     std::atomic<bool> m_tcpRunning{false};
+    // migrated
+    Socket m_udpSocket{-1};
+    bool m_loopback;
+    struct sockaddr_in m_broadcastAddress{};
+
     std::vector<std::thread> m_workerThreads;
     std::mutex m_mutex;
 
@@ -253,6 +258,12 @@ class DoIPServer {
 
     void connectionHandlerThread(std::unique_ptr<DoIPDefaultConnection> connection);
 
+    ssize_t sendBroadcast(const DoIPMessage &msg, uint16_t port);
+
+    /**
+     * @brief Configure broadcast/multicast settings
+     */
+    void configureBroadcast();
     void udpAnnouncementThread();
 };
 

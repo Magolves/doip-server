@@ -58,7 +58,7 @@ class IServerTransport {
      * @param port The destination port for broadcast
      * @return Number of bytes sent, or -1 on error
      */
-    virtual ssize_t sendBroadcast(const DoIPMessage &msg, uint16_t port) = 0;
+    //virtual ssize_t sendBroadcast(const DoIPMessage &msg, uint16_t port) = 0;
 
     /**
      * @brief Close the server transport and cleanup resources

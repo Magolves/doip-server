@@ -26,7 +26,7 @@ void TcpServerTransport::closeSocket() {
         if (m_log) m_log->info("Closing TCP server transport (destructor)");
 
             m_tcpServerSocket.close();
-            m_udpSocket.close();
+            //m_udpSocket.close();
     }
 }
 
@@ -39,13 +39,13 @@ bool TcpServerTransport::setup(uint16_t port) {
         return false;
     }
 
-    if (!setupUdpSocket()) {
-        m_log->error("Failed to setup UDP socket");
-        m_udpSocket.close();
-        return false;
-    }
+    // if (!setupUdpSocket()) {
+    //     m_log->error("Failed to setup UDP socket");
+    //     m_udpSocket.close();
+    //     return false;
+    // }
 
-    configureBroadcast();
+    // configureBroadcast();
     m_isActive = true;
     m_log->info("TCP server transport ready on port {}", port);
     return true;
@@ -96,68 +96,6 @@ bool TcpServerTransport::setupTcpSocket() {
     return true;
 }
 
-bool TcpServerTransport::setupUdpSocket() {
-    m_log->debug("Setting up UDP socket for broadcasts");
-
-    int tmpUdpSocket = socket(AF_INET, SOCK_DGRAM, 0);
-    if (tmpUdpSocket < 0) {
-        m_log->error("Failed to create UDP socket: {}", strerror(errno));
-        return false;
-    }
-
-    auto port = DOIP_UDP_DISCOVERY_PORT;
-
-    // Set socket timeout
-    struct timeval timeout;
-    timeout.tv_sec = 1;
-    timeout.tv_usec = 0;
-    setsockopt(tmpUdpSocket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-
-    // Enable SO_REUSEADDR
-    int reuse = 1;
-    setsockopt(tmpUdpSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
-
-    // Bind to discovery port
-    struct sockaddr_in udp_addr;
-    memset(&udp_addr, 0, sizeof(udp_addr));
-    udp_addr.sin_family = AF_INET;
-    udp_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    udp_addr.sin_port = htons(port);
-
-    if (bind(tmpUdpSocket, reinterpret_cast<struct sockaddr *>(&udp_addr), sizeof(udp_addr)) < 0) {
-        m_log->error("Failed to bind UDP socket to port {}: {}", port, strerror(errno));
-        ::close(tmpUdpSocket);
-        tmpUdpSocket = -1;
-        return false;
-    }
-
-    m_udpSocket.reset(tmpUdpSocket);
-
-    m_log->info("UDP socket bound to port {}", port);
-    return true;
-}
-
-void TcpServerTransport::configureBroadcast() {
-    if (m_loopback) {
-        m_log->debug("Configuring for loopback mode");
-        m_broadcastAddress.sin_family = AF_INET;
-        m_broadcastAddress.sin_addr.s_addr = inet_addr("127.0.0.1");
-        m_broadcastAddress.sin_port = htons(DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
-    } else {
-        m_log->debug("Configuring for broadcast mode");
-
-        // Enable broadcast
-        int broadcast = 1;
-        if (setsockopt(m_udpSocket.get(), SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
-            m_log->warn("Failed to enable broadcast: {}", strerror(errno));
-        }
-
-        m_broadcastAddress.sin_family = AF_INET;
-        m_broadcastAddress.sin_addr.s_addr = inet_addr("255.255.255.255");
-        m_broadcastAddress.sin_port = htons(DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
-    }
-}
-
 std::unique_ptr<IConnectionTransport> TcpServerTransport::acceptConnection() {
     if (!m_isActive || m_tcpServerSocket.get() < 0) {
         return nullptr;
@@ -185,34 +123,6 @@ std::unique_ptr<IConnectionTransport> TcpServerTransport::acceptConnection() {
     return std::make_unique<TcpConnectionTransport>(client_socket);
 }
 
-ssize_t TcpServerTransport::sendBroadcast(const DoIPMessage &msg, uint16_t port) {
-    if (m_udpSocket.get() < 0) {
-        m_log->error("UDP socket not initialized, cannot send broadcast");
-        return -1;
-    }
-
-    // Override port if specified
-    struct sockaddr_in dest_addr = m_broadcastAddress;
-    if (port != 0) {
-        dest_addr.sin_port = htons(port);
-    }
-
-    ssize_t sent = sendto(
-        m_udpSocket.get(),
-        msg.data(),
-        msg.size(),
-        0,
-        reinterpret_cast<struct sockaddr *>(&dest_addr),
-        sizeof(dest_addr));
-
-    if (sent < 0) {
-        m_log->error("Failed to send broadcast: {}", strerror(errno));
-        return -1;
-    }
-
-    m_log->debug("Sent {} bytes via UDP broadcast", sent);
-    return sent;
-}
 
 void TcpServerTransport::close() {
     closeSocket();
