@@ -31,12 +31,14 @@ class DoIPClient {
 
     [[nodiscard]] bool startTcpConnection(const char *inet_address = "127.0.0.1", uint16_t port = DOIP_TCP_DEFAULT_PORT);
 
-    [[nodiscard]] bool isTcpConnected() const noexcept { return m_connected.valid(); }
+    [[nodiscard]] bool isTcpRunning() const noexcept { return m_tcpRunning.load(); }
+
     [[nodiscard]] bool reconnectServer();
     void closeTcpConnection();
 
 
     void startUdpConnection();
+    [[nodiscard]] bool isUdpRunning() const noexcept { return m_udpRunning.load(); }
     void startAnnouncementListener();
     void closeUdpConnection();
 

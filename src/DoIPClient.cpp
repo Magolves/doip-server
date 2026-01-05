@@ -202,10 +202,15 @@ void DoIPClient::reactToMessage(const DoIPMessage &msg) {
         }
     } else if (m_receiveState == ReceiveState::WaitForDiagnosticMessage) {
         // Process diagnostic message
+        auto newState = ReceiveState::WaitForAckOrAliveCheck;
         auto payloadType = msg.getPayloadType();
         switch (payloadType) {
         case DoIPPayloadType::DiagnosticMessage: {
-            m_model->diagMessageReceived(*this, msg);
+            auto result = m_model->diagMessageReceived(*this, msg);
+            if (result == CallbackResult::Stop) {
+                newState = ReceiveState::Quit;
+                m_tcpRunning.store(false);
+            }
             break;
         }
         default:
@@ -213,7 +218,7 @@ void DoIPClient::reactToMessage(const DoIPMessage &msg) {
             m_model->error(*this, "Received unexpected message type");
             break;
         }
-        updateReceiveState(ReceiveState::WaitForAckOrAliveCheck);
+        updateReceiveState(newState);
     }
 
 }

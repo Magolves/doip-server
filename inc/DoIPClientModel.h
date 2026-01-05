@@ -9,6 +9,11 @@
 namespace doip {
     class DoIPClient;
 
+    enum class CallbackResult {
+        Continue,
+        Stop,
+    };
+
 
     struct DoIPClientModel {
         virtual ~DoIPClientModel() = default;
@@ -43,10 +48,12 @@ namespace doip {
          *
          * @param client the DoIP client
          * @param msg the diagnostic message received
+         * @return CallbackResult indicating whether to continue processing or stop. By default it returns Stop.
          */
-        virtual void diagMessageReceived(DoIPClient& client, const DoIPMessage& msg) {
+        virtual CallbackResult diagMessageReceived(DoIPClient& client, const DoIPMessage& msg) {
             (void)client;
             (void)msg;
+            return CallbackResult::Stop;
         }
 
         /**
