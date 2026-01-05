@@ -1,5 +1,6 @@
 #include "DoIPClient.h"
 #include "DoIPMessage.h"
+#include "DoIPTimes.h"
 #include "DoIPPayloadType.h"
 #include "util/Logger.h"
 #include <cerrno>  // for errno
@@ -8,50 +9,9 @@
 
 using namespace doip;
 
-/*
- *Set up the connection between client and server
- */
-bool DoIPClient::startTcpConnection(const char *inet_address, uint16_t port) {
-    int tmpSocket = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (tmpSocket >= 0) {
-        m_tcpSocket.reset(tmpSocket);
-        m_log->info("Client TCP-Socket created successfully");
-
-        bool connectedFlag = false;
-        const char *ipAddr = inet_address;
-        m_serverAddress.sin_family = AF_INET;
-        m_serverAddress.sin_port = htons(port);
-        inet_aton(ipAddr, &(m_serverAddress.sin_addr));
-
-        int retries = 3;
-        while (!connectedFlag && retries > 0) {
-            int tmpConnSocket = connect(m_tcpSocket.get(), reinterpret_cast<struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress));
-            if (tmpConnSocket != -1) {
-                m_connected.reset(tmpConnSocket);
-                connectedFlag = true;
-                m_log->info("Connection to server established");
-
-                if (!activateRouting()) {
-                    m_log->error("Routing activation failed - connection closed");
-                    m_connected.close();
-                    m_model->routingActivationFinished(*this, false, m_logicalAddress);
-                    return false;
-                }
-
-                m_model->routingActivationFinished(*this, true, m_logicalAddress);
-
-                m_tcpRunning.store(true);
-                m_tcpThread = std::thread(&DoIPClient::tcpThreadFunction, this);
-                return true;
-            }
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            retries--;
-        }
-    }
-
-    return false;
-}
+// -------------------------------------------------------------------
+// UDP Connection and Thread Handling
+// -------------------------------------------------------------------
 
 void DoIPClient::startUdpConnection() {
 
@@ -82,16 +42,16 @@ void DoIPClient::startAnnouncementListener() {
     int tmpUdpAnnouncementSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (tmpUdpAnnouncementSocket >= 0) {
-        m_udpAnnouncementSocket.reset(tmpUdpAnnouncementSocket);
+        m_udpVehicleAnnSocket.reset(tmpUdpAnnouncementSocket);
         m_log->info("Client-Announcement-Socket created successfully");
 
         // Allow socket reuse for broadcast
         int reuse = 1;
-        setsockopt(m_udpAnnouncementSocket.get(), SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+        setsockopt(m_udpVehicleAnnSocket.get(), SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
 
         // Enable broadcast reception
         int broadcast = 1;
-        if (setsockopt(m_udpAnnouncementSocket.get(), SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
+        if (setsockopt(m_udpVehicleAnnSocket.get(), SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
             m_log->error("Failed to enable broadcast reception: {}", strerror(errno));
         } else {
             m_log->info("Broadcast reception enabled for announcements");
@@ -102,7 +62,7 @@ void DoIPClient::startAnnouncementListener() {
         m_announcementAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 
         // Bind to port 13401 for Vehicle Announcements
-        if (bind(m_udpAnnouncementSocket.get(), reinterpret_cast<struct sockaddr *>(&m_announcementAddress), sizeof(m_announcementAddress)) < 0) {
+        if (bind(m_udpVehicleAnnSocket.get(), reinterpret_cast<struct sockaddr *>(&m_announcementAddress), sizeof(m_announcementAddress)) < 0) {
             m_log->error("Failed to bind announcement socket to port {}: {}", DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT, strerror(errno));
         } else {
             m_log->info("Announcement socket bound to port {} successfully", DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
@@ -110,6 +70,168 @@ void DoIPClient::startAnnouncementListener() {
     } else {
         m_log->error("Failed to create announcement socket: {}", strerror(errno));
     }
+}
+
+void DoIPClient::udpThreadFunction() {
+    while (m_udpRunning.load()) {
+        receiveUdpMessage();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
+
+void DoIPClient::closeUdpConnection() {
+    m_udpSocket.close();
+    if (m_udpVehicleAnnSocket.get() >= 0) {
+        m_udpVehicleAnnSocket.close();
+    }
+}
+
+void DoIPClient::receiveUdpMessage() {
+
+    unsigned int length = sizeof(m_clientAddress);
+
+    // Set socket to timeout after 3 seconds
+    struct timeval timeout;
+    timeout.tv_sec = static_cast<time_t>(doip::times::client::UdpMessageTimeout.count() / 1000);
+    timeout.tv_usec = 0;
+    setsockopt(m_udpSocket.get(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+    int bytesRead;
+    bytesRead = recvfrom(m_udpSocket.get(), m_receiveBuf.data(), DOIP_MAXIMUM_MTU, 0, reinterpret_cast<struct sockaddr *>(&m_clientAddress), &length);
+
+    if (bytesRead < 0) {
+        if (errno == EAGAIN) {
+            m_log->warn("Timeout waiting for UDP response");
+        } else {
+            m_log->error("Error receiving UDP message: {}", strerror(errno));
+        }
+        return;
+    }
+
+    m_log->info("Received {} bytes from UDP", bytesRead);
+
+    auto optMmsg = DoIPMessage::tryParse(m_receiveBuf.data(), static_cast<size_t>(bytesRead));
+    if (!optMmsg.has_value()) {
+        m_log->error("Failed to parse DoIP message from UDP data");
+        return;
+    }
+
+    DoIPMessage msg = optMmsg.value();
+
+    m_log->info("RX: {}", fmt::streamed(msg));
+}
+
+bool DoIPClient::receiveVehicleAnnouncement() {
+    unsigned int length = sizeof(m_announcementAddress);
+    int bytesRead;
+
+    m_log->debug("Listening for Vehicle Announcements on port {}", DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
+
+    // Set socket timeout for announcement reception
+    struct timeval timeout;
+    timeout.tv_sec = 5; // increase to 5 seconds for robustness in CI
+    timeout.tv_usec = 0;
+    setsockopt(m_udpVehicleAnnSocket.get(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+    bytesRead = recvfrom(m_udpVehicleAnnSocket.get(), m_receiveBuf.data(), DOIP_MAXIMUM_MTU, 0,
+                         reinterpret_cast<struct sockaddr *>(&m_announcementAddress), &length);
+    if (bytesRead < 0) {
+        if (errno == EAGAIN) {
+            m_log->warn("Timeout waiting for Vehicle Announcement");
+        } else {
+            m_log->error("Error receiving Vehicle Announcement: {}", strerror(errno));
+        }
+        return false;
+    }
+
+    auto optMsg = DoIPMessage::tryParse(m_receiveBuf.data(), static_cast<size_t>(bytesRead));
+    if (!optMsg.has_value()) {
+        m_log->error("Failed to parse Vehicle Announcement message");
+        return false;
+    }
+
+    DoIPMessage msg = optMsg.value();
+    // Parse and display the announcement information
+    if (msg.getPayloadType() == DoIPPayloadType::VehicleIdentificationResponse) {
+        m_log->info("Vehicle Announcement received: {}", fmt::streamed(msg));
+        parseVehicleIdentificationResponse(msg);
+        return true;
+    }
+    return false;
+}
+
+ssize_t DoIPClient::sendVehicleIdentificationRequest(const char *inet_address) {
+
+    int setAddressError = inet_aton(inet_address, &(m_serverAddress.sin_addr));
+
+    if (setAddressError != 0) {
+        m_log->info("Address set successfully");
+    } else {
+        m_log->error("Could not set address. Try again");
+    }
+
+    int socketError = setsockopt(m_udpSocket.get(), SOL_SOCKET, SO_BROADCAST, &m_broadcast, sizeof(m_broadcast));
+
+    if (socketError == 0) {
+        m_log->info("Broadcast Option set successfully");
+    }
+
+    DoIPMessage vehicleIdReq = message::makeVehicleIdentificationRequest();
+
+    ssize_t bytesSent = sendto(m_udpSocket.get(), vehicleIdReq.data(), vehicleIdReq.size(), 0, reinterpret_cast<struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress));
+    m_log->info("Sent Vehicle Identification Request to {}:{}", inet_address, ntohs(m_serverAddress.sin_port));
+
+    if (bytesSent > 0) {
+        m_log->info("Sending Vehicle Identification Request");
+    }
+
+    return bytesSent;
+}
+
+// -------------------------------------------------------------------
+// TCP Connection and Thread Handling
+// -------------------------------------------------------------------
+
+bool DoIPClient::startTcpConnection(const char *inet_address, uint16_t port) {
+    int tmpSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (tmpSocket >= 0) {
+        m_tcpSocket.reset(tmpSocket);
+        m_log->info("Client TCP-Socket created successfully");
+
+        bool connectedFlag = false;
+        const char *ipAddr = inet_address;
+        m_serverAddress.sin_family = AF_INET;
+        m_serverAddress.sin_port = htons(port);
+        inet_aton(ipAddr, &(m_serverAddress.sin_addr));
+
+        int retries = 3;
+        while (!connectedFlag && retries > 0) {
+            int tmpConnSocket = connect(m_tcpSocket.get(), reinterpret_cast<struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress));
+            if (tmpConnSocket != -1) {
+                m_tcpClientSocket.reset(tmpConnSocket);
+                connectedFlag = true;
+                m_log->info("Connection to server established");
+
+                if (!activateRouting()) {
+                    m_log->error("Routing activation failed - connection closed");
+                    m_tcpClientSocket.close();
+                    m_model->routingActivationFinished(*this, false, m_logicalAddress);
+                    return false;
+                }
+
+                m_model->routingActivationFinished(*this, true, m_logicalAddress);
+
+                m_tcpRunning.store(true);
+                m_tcpThread = std::thread(&DoIPClient::tcpThreadFunction, this);
+                return true;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            retries--;
+        }
+    }
+
+    return false;
 }
 
 void DoIPClient::tcpThreadFunction() {
@@ -262,16 +384,10 @@ void DoIPClient::closeTcpConnection() {
         m_tcpThread.join();
     }
 
-    m_connected.close();
+    m_tcpClientSocket.close();
     m_tcpSocket.close();
 }
 
-void DoIPClient::closeUdpConnection() {
-    m_udpSocket.close();
-    if (m_udpAnnouncementSocket.get() >= 0) {
-        m_udpAnnouncementSocket.close();
-    }
-}
 
 bool DoIPClient::reconnectServer() {
     closeTcpConnection();
@@ -336,107 +452,6 @@ std::optional<DoIPMessage> DoIPClient::receiveMessage() {
     return msg;
 }
 
-void DoIPClient::receiveUdpMessage() {
-
-    unsigned int length = sizeof(m_clientAddress);
-
-    // Set socket to timeout after 3 seconds
-    struct timeval timeout;
-    timeout.tv_sec = 3;
-    timeout.tv_usec = 0;
-    setsockopt(m_udpSocket.get(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-
-    int bytesRead;
-    bytesRead = recvfrom(m_udpSocket.get(), m_receiveBuf.data(), DOIP_MAXIMUM_MTU, 0, reinterpret_cast<struct sockaddr *>(&m_clientAddress), &length);
-
-    if (bytesRead < 0) {
-        if (errno == EAGAIN) {
-            m_log->warn("Timeout waiting for UDP response");
-        } else {
-            m_log->error("Error receiving UDP message: {}", strerror(errno));
-        }
-        return;
-    }
-
-    m_log->info("Received {} bytes from UDP", bytesRead);
-
-    auto optMmsg = DoIPMessage::tryParse(m_receiveBuf.data(), static_cast<size_t>(bytesRead));
-    if (!optMmsg.has_value()) {
-        m_log->error("Failed to parse DoIP message from UDP data");
-        return;
-    }
-
-    DoIPMessage msg = optMmsg.value();
-
-    m_log->info("RX: {}", fmt::streamed(msg));
-}
-
-bool DoIPClient::receiveVehicleAnnouncement() {
-    unsigned int length = sizeof(m_announcementAddress);
-    int bytesRead;
-
-    m_log->debug("Listening for Vehicle Announcements on port {}", DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
-
-    // Set socket timeout for announcement reception
-    struct timeval timeout;
-    timeout.tv_sec = 5; // increase to 5 seconds for robustness in CI
-    timeout.tv_usec = 0;
-    setsockopt(m_udpAnnouncementSocket.get(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-
-    bytesRead = recvfrom(m_udpAnnouncementSocket.get(), m_receiveBuf.data(), DOIP_MAXIMUM_MTU, 0,
-                         reinterpret_cast<struct sockaddr *>(&m_announcementAddress), &length);
-    if (bytesRead < 0) {
-        if (errno == EAGAIN) {
-            m_log->warn("Timeout waiting for Vehicle Announcement");
-        } else {
-            m_log->error("Error receiving Vehicle Announcement: {}", strerror(errno));
-        }
-        return false;
-    }
-
-    auto optMsg = DoIPMessage::tryParse(m_receiveBuf.data(), static_cast<size_t>(bytesRead));
-    if (!optMsg.has_value()) {
-        m_log->error("Failed to parse Vehicle Announcement message");
-        return false;
-    }
-
-    DoIPMessage msg = optMsg.value();
-    // Parse and display the announcement information
-    if (msg.getPayloadType() == DoIPPayloadType::VehicleIdentificationResponse) {
-        m_log->info("Vehicle Announcement received: {}", fmt::streamed(msg));
-        parseVehicleIdentificationResponse(msg);
-        return true;
-    }
-    return false;
-}
-
-ssize_t DoIPClient::sendVehicleIdentificationRequest(const char *inet_address) {
-
-    int setAddressError = inet_aton(inet_address, &(m_serverAddress.sin_addr));
-
-    if (setAddressError != 0) {
-        m_log->info("Address set successfully");
-    } else {
-        m_log->error("Could not set address. Try again");
-    }
-
-    int socketError = setsockopt(m_udpSocket.get(), SOL_SOCKET, SO_BROADCAST, &m_broadcast, sizeof(m_broadcast));
-
-    if (socketError == 0) {
-        m_log->info("Broadcast Option set successfully");
-    }
-
-    DoIPMessage vehicleIdReq = message::makeVehicleIdentificationRequest();
-
-    ssize_t bytesSent = sendto(m_udpSocket.get(), vehicleIdReq.data(), vehicleIdReq.size(), 0, reinterpret_cast<struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress));
-    m_log->info("Sent Vehicle Identification Request to {}:{}", inet_address, ntohs(m_serverAddress.sin_port));
-
-    if (bytesSent > 0) {
-        m_log->info("Sending Vehicle Identification Request");
-    }
-
-    return bytesSent;
-}
 
 /**
  * Sets the source address for this client

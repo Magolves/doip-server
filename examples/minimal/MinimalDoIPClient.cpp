@@ -12,9 +12,15 @@ const std::vector<ByteArray> UDS_MESSAGES = {
 
 /**
  * @brief Example DoIP client model that handles callbacks.
- *
+ * It illustrates the usage of the DoIPClientModel interface.
  */
 struct MyDoIPClientModel : public DoIPClientModel {
+    /**
+     * @brief Callback when routing activation has finished.
+     * @param client the DoIP client
+     * @param activated true if routing was activated successfully, false otherwise
+     * @param logicalAddress the assigned logical address (if activated)
+     */
     void routingActivationFinished(DoIPClient &client, bool activated, DoIPAddress logicalAddress) override {
         (void)client;
         if (activated) {
@@ -25,20 +31,37 @@ struct MyDoIPClientModel : public DoIPClientModel {
         }
     }
 
+    /**
+     * @brief Callback when a DoIP message has been sent to the server.
+     * @param client the DoIP client
+     * @param msg the DoIP message that was sent
+    */
     void messageSent(DoIPClient &client, const DoIPMessage &msg) override {
         (void)client;
         std::cout << "Message sent: " << msg << std::endl;
     }
 
+    /**
+     * @brief Callback when a diagnostic message has been acknowledged by the server.
+     * Payload types for acknowledgments are DiagnosticMessagePositiveAck (0x8002) and DiagnosticMessageNegativeAck (0x8003).
+     * @param client the DoIP client
+     * @param ack the diagnostic acknowledgment received
+     */
     void diagMessageAcked(DoIPClient &client, DoIPDiagnosticAck ack) override {
         (void)client;
         std::cout << "Diagnostic message acknowledged with: " << static_cast<int>(ack) << std::endl;
     }
 
+    /**
+     * @brief Callback when a diagnostic message has (0x8001) been received from the server.
+     *
+     * @param client the DoIP client
+     * @param msg the diagnostic message received
+     * @return CallbackResult
+     */
     CallbackResult diagMessageReceived(DoIPClient &client, const DoIPMessage &msg) override {
         (void)client;
         std::cout << "Message received: " << msg << std::endl;
-        std::cout << "--> index: "  << udsMessageIndex << std::endl;
         return sendNextUdsMessage(client);
     }
 
@@ -52,30 +75,27 @@ struct MyDoIPClientModel : public DoIPClientModel {
 
         CallbackResult sendNextUdsMessage(DoIPClient &client) {
             if (udsMessageIndex < UDS_MESSAGES.size()) {
-                std::cout << "Sending UDS message " << (udsMessageIndex + 1) << "/" << UDS_MESSAGES.size() << std::endl;
                 client.sendDiagnosticMessage(UDS_MESSAGES[udsMessageIndex]);
             }
             // wait until the last message has been received
             udsMessageIndex++;
             return (udsMessageIndex <= UDS_MESSAGES.size()) ? CallbackResult::Continue : CallbackResult::Stop;
         }
-
-        // 0 -> 1
 };
 
 int main() {
+    // Assign the client model
     DoIPClient client(std::make_unique<MyDoIPClientModel>());
+    // Setup TCP connection to DoIP server 
     if (!client.startTcpConnection()) {
         std::cerr << "Failed to start TCP connection to DoIP server" << std::endl;
         return 1;
     }
 
-    // Wait a bit for communication to complete
     while (client.isTcpRunning()) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    // Clean up: close the connection (this will join the thread)
     client.closeTcpConnection();
 
     return 0;

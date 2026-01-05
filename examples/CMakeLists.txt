@@ -4,4 +4,5 @@ if (LINUX)
 endif()
 
 add_subdirectory(minimal)
+add_subdirectory(discover)
 

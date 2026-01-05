@@ -89,6 +89,7 @@ bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFacto
     }
 
     if (!m_transport->setup(DOIP_TCP_DEFAULT_PORT)) {
+        FIXME: setup only TCP port
         m_doipLog->error("Failed to setup transport");
         return false;
     }
@@ -115,6 +116,7 @@ void DoIPServer::closeTcpSocket() {
 
 bool DoIPServer::setupUdpSocket() {
     // UDP is already setup in TcpServerTransport
+    FIXME: setup UDP port here, not in setupTcpSocket
     m_udpRunning.store(true);
     m_workerThreads.emplace_back([this]() {
         udpAnnouncementThread();
@@ -212,8 +214,12 @@ void DoIPServer::udpAnnouncementThread() {
             m_udpLog->error("Failed to send announcement");
         }
 
+        // TODO: receive and log any UDP responses from clients
+
         usleep(m_config.announceInterval * 1000);
     }
+
+
 
     m_doipLog->info("Announcement thread stopped");
 }

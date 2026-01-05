@@ -105,6 +105,8 @@ bool TcpServerTransport::setupUdpSocket() {
         return false;
     }
 
+    auto port = DOIP_UDP_DISCOVERY_PORT;
+
     // Set socket timeout
     struct timeval timeout;
     timeout.tv_sec = 1;
@@ -120,10 +122,10 @@ bool TcpServerTransport::setupUdpSocket() {
     memset(&udp_addr, 0, sizeof(udp_addr));
     udp_addr.sin_family = AF_INET;
     udp_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    udp_addr.sin_port = htons(DOIP_UDP_DISCOVERY_PORT);
+    udp_addr.sin_port = htons(port);
 
     if (bind(tmpUdpSocket, reinterpret_cast<struct sockaddr *>(&udp_addr), sizeof(udp_addr)) < 0) {
-        m_log->error("Failed to bind UDP socket to port {}: {}", DOIP_UDP_DISCOVERY_PORT, strerror(errno));
+        m_log->error("Failed to bind UDP socket to port {}: {}", port, strerror(errno));
         ::close(tmpUdpSocket);
         tmpUdpSocket = -1;
         return false;
@@ -131,7 +133,7 @@ bool TcpServerTransport::setupUdpSocket() {
 
     m_udpSocket.reset(tmpUdpSocket);
 
-    m_log->info("UDP socket bound to port {}", DOIP_UDP_DISCOVERY_PORT);
+    m_log->info("UDP socket bound to port {}", port);
     return true;
 }
 

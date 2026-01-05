@@ -18,7 +18,6 @@
 
 namespace doip {
 
-
 class DoIPClient {
     enum class ReceiveState {
         WaitForAckOrAliveCheck,
@@ -36,18 +35,16 @@ class DoIPClient {
     [[nodiscard]] bool reconnectServer();
     void closeTcpConnection();
 
-
     void startUdpConnection();
     [[nodiscard]] bool isUdpRunning() const noexcept { return m_udpRunning.load(); }
     void startAnnouncementListener();
     void closeUdpConnection();
 
     // TODO: Make private later
-        void receiveUdpMessage();
+    void receiveUdpMessage();
     ssize_t sendVehicleIdentificationRequest(const char *inet_address);
     [[nodiscard]]
     bool receiveVehicleAnnouncement();
-
 
     /**
      * @brief Enqueues a DoIP message to the server
@@ -82,7 +79,8 @@ class DoIPClient {
   private:
     UniqueDoIPClientModelPtr m_model;
     ByteArray m_receiveBuf;
-    Socket m_tcpSocket, m_udpSocket, m_udpAnnouncementSocket, m_connected;
+    Socket m_tcpSocket, m_tcpClientSocket;
+    Socket m_udpSocket, m_udpVehicleAnnSocket;
     ThreadSafeQueue<DoIPMessage> m_messageQueue;
     std::atomic<bool> m_tcpRunning{false};
     std::atomic<bool> m_udpRunning{false};
@@ -101,12 +99,10 @@ class DoIPClient {
 
     ReceiveState m_receiveState = ReceiveState::WaitForAckOrAliveCheck;
 
-        ssize_t sendRoutingActivationRequest();
+    ssize_t sendRoutingActivationRequest();
     std::optional<DoIPMessage> receiveRoutingActivationResponse();
 
-
-
-        /**
+    /**
      * Sends a alive check response containing the clients source address to the server
      */
     ssize_t sendAliveCheckResponse();
@@ -118,11 +114,11 @@ class DoIPClient {
 
     void reactToMessage(const DoIPMessage &msg);
 
+    void udpThreadFunction();
     void parseVehicleIdentificationResponse(const DoIPMessage &msg);
 
     int emptyMessageCounter = 0;
 };
-
 
 } // namespace doip
 
