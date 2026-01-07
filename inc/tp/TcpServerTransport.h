@@ -43,7 +43,7 @@ class TcpServerTransport : public IServerTransport {
     std::string getIdentifier() const override;
 
   private:
-    Socket m_tcpServerSocket{-1};
+    Socket m_tcpServerSocket{};
     //--
     uint16_t m_port{0};
     //--bool m_loopback;

@@ -11,8 +11,7 @@
 namespace doip {
 
 TcpServerTransport::TcpServerTransport(bool loopback)
-    : m_loopback(loopback),
-      m_log(Logger::get("TcpServerTransport")) {
+    : m_log(Logger::get("TcpServerTransport")) {
     m_log->debug("TcpServerTransport created (loopback={})", loopback);
 }
 
@@ -74,7 +73,6 @@ bool TcpServerTransport::setupTcpSocket() {
     if (bind(tmpSocket, reinterpret_cast<const struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress)) < 0) {
         m_log->error("Failed to bind TCP socket to port {}: {}", m_port, strerror(errno));
         ::close(tmpSocket);
-        tmpSocket = -1;
         return false;
     }
 
@@ -86,7 +84,6 @@ bool TcpServerTransport::setupTcpSocket() {
     if (listen(tmpSocket, 5) < 0) {
         m_log->error("Failed to listen on TCP socket: {}", strerror(errno));
         ::close(tmpSocket);
-        tmpSocket = -1;
         return false;
     }
 

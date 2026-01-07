@@ -25,16 +25,6 @@ std::unique_ptr<IConnectionTransport> MockServerTransport::acceptConnection() {
     return nullptr;
 }
 
-ssize_t MockServerTransport::sendBroadcast(const DoIPMessage &msg, uint16_t port) {
-    (void)port;
-    if (!m_isActive) {
-        return -1;
-    }
-
-    m_broadcastQueue.push(msg);
-    return static_cast<ssize_t>(msg.size());
-}
-
 void MockServerTransport::close() {
     m_isActive = false;
     clearQueues();

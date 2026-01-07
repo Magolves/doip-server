@@ -26,7 +26,7 @@ class DoIPClient {
     };
 
   public:
-    DoIPClient(UniqueDoIPClientModelPtr model = std::make_unique<DoIPClientModel>()) : m_model(std::move(model)) { m_receiveBuf.reserve(DOIP_MAXIMUM_MTU); }
+    explicit DoIPClient(UniqueDoIPClientModelPtr model = std::make_unique<DoIPClientModel>()) : m_model(std::move(model)) { m_receiveBuf.reserve(DOIP_MAXIMUM_MTU); }
 
     [[nodiscard]] bool startTcpConnection(const char *inet_address = "127.0.0.1", uint16_t port = DOIP_TCP_DEFAULT_PORT);
 

@@ -21,6 +21,7 @@
 #include "DoIPServerModel.h"
 #include "tp/IServerTransport.h"
 #include "DoIPDefaultConnection.h"
+#include "util/Socket.h"
 
 namespace doip {
 

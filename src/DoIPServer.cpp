@@ -27,7 +27,8 @@ DoIPServer::DoIPServer(const ServerConfig &config)
       m_doipLog(Logger::get("server")),
       m_udpLog(Logger::getUdp()),
       m_tcpLog(Logger::getTcp()),
-      m_transport(std::make_unique<TcpServerTransport>(config.loopback)) {
+      m_transport(std::make_unique<TcpServerTransport>(config.loopback)),
+      m_loopback(config.loopback) {
 
     setLoopbackMode(m_config.loopback);
 }
@@ -89,7 +90,6 @@ bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFacto
     }
 
     if (!m_transport->setup(DOIP_TCP_DEFAULT_PORT)) {
-        FIXME: setup only TCP port
         m_doipLog->error("Failed to setup transport");
         return false;
     }

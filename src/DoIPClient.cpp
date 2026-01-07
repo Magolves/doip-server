@@ -92,7 +92,8 @@ void DoIPClient::receiveUdpMessage() {
 
     // Set socket to timeout after 3 seconds
     struct timeval timeout;
-    timeout.tv_sec = static_cast<time_t>(doip::times::client::UdpMessageTimeout.count() / 1000);
+    //timeout.tv_sec = static_cast<time_t>(doip::times::client::UdpMessageTimeout.count() / 1000);
+    timeout.tv_sec = doip::times::client::UdpMessageTimeout.count() / 1000;
     timeout.tv_usec = 0;
     setsockopt(m_udpSocket.get(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 

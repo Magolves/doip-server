@@ -29,7 +29,7 @@ class MockServerTransport : public IServerTransport {
     // IServerTransport interface
     bool setup(uint16_t port) override;
     std::unique_ptr<IConnectionTransport> acceptConnection() override;
-    ssize_t sendBroadcast(const DoIPMessage &msg, uint16_t port) override;
+    //--ssize_t sendBroadcast(const DoIPMessage &msg, uint16_t port) override;
     void close() override;
     bool isActive() const override;
     std::string getIdentifier() const override;
