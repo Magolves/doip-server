@@ -17,10 +17,13 @@ int main(int argc, char *argv[]) {
     // for discovery check we use relaxed announcement settings
     server->setAnnounceInterval(500);  // Send announcements every 500ms for faster discovery
     server->setAnnounceNum(100);       // Send 100 announcements = 50 seconds of announcements (enough for parallel test execution)
+    server->setVin("WVWZZZ1JZ3W386752");
+    server->setGid(123456);
+    server->setEid(654321);
 
     // Start announcement thread after sockets are bound
      // Set up TCP first to ensure transport creates/binds both TCP and UDP sockets
-    if (!server->setupTcpSocket()) {
+    if (!server->setupTcpSocket([]() { return std::make_unique<uds::UdsServerModel>(); })) {
         console->critical("Failed to set up TCP socket");
         return 1;
     }
@@ -34,7 +37,7 @@ int main(int argc, char *argv[]) {
 
     console->info("DoIP UDP Server is running");
 
-    while (server->isUdpRunning()) {
+    while (server->isRunning()) {
         // Main loop can perform other tasks or just sleep
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }

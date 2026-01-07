@@ -227,6 +227,10 @@ class DoIPClient:
             print(f"  EID: {eid}")
             print(f"  GID: {gid}")
 
+            # assert(vin == "WVWZZZ1JZ3W386752")
+            # assert(eid == 123456)
+            # assert(eid == 654321)
+
             self.server_ip = server_ip
             self.target_address = logical_address
 
@@ -329,6 +333,9 @@ class DoIPClient:
                 nack_code = payload[4] if len(payload) > 4 else 0
                 print(f"  Diagnostic message NACK: 0x{nack_code:02X}")
                 return False
+
+            response = self.tcp_socket.recv(4096)
+            header = DoIPHeader.unpack(response)
 
             # Wait for actual UDS response
             if header.payload_type != DOIP_DIAGNOSTIC_MESSAGE:
