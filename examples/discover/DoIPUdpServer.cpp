@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
     // for discovery check we use relaxed announcement settings
     server->setAnnounceInterval(500);  // Send announcements every 500ms for faster discovery
-    server->setAnnounceNum(100);       // Send 100 announcements = 50 seconds of announcements (enough for parallel test execution)
+    server->setAnnounceNum(10);       // Send 100 announcements = 50 seconds of announcements (enough for parallel test execution)
     server->setVin("WVWZZZ1JZ3W386752");
     server->setGid(123456);
     server->setEid(654321);

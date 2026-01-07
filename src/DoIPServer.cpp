@@ -254,7 +254,38 @@ void DoIPServer::udpAnnouncementThread() {
         usleep(m_config.announceInterval * 1000);
     }
 
-    TODO: Wait for vehicle requests
+    m_udpLog->info("Listening for vehicle requests...");
+    while(m_udpRunning.load()) {
+        std::array<uint8_t, DOIP_MAXIMUM_MTU> receive;
+        ssize_t result = recv(m_udpSocket.get(), receive.data(), DOIP_MAXIMUM_MTU, 0);
+
+        if (result <= 0) {
+            m_udpLog->warn("Receive {}", result);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+
+        const auto& optMsg = DoIPMessage::tryParse(receive.data(), static_cast<size_t>(result));
+        if (!optMsg.has_value()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            m_udpLog->error("Received invalid message");
+            continue;
+        }
+
+        const auto& msg = optMsg.value();
+        if (msg.getPayloadType() == DoIPPayloadType::VehicleIdentificationRequest) {
+            const auto& rsp = doip::message::makeVehicleIdentificationResponse(
+                m_config.vin,
+                m_config.logicalAddress,
+                m_config.eid,
+                m_config.gid
+            );
+            m_udpLog->info("Send {}", fmt::streamed(rsp));
+            write(m_udpSocket.get(), rsp.data(), rsp.size());
+        } else {
+            m_udpLog->warn("Unexpected payload type: {}", fmt::streamed(msg));
+        }
+    }
 
 
     m_doipLog->info("Announcement thread stopped");
