@@ -254,6 +254,7 @@ void DoIPServer::udpAnnouncementThread() {
         usleep(m_config.announceInterval * 1000);
     }
 
+    TODO: Wait for vehicle requests
 
 
     m_doipLog->info("Announcement thread stopped");
