@@ -46,6 +46,7 @@ if (WITH_INTEGRATION_TEST)
     add_custom_target(
         copy_test_script_discover ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh
+
     )
 
     add_test(
@@ -57,5 +58,6 @@ if (WITH_INTEGRATION_TEST)
         TIMEOUT 20
         DEPENDS copy_test_script_discover_cs
         LABELS "integration"
+        RESOURCE_LOCK port_13400
     )
 endif()

@@ -65,5 +65,7 @@ if (WITH_INTEGRATION_TEST)
         )
     set_tests_properties(Integration-UdsDownload PROPERTIES
         DEPENDS "copy_uds_download_script"
+        LABELS "integration"
+        RESOURCE_LOCK port_13400
     )
 endif()

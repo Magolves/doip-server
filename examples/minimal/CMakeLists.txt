@@ -42,5 +42,6 @@ if (WITH_INTEGRATION_TEST)
         TIMEOUT 20
         DEPENDS copy_test_script_minimal_cs
         LABELS "integration"
+        RESOURCE_LOCK port_13400
     )
 endif()

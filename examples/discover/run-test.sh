@@ -13,7 +13,7 @@ CLIENT_EXIT=$?
 # Kill server
 kill $SERVER_PID
 
-sleep 1
+sleep 2
 
 # Print logs for debugging
 echo "=== Server Log ==="

@@ -10,6 +10,8 @@ CLIENT_EXIT=$?
 
 kill $SERVER_PID
 
+sleep 1
+
 # Print logs for debugging
 echo "=== Server Log ==="
 tail server.log

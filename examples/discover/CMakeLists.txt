@@ -39,5 +39,7 @@ if (WITH_INTEGRATION_TEST)
         )
     set_tests_properties(Integration_UdpDiscover PROPERTIES
         DEPENDS "copy_discover_script"
+        LABELS "integration"
+        RESOURCE_LOCK port_13400
     )
 endif()

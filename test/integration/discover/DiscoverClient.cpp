@@ -8,7 +8,6 @@ using std::string;
 DoIPClient client;
 
 int main() {
-    string serverAddress = "127.0.0.1"; // Default to loopback for testing to same hosts
     auto console = spdlog::stdout_color_mt("discover-client");
 
     console->info("Starting DoIP Client");
