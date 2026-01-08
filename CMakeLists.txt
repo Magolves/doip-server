@@ -44,9 +44,9 @@ endif()
 include(cmake/projectSettings.cmake)
 
 # Include python virtual environment setup for integration tests
-if (WITH_INTEGRATION_TEST)
-    include(cmake/python-venv.cmake)
-endif()
+# if (WITH_INTEGRATION_TEST)
+#     include(cmake/python-venv.cmake)
+# endif()
 
 # Find required packages
 find_package(Threads REQUIRED)
