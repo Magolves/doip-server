@@ -15,7 +15,6 @@ add_custom_command(
     COMMAND ${VENV_DIR}/bin/pip3 install udsoncan doipclient
     DEPENDS ${VENV_DIR}
     COMMENT "Installing Python packages in venv"
-    BYPRODUCTS ${VENV_DIR}/installed
 )
 
 # Custom target to set up venv and packages
