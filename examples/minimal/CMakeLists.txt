@@ -29,18 +29,18 @@ if (WITH_INTEGRATION_TEST)
     configure_file(run-test.sh ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh COPYONLY)
 
     add_custom_target(
-        copy_script_minimal ALL
+        copy_test_script_minimal_cs ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh
     )
 
     add_test(
-        NAME uds-minimal-test
+        NAME Integration_UdsDownload
         COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
-    set_tests_properties(uds-minimal-test PROPERTIES
+    set_tests_properties(Integration_UdsDownload PROPERTIES
         TIMEOUT 20
-        DEPENDS copy_script_minimal
+        DEPENDS copy_test_script_minimal_cs
         LABELS "integration"
     )
 endif()

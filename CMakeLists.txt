@@ -12,7 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Build options
-option(WITH_UNIT_TEST "Build unit tests" ON)
+option(WITH_UNIT_TEST "Enable unit tests" ON)
 option(WITH_INTEGRATION_TEST  "Enable integration tests" ON)
 # Enable test coverage reporting
 option(WITH_TEST_COV "Enable test coverage reporting " OFF)
@@ -42,6 +42,11 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 include(cmake/projectSettings.cmake)
+
+# Include python virtual environment setup for integration tests
+if (WITH_INTEGRATION_TEST)
+    include(cmake/python-venv.cmake)
+endif()
 
 # Find required packages
 find_package(Threads REQUIRED)

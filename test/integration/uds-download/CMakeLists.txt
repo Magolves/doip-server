@@ -34,36 +34,9 @@ foreach(demo_source ${DISCOVER_SOURCES})
 endforeach()
 
 
-# Paths
-set(VENV_DIR ${CMAKE_CURRENT_BINARY_DIR}/venv)
-set(PYTHON_EXECUTABLE python3)  # or specify a full path
-
-# Create venv
-add_custom_command(
-    OUTPUT ${VENV_DIR}
-    COMMAND ${PYTHON_EXECUTABLE} -m venv ${VENV_DIR}
-    COMMENT "Creating Python virtual environment"
-)
-
-# Install packages
-add_custom_command(
-    OUTPUT ${VENV_DIR}/installed
-    COMMAND ${VENV_DIR}/bin/pip3 install udsoncan doipclient
-    DEPENDS ${VENV_DIR}
-    COMMENT "Installing Python packages in venv"
-    BYPRODUCTS ${VENV_DIR}/installed
-)
-
-# Custom target to set up venv and packages
-add_custom_target(
-    setup_venv ALL
-    DEPENDS ${VENV_DIR}/installed
-)
-
-
 # Define the source and destination paths
-set(SOURCE_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/test-local-client.py)
-set(DESTINATION_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/test-local-client.py)
+set(SOURCE_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/test-uds-download.py)
+set(DESTINATION_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/test-uds-download.py)
 configure_file(${SOURCE_SCRIPT} ${DESTINATION_SCRIPT} COPYONLY)
 configure_file(run-test.sh ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh COPYONLY)
 
@@ -78,7 +51,7 @@ add_custom_command(
 )
 
 # Optionally, add the output to a target to ensure it's built
-add_custom_target(copy_script ALL DEPENDS ${DESTINATION_SCRIPT})
+add_custom_target(copy_uds_download_script ALL DEPENDS ${DESTINATION_SCRIPT})
 
 message(STATUS "Adding integration tests for examples")
 
@@ -89,6 +62,6 @@ if (WITH_INTEGRATION_TEST)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
     set_tests_properties(uds-download-test PROPERTIES
-        DEPENDS "setup_venv;copy_script"
+        DEPENDS "setup_venv;copy_uds_download_script"
     )
 endif()
