@@ -55,7 +55,7 @@ sleep 1
 
 # Run client, log to client.log
 ls -la > client.log 2>&1
-python3 test-local-client.py >> client.log 2>&1
+python3 test-uds-download.py >> client.log 2>&1
 CLIENT_EXIT=$?
 
 # Kill server
