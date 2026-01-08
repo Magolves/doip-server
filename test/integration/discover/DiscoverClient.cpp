@@ -8,14 +8,16 @@ using std::string;
 DoIPClient client;
 
 int main() {
-    // string serverAddress = "224.0.0.2"; // Default multicast address
-    string serverAddress = "127.0.0.1"; // Default to loopback for testing
+    string serverAddress = "127.0.0.1"; // Default to loopback for testing to same hosts
     auto console = spdlog::stdout_color_mt("discover-client");
 
     console->info("Starting DoIP Client");
 
     // Start UDP connections (don't start TCP yet)
-    client.startUdpConnection();
+    if (!client.startUdpConnection()) {
+        console->error("Failed to start UDP connection");
+        return EXIT_FAILURE;
+    }
     client.startAnnouncementListener(); // Listen for Vehicle Announcements on port 13401
 
     // Listen for Vehicle Announcements first
@@ -25,13 +27,12 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    client.printVehicleInformationResponse();
-
-    // Send Vehicle Identification Request to configured address
-    if (client.sendVehicleIdentificationRequest(serverAddress.c_str()) > 0) {
-        console->info("Vehicle Identification Request sent successfully");
-        client.receiveUdpMessage();
-    }
+    ServerProperties vehicleInfo = client.getServerProperties();
+    console->info("Discovered Vehicle - VIN: {}, EID: {}, GID: {}, Logical Address: 0x{:04X}",
+                  fmt::streamed(vehicleInfo.vin),
+                  fmt::streamed(vehicleInfo.eid),
+                  fmt::streamed(vehicleInfo.gid),
+                  vehicleInfo.logicalAddress);
 
     // Now start TCP connection for diagnostic communication
     console->info("Discovery complete, closing UDP connections");

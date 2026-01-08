@@ -137,7 +137,7 @@ class DoIPServer {
      * @return DoIPAddress Logical gateway address
      */
     DoIPAddress getLogicalGatewayAddress() const noexcept {
-        return m_config.logicalAddress;
+        return m_config.properties.logicalAddress;
     }
     /**
      * @brief Set the logical DoIP gateway address.
@@ -167,29 +167,30 @@ class DoIPServer {
      * @brief Get current VIN.
      * @return Reference to configured VIN.
      */
-    const Vin &getVin() const { return m_config.vin; }
+    const Vin &getVin() const { return m_config.properties.vin; }
 
     /**
      * @brief Set EID value.
-     * @param nputEID EID as 64-bit value (lower 48 bits used).
+     * @param eid EID as 64-bit value (lower 48 bits used).
      */
-    void setEid(uint64_t nputEID);
+    void setEid(uint64_t eid);
+
     /**
      * @brief Get current EID.
      * @return Reference to configured EID.
      */
-    const EntityId &getEid() const { return m_config.eid; }
+    const EntityId &getEid() const { return m_config.properties.eid; }
 
     /**
      * @brief Set GID value.
-     * @param inputGID GID as 64-bit value (lower 48 bits used).
+     * @param gid GID as 64-bit value (lower 48 bits used).
      */
-    void setGid(uint64_t inputGID);
+    void setGid(uint64_t gid);
     /**
      * @brief Get current GID.
      * @return Reference to configured GID.
      */
-    const GroupId &getGid() const { return m_config.gid; }
+    const GroupId &getGid() const { return m_config.properties.gid; }
 
     /**
      * @brief Get current further action requirement status.
@@ -260,6 +261,14 @@ class DoIPServer {
     void connectionHandlerThread(std::unique_ptr<DoIPDefaultConnection> connection);
 
     ssize_t sendBroadcast(const DoIPMessage &msg, uint16_t port);
+
+    /**
+     * @brief Create a vehicle announcement message from the given server configuration.
+     *
+     * @param config Server configuration containing vehicle properties.
+     * @return DoIPMessage Vehicle announcement message.
+     */
+    DoIPMessage makeVehicleAnnouncementMessage(const ServerConfig& config);
 
     /**
      * @brief Configure broadcast/multicast settings

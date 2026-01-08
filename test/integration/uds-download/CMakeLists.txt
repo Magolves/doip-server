@@ -1,7 +1,7 @@
 # Examples CMakeLists.txt
 
 set (DISCOVER_SOURCES
-    DoIP_Uds_Server.cpp
+    UdsServer.cpp
 )
 
 foreach(demo_source ${DISCOVER_SOURCES})

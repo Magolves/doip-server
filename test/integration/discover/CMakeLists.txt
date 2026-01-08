@@ -1,8 +1,8 @@
 # Examples CMakeLists.txt
 
 set (DISCOVER_SOURCES
-    Discover_Server.cpp
-    Discover_Client.cpp
+    DiscoverServer.cpp
+    DiscoverClient.cpp
 )
 
 foreach(demo_source ${DISCOVER_SOURCES})
@@ -43,7 +43,7 @@ if (WITH_INTEGRATION_TEST)
 
     # Integration fixture: start DoIPServer as a daemon
     add_test(NAME Integration_StartDiscoverServer
-        COMMAND bash -c "$<TARGET_FILE:Discover_Server> --daemon && sleep 1.0"
+        COMMAND bash -c "$<TARGET_FILE:DiscoverServer> --daemon && sleep 1.0"
     )
     set_tests_properties(Integration_StartDiscoverServer PROPERTIES
         FIXTURES_SETUP demo_server
@@ -108,7 +108,7 @@ if (WITH_INTEGRATION_TEST)
     # Integration test: run discover (udp client) against the running server
     # CRITICAL: Must run serially and immediately after server is ready to catch announcements
     add_test(NAME Integration_DiscoverClient_Runs
-        COMMAND $<TARGET_FILE:Discover_Client>
+        COMMAND $<TARGET_FILE:DiscoverClient>
     )
     set_tests_properties(Integration_DiscoverClient_Runs PROPERTIES
         FIXTURES_REQUIRED demo_ready

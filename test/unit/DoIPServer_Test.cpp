@@ -20,7 +20,7 @@ TEST_SUITE("DoIPServer Tests") {
             CHECK(server.getVin() == Vin::Zero);
             CHECK(server.getEid() == EntityId::Zero);
             CHECK(server.getGid() == GroupId::Zero);
-            CHECK(server.getLogicalGatewayAddress() == DoIPAddress(0x0028));
+            CHECK(server.getLogicalGatewayAddress() == DoIPAddress(0x0));
             CHECK(server.getClientIp() == "");
             CHECK(server.getClientPort() == 0);
         }

@@ -1,7 +1,7 @@
 #include "DoIPClient.h"
 #include "DoIPMessage.h"
-#include "DoIPTimes.h"
 #include "DoIPPayloadType.h"
+#include "DoIPTimes.h"
 #include "util/Logger.h"
 #include <cerrno>  // for errno
 #include <cstring> // for strerror
@@ -13,7 +13,7 @@ using namespace doip;
 // UDP Connection and Thread Handling
 // -------------------------------------------------------------------
 
-void DoIPClient::startUdpConnection() {
+bool DoIPClient::startUdpConnection() {
 
     int tmpUdpSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -34,8 +34,11 @@ void DoIPClient::startUdpConnection() {
         if (!rc) {
             m_log->error("Bind failed: {}", strerror(errno));
             close(m_udpSocket.get());
+            return false;
         }
+        return true;
     }
+    return false;
 }
 
 void DoIPClient::startAnnouncementListener() {
@@ -62,7 +65,8 @@ void DoIPClient::startAnnouncementListener() {
         m_announcementAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 
         // Bind to port 13401 for Vehicle Announcements
-        if (bind(m_udpVehicleAnnSocket.get(), reinterpret_cast<struct sockaddr *>(&m_announcementAddress), sizeof(m_announcementAddress)) < 0) {
+        int rc = bind(m_udpVehicleAnnSocket.get(), reinterpret_cast<struct sockaddr *>(&m_announcementAddress), sizeof(m_announcementAddress));
+        if (rc < 0) {
             m_log->error("Failed to bind announcement socket to port {}: {}", DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT, strerror(errno));
         } else {
             m_log->info("Announcement socket bound to port {} successfully", DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
@@ -92,7 +96,7 @@ void DoIPClient::receiveUdpMessage() {
 
     // Set socket to timeout after 3 seconds
     struct timeval timeout;
-    //timeout.tv_sec = static_cast<time_t>(doip::times::client::UdpMessageTimeout.count() / 1000);
+    // timeout.tv_sec = static_cast<time_t>(doip::times::client::UdpMessageTimeout.count() / 1000);
     timeout.tv_sec = doip::times::client::UdpMessageTimeout.count() / 1000;
     timeout.tv_usec = 0;
     setsockopt(m_udpSocket.get(), SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
@@ -201,6 +205,8 @@ bool DoIPClient::startTcpConnection(const char *inet_address, uint16_t port) {
         m_log->info("Client TCP-Socket created successfully");
 
         bool connectedFlag = false;
+        m_tcpRunning.store(false);
+
         const char *ipAddr = inet_address;
         m_serverAddress.sin_family = AF_INET;
         m_serverAddress.sin_port = htons(port);
@@ -208,24 +214,27 @@ bool DoIPClient::startTcpConnection(const char *inet_address, uint16_t port) {
 
         int retries = 3;
         while (!connectedFlag && retries > 0) {
-            int tmpConnSocket = connect(m_tcpSocket.get(), reinterpret_cast<struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress));
-            if (tmpConnSocket != -1) {
-                m_tcpClientSocket.reset(tmpConnSocket);
+            int connResult = connect(m_tcpSocket.get(), reinterpret_cast<struct sockaddr *>(&m_serverAddress), sizeof(m_serverAddress));
+            if (connResult == 0) {
                 connectedFlag = true;
                 m_log->info("Connection to server established");
 
                 if (!activateRouting()) {
                     m_log->error("Routing activation failed - connection closed");
-                    m_tcpClientSocket.close();
-                    m_model->routingActivationFinished(*this, false, m_logicalAddress);
+                    m_tcpSocket.close();
+                    m_tcpRunning.store(false);
+                    m_model->routingActivationFinished(*this, false, m_serverProperties.logicalAddress);
                     return false;
                 }
 
-                m_model->routingActivationFinished(*this, true, m_logicalAddress);
-
+                m_model->routingActivationFinished(*this, true, m_serverProperties.logicalAddress);
                 m_tcpRunning.store(true);
                 m_tcpThread = std::thread(&DoIPClient::tcpThreadFunction, this);
                 return true;
+            } else {
+                m_log->error("Connection to server failed: {}", strerror(errno));
+                m_tcpSocket.close();
+                m_tcpRunning.store(false);
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
             retries--;
@@ -270,7 +279,7 @@ void DoIPClient::tcpThreadFunction() {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
         } else {
-            reactToMessage(optAck.value());
+            handleMessage(optAck.value());
         }
 
         if (m_receiveState == ReceiveState::Quit) {
@@ -295,12 +304,12 @@ void DoIPClient::tcpThreadFunction() {
             continue;
         } else {
             receiveRetries = 5;
-            reactToMessage(optMsg.value());
+            handleMessage(optMsg.value());
         }
     }
 }
 
-void DoIPClient::reactToMessage(const DoIPMessage &msg) {
+void DoIPClient::handleMessage(const DoIPMessage &msg) {
     if (m_receiveState == ReceiveState::WaitForAckOrAliveCheck) {
         switch (msg.getPayloadType()) {
         case DoIPPayloadType::AliveCheckRequest:
@@ -343,7 +352,6 @@ void DoIPClient::reactToMessage(const DoIPMessage &msg) {
         }
         updateReceiveState(newState);
     }
-
 }
 
 bool DoIPClient::activateRouting() {
@@ -371,7 +379,8 @@ bool DoIPClient::activateRouting() {
         return false;
     }
 
-    m_logicalAddress = optLogicalAddress.value();
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_serverProperties.logicalAddress = optLogicalAddress.value();
 
     return true;
 }
@@ -385,10 +394,8 @@ void DoIPClient::closeTcpConnection() {
         m_tcpThread.join();
     }
 
-    m_tcpClientSocket.close();
     m_tcpSocket.close();
 }
-
 
 bool DoIPClient::reconnectServer() {
     closeTcpConnection();
@@ -409,7 +416,8 @@ ssize_t DoIPClient::sendRoutingActivationRequest() {
 }
 
 void DoIPClient::sendDiagnosticMessage(const ByteArray &payload) {
-    sendMessage(message::makeDiagnosticMessage(m_sourceAddress, m_logicalAddress, payload));
+    std::lock_guard<std::mutex> lock(m_mutex);
+    sendMessage(message::makeDiagnosticMessage(m_sourceAddress, m_serverProperties.logicalAddress, payload));
 }
 
 ssize_t DoIPClient::sendAliveCheckResponse() {
@@ -453,12 +461,12 @@ std::optional<DoIPMessage> DoIPClient::receiveMessage() {
     return msg;
 }
 
-
 /**
  * Sets the source address for this client
  * @param address   source address for the client
  */
 void DoIPClient::setSourceAddress(const DoIPAddress &address) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_sourceAddress = address;
 }
 
@@ -473,18 +481,11 @@ void DoIPClient::parseVehicleIdentificationResponse(const DoIPMessage &msg) {
         m_log->warn("Incomplete Vehicle Identification Response received: Missing VIN, EID, GID, Logical Address or Further Action Request");
     }
 
-    m_vin = optVin.value();
-    m_eid = optEid.value();
-    m_gid = optGid.value();
-    m_logicalAddress = optLogicalAddress.value();
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_serverProperties.vin = optVin.value();
+    m_serverProperties.eid = optEid.value();
+    m_serverProperties.gid = optGid.value();
+    m_serverProperties.logicalAddress = optLogicalAddress.value();
     m_furtherActionReqResult = optFurtherAction.value();
 }
 
-void DoIPClient::printVehicleInformationResponse() {
-    m_log->info("Vehicle Identification Response:");
-    m_log->info("VIN: {}", fmt::streamed(m_vin));
-    m_log->info("EID: {}", fmt::streamed(m_eid));
-    m_log->info("GID: {}", fmt::streamed(m_gid));
-    m_log->info("Logical Address: 0x{:04X}", m_logicalAddress);
-    m_log->info("Further Action Request Result: {}", static_cast<uint8_t>(m_furtherActionReqResult));
-}

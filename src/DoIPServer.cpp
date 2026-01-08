@@ -168,44 +168,42 @@ bool DoIPServer::setupUdpSocket() {
 
 void DoIPServer::closeUdpSocket() {
     m_udpRunning.store(false);
-    // Transport handles UDP socket cleanup
 }
-
 
 bool DoIPServer::setDefaultEid() {
     MacAddress mac = {0};
     if (!getFirstMacAddress(mac)) {
         m_doipLog->error("Failed to get MAC address, using default EID");
-        m_config.eid = EntityId::Zero;
+        m_config.properties.eid = EntityId::Zero;
         return false;
     }
     // Set EID based on MAC address (last 6 bytes)
-    m_config.eid = EntityId(mac.data(), m_config.eid.ID_LENGTH);
+    m_config.properties.eid = EntityId(mac.data(), m_config.properties.eid.ID_LENGTH);
     return true;
 }
 
 void DoIPServer::setVin(const std::string &VINString) {
 
-    m_config.vin = Vin(VINString);
+    m_config.properties.vin = Vin(VINString);
 }
 
 void DoIPServer::setVin(const Vin &vin) {
     if (!isValidVin(vin)) {
         m_doipLog->warn("Invalid VIN provided {}", fmt::streamed(vin));
     }
-    m_config.vin = vin;
+    m_config.properties.vin = vin;
 }
 
 void DoIPServer::setLogicalGatewayAddress(DoIPAddress logicalAddress) {
-    m_config.logicalAddress = logicalAddress;
+    m_config.properties.logicalAddress = logicalAddress;
 }
 
-void DoIPServer::setEid(const uint64_t inputEID) {
-    m_config.eid = EntityId(inputEID);
+void DoIPServer::setEid(const uint64_t eid) {
+    m_config.properties.eid = EntityId(eid);
 }
 
-void DoIPServer::setGid(const uint64_t inputGID) {
-    m_config.gid = GroupId(inputGID);
+void DoIPServer::setGid(const uint64_t gid) {
+    m_config.properties.gid = GroupId(gid);
 }
 
 void DoIPServer::setFurtherActionRequired(DoIPFurtherAction furtherActionRequired) {
@@ -239,9 +237,7 @@ void DoIPServer::udpAnnouncementThread() {
 
     // Send announcements with configured interval and count
     for (int i = 0; i < m_config.announceCount && m_udpRunning; i++) {
-        DoIPMessage msg = message::makeVehicleIdentificationResponse(
-            m_config.vin, m_config.logicalAddress, m_config.eid, m_config.gid);
-
+        DoIPMessage msg = makeVehicleAnnouncementMessage(m_config);
         ssize_t sentBytes = sendBroadcast(msg, DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
 
         m_doipLog->info("TX {}", fmt::streamed(msg));
@@ -285,12 +281,7 @@ void DoIPServer::udpAnnouncementThread() {
                        inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
 
         if (msg.getPayloadType() == DoIPPayloadType::VehicleIdentificationRequest) {
-            const auto& rsp = doip::message::makeVehicleIdentificationResponse(
-                m_config.vin,
-                m_config.logicalAddress,
-                m_config.eid,
-                m_config.gid
-            );
+            const auto& rsp = makeVehicleAnnouncementMessage(m_config);
             m_udpLog->info("TX {}", fmt::streamed(rsp));
             ssize_t rc = sendto(m_udpSocket.get(), rsp.data(), rsp.size(), 0,
                                 reinterpret_cast<struct sockaddr*>(&clientAddr), clientAddrLen);
@@ -323,7 +314,7 @@ std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(std::function<U
     auto model = modelFactory ? modelFactory() : std::make_unique<DefaultDoIPServerModel>();
     // Ensure server model uses configured logical address
     if (model) {
-        model->serverAddress = m_config.logicalAddress;
+        model->serverAddress = m_config.properties.logicalAddress;
     }
     m_tcpLog->info("Accepted new TCP connection, model {} (factory {})",
                    model->getModelName(),
@@ -409,4 +400,12 @@ ssize_t DoIPServer::sendBroadcast(const DoIPMessage &msg, uint16_t port) {
 
     m_udpLog->debug("Sent {} bytes via UDP broadcast", sent);
     return sent;
+}
+
+DoIPMessage DoIPServer::makeVehicleAnnouncementMessage(const ServerConfig& config) {
+    return message::makeVehicleIdentificationResponse(
+        config.properties.vin,
+        config.properties.logicalAddress,
+        config.properties.eid,
+        config.properties.gid);
 }

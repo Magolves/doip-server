@@ -742,22 +742,21 @@ inline std::ostream &operator<<(std::ostream &os, const DoIPMessage &msg) {
         os << ansi::yellow << "|Alive Check?";
     } else if (msg.getPayloadType() == DoIPPayloadType::AliveCheckResponse) {
         auto sa = msg.getSourceAddress();
-        os << ansi::green << "|Alive Check " << sa.value() << " ✓";
+        os << ansi::green << "|Alive Check " << toHex4(sa.value_or(0)) << " ✓";
     } else if (msg.getPayloadType() == DoIPPayloadType::RoutingActivationRequest) {
         auto sa = msg.getSourceAddress();
-        os << ansi::yellow << "|Routing activation? " << std::hex << sa.value() << std::dec;
+        os << ansi::yellow << "|Routing activation? " << toHex4(sa.value_or(0));
     } else if (msg.getPayloadType() == DoIPPayloadType::RoutingActivationResponse) {
         auto sa = msg.getSourceAddress();
-
-        os << ansi::green << "|Routing activation " << std::hex << sa.value() << std::dec << " ✓";
+        os << ansi::green << "|Routing activation " << toHex4(sa.value_or(0)) << " ✓";
     } else if (msg.getPayloadType() == DoIPPayloadType::DiagnosticMessage) {
         auto payload = msg.getDiagnosticMessagePayload();
         auto sa = msg.getSourceAddress();
         auto ta = msg.getTargetAddress();
         os << "|Diag ";
-        os << ansi::bold_magenta << std::hex << sa.value() << std::dec;
+        os << ansi::bold_magenta << toHex4(sa.value_or(0));
         os << ansi::reset << " -> ";
-        os << ansi::bold_magenta << std::hex << ta.value() << std::dec;
+        os << ansi::bold_magenta << toHex4(ta.value_or(0));
 
         os << ansi::reset << ": ";
         os << ansi::bold_blue;

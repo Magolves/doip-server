@@ -10,14 +10,14 @@ int main(int argc, char *argv[]) {
 
     ServerConfig cfg;
     cfg.loopback = true; // For testing, use loopback announcements
+    // Set server properties
+    cfg.properties.logicalAddress = DoIPAddress(0x29); // Example logical address
+    cfg.properties.vin = Vin("WVWZZZ1JZ3W386752"); // Some valid VIN
+    cfg.properties.eid = EntityId(0x654321);
+    cfg.properties.gid = GroupId(0x123456);
 
     auto server = std::make_unique<DoIPServer>(cfg);
     auto console = spdlog::stdout_color_mt("doip-udp-server");
-
-    // Set server properties
-    server->setVin("WVWZZZ1JZ3W386752"); // Some valid VIN
-    server->setGid(0x123456);
-    server->setEid(0x654321);
 
      // Set up TCP first to ensure transport creates/binds both TCP and UDP sockets
     if (!server->setupTcpSocket([]() { return std::make_unique<uds::UdsServerModel>(); })) {
