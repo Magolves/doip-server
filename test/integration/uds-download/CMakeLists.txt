@@ -57,11 +57,11 @@ message(STATUS "Adding integration tests for examples")
 
 if (WITH_INTEGRATION_TEST)
     add_test(
-        NAME uds-download-test
+        NAME Integration-UdsDownload
         COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
-    set_tests_properties(uds-download-test PROPERTIES
+    set_tests_properties(Integration-UdsDownload PROPERTIES
         DEPENDS "copy_uds_download_script"
     )
 endif()
