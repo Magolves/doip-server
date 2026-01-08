@@ -4,11 +4,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <array>
 #include <iomanip>
 #include <iostream>
-
-#include "util/ByteArray.h"
+#include <sstream>
 
 namespace doip {
 
