@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classdoip_1_1IDownstreamProvider.html" title="Interface for downstream communication providers." alt="" coords="5,31,204,57"/>
+<area shape="rect" id="node2" href="$classdoip_1_1can_1_1CanIsoTpProvider.html" title="SocketCAN&#45;based downstream provider using ISO&#45;TP." alt="" coords="252,5,455,32"/>
+<area shape="rect" id="node3" href="$classdoip_1_1uds_1_1UdsMockProvider.html" title=" " alt="" coords="252,56,455,83"/>
+</map>

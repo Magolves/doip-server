@@ -1,0 +1,4 @@
+<map id="doip::MockConnectionTransport" name="doip::MockConnectionTransport">
+<area shape="rect" id="node1" title="Mock connection transport for testing." alt="" coords="5,80,232,107"/>
+<area shape="rect" id="node2" href="$classdoip_1_1IConnectionTransport.html" title="Per&#45;connection transport abstraction for DoIP." alt="" coords="21,5,216,32"/>
+</map>

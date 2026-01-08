@@ -1,0 +1,4 @@
+<map id="doip::ServerConfig" name="doip::ServerConfig">
+<area shape="rect" id="node1" title="Server configuration structure used to initialize a DoIP server." alt="" coords="18,95,159,121"/>
+<area shape="rect" id="node2" href="$structdoip_1_1ServerProperties.html" title=" " alt="" coords="5,5,172,32"/>
+</map>

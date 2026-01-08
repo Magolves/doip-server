@@ -1,0 +1,8 @@
+<map id="doip::uds::UdsServerModel" name="doip::uds::UdsServerModel">
+<area shape="rect" id="node1" title="UDS DoIP Server Model with UdsMockProvider." alt="" coords="16,364,212,391"/>
+<area shape="rect" id="node2" href="$classDoIPDownstreamServerModel.html" title=" " alt="" coords="5,288,223,315"/>
+<area shape="rect" id="node3" href="$structdoip_1_1DoIPServerModel.html" title="DoIP Server Model &#45; Configuration and callbacks for a DoIP server connection." alt="" coords="7,191,178,218"/>
+<area shape="rect" id="node4" title=" " alt="" coords="203,184,380,225"/>
+<area shape="rect" id="node5" title=" " alt="" coords="213,95,370,121"/>
+<area shape="rect" id="node6" title=" " alt="" coords="272,5,311,32"/>
+</map>
