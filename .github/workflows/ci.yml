@@ -89,6 +89,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }} \
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -DWITH_UNIT_TEST=ON \
+          -DWITH_INTEGRATION=OFF \
           -DWARNINGS_AS_ERRORS=ON
 
     - name: Configure CMake (Windows)
@@ -172,6 +173,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=g++-11 \
           -DCMAKE_BUILD_TYPE=Debug \
           -DWITH_UNIT_TEST=ON \
+          -DWITH_INTEGRATION=OFF \
           -DENABLE_SANITIZERS=ON \
           -DWARNINGS_AS_ERRORS=ON
 
@@ -260,6 +262,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=g++-11 \
           -DCMAKE_BUILD_TYPE=Debug \
           -DWITH_UNIT_TEST=ON \
+          -DWITH_INTEGRATION=ON \
           -DCMAKE_CXX_FLAGS="--coverage" \
           -DCMAKE_C_FLAGS="--coverage" \
           -DWARNINGS_AS_ERRORS=OFF
