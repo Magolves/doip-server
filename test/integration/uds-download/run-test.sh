@@ -2,7 +2,7 @@
 
 # Start server in background, log to server.log
 echo "Check for running servers..." > server.log 2>&1
-ps -aux | grep Server >> server.log 2>&1
+ps -au | grep Server >> server.log 2>&1
 echo "Starting UdsServer..." >> server.log 2>&1
 ./UdsServer >> server.log 2>&1 &
 SERVER_PID=$!
