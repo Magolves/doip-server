@@ -38,7 +38,6 @@ endforeach()
 set(SOURCE_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/test-uds-download.py)
 set(DESTINATION_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/test-uds-download.py)
 configure_file(${SOURCE_SCRIPT} ${DESTINATION_SCRIPT} COPYONLY)
-configure_file(run-test.sh ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh COPYONLY)
 
 # Add a custom command to copy the file only if it changes
 add_custom_command(
@@ -56,6 +55,9 @@ add_custom_target(copy_uds_download_script ALL DEPENDS ${DESTINATION_SCRIPT})
 message(STATUS "Adding integration tests for examples")
 
 if (WITH_INTEGRATION_TEST)
+    message(STATUS "Building UdsDownload integration test in ${CMAKE_CURRENT_BINARY_DIR}")
+    configure_file(run-test.sh ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh COPYONLY)
+
     add_test(
         NAME Integration-UdsDownload
         COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh

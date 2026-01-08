@@ -1,15 +1,21 @@
 #!/bin/bash
 set -e
-./DiscoverServer &
+./DiscoverServer > server.log 2>&1 &
 SERVER_PID=$!
 sleep 1
 
 # Run tests
-./DiscoverClient
+./DiscoverClient > client.log 2>&1
 CLIENT_EXIT=$?
 
 kill $SERVER_PID
 pkill DiscoverServer
+
+# Print logs for debugging
+echo "=== Server Log ==="
+tail server.log
+echo "=== Client Log ==="
+cat client.log
 
 
 # Return client's exit code

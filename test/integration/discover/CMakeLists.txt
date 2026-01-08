@@ -40,6 +40,7 @@ foreach(demo_source ${DISCOVER_SOURCES})
 endforeach()
 
 if (WITH_INTEGRATION_TEST)
+    message(STATUS "Building Discover C++ Client integration test in ${CMAKE_CURRENT_BINARY_DIR}")
     configure_file(run-test.sh ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh COPYONLY)
 
     add_custom_target(
