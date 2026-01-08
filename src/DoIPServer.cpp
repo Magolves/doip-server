@@ -281,7 +281,12 @@ void DoIPServer::udpAnnouncementThread() {
                 m_config.gid
             );
             m_udpLog->info("Send {}", fmt::streamed(rsp));
-            write(m_udpSocket.get(), rsp.data(), rsp.size());
+            ssize_t rc = write(m_udpSocket.get(), rsp.data(), rsp.size());
+            if (rc < 0) {
+                m_udpLog->error("Failed to send Vehicle Identification Response: {}", strerror(errno));
+            } else {
+                m_udpLog->info("Sent Vehicle Identification Response: {} bytes", rc);
+            }
         } else {
             m_udpLog->warn("Unexpected payload type: {}", fmt::streamed(msg));
         }
