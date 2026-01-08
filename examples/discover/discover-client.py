@@ -39,7 +39,7 @@ UDS_READ_DATA_BY_ID = 0x22
 
 # Timeouts
 # Announcements are often sent at multi-second intervals; use generous defaults
-UDP_ANNOUNCEMENT_TIMEOUT = 10.0  # seconds
+UDP_ANNOUNCEMENT_TIMEOUT = 5.0   # seconds
 UDP_RESPONSE_TIMEOUT = 5.0       # seconds
 TCP_RESPONSE_TIMEOUT = 5.0       # seconds
 
@@ -392,6 +392,14 @@ def main():
     print("DoIP Test Client")
     print("=" * 50)
 
+    # Check for loopback mode argument
+    use_loopback = False
+    if len(sys.argv) > 1 and sys.argv[1] in ['--loopback', '-l', 'loopback']:
+        use_loopback = True
+        print("Running in LOOPBACK mode (127.0.0.1)")
+    else:
+        print("Running in BROADCAST mode (255.255.255.255)")
+
     client = DoIPClient()
 
     # Step 1: Listen for vehicle announcements
@@ -400,7 +408,8 @@ def main():
     # Step 2: If no announcement, send identification request
     if not announcement_received:
         print("\nNo announcement received, sending identification request...")
-        identification_received = client.send_vehicle_identification_request()
+        broadcast_addr = '127.0.0.1' if use_loopback else '255.255.255.255'
+        identification_received = client.send_vehicle_identification_request(broadcast_addr)
 
         if not identification_received:
             print("\nERROR: Neither announcement nor identification response received")

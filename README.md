@@ -62,6 +62,12 @@ doxygen Doxyfile
 xdg-open docs/html/index.html
 ```
 
+#### Examples
+
+1. [Minimal client/server](./examples/minimal/ReadMe.md)
+2. [UDP discover](./examples/discover/ReadMe.md)
+3. [UDS download (test)](./test/integration/uds-download/)
+
 ### Installation
 
 1. To install the library on the system, first get the source files with:

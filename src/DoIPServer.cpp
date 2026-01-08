@@ -135,6 +135,12 @@ bool DoIPServer::setupUdpSocket() {
     int reuse = 1;
     setsockopt(tmpUdpSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
 
+    // Enable SO_BROADCAST to receive broadcast packets
+    int broadcast = 1;
+    if (setsockopt(tmpUdpSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
+        m_udpLog->warn("Failed to enable SO_BROADCAST for receive socket: {}", strerror(errno));
+    }
+
     // Bind to discovery port
     struct sockaddr_in udp_addr;
     memset(&udp_addr, 0, sizeof(udp_addr));
@@ -223,10 +229,6 @@ void DoIPServer::setLoopbackMode(bool useLoopback) {
     }
 }
 
-
-
-// new version starts here
-
 void DoIPServer::udpAnnouncementThread() {
     m_doipLog->info("Announcement thread started");
 
@@ -257,10 +259,16 @@ void DoIPServer::udpAnnouncementThread() {
     m_udpLog->info("Listening for vehicle requests...");
     while(m_udpRunning.load()) {
         std::array<uint8_t, DOIP_MAXIMUM_MTU> receive;
-        ssize_t result = recv(m_udpSocket.get(), receive.data(), DOIP_MAXIMUM_MTU, 0);
+        struct sockaddr_in clientAddr;
+        socklen_t clientAddrLen = sizeof(clientAddr);
+
+        ssize_t result = recvfrom(m_udpSocket.get(), receive.data(), DOIP_MAXIMUM_MTU, 0,
+                                   reinterpret_cast<struct sockaddr*>(&clientAddr), &clientAddrLen);
 
         if (result <= 0) {
-            m_udpLog->warn("Receive {}", result);
+            if (result < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+                m_udpLog->warn("Receive error: {} ({})", strerror(errno), errno);
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
         }
@@ -273,6 +281,9 @@ void DoIPServer::udpAnnouncementThread() {
         }
 
         const auto& msg = optMsg.value();
+        m_udpLog->info("RX {} from {}:{}", fmt::streamed(msg),
+                       inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
+
         if (msg.getPayloadType() == DoIPPayloadType::VehicleIdentificationRequest) {
             const auto& rsp = doip::message::makeVehicleIdentificationResponse(
                 m_config.vin,
@@ -280,12 +291,14 @@ void DoIPServer::udpAnnouncementThread() {
                 m_config.eid,
                 m_config.gid
             );
-            m_udpLog->info("Send {}", fmt::streamed(rsp));
-            ssize_t rc = write(m_udpSocket.get(), rsp.data(), rsp.size());
+            m_udpLog->info("TX {}", fmt::streamed(rsp));
+            ssize_t rc = sendto(m_udpSocket.get(), rsp.data(), rsp.size(), 0,
+                                reinterpret_cast<struct sockaddr*>(&clientAddr), clientAddrLen);
             if (rc < 0) {
                 m_udpLog->error("Failed to send Vehicle Identification Response: {}", strerror(errno));
             } else {
-                m_udpLog->info("Sent Vehicle Identification Response: {} bytes", rc);
+                m_udpLog->info("Sent Vehicle Identification Response: {} bytes to {}:{}",
+                               rc, inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
             }
         } else {
             m_udpLog->warn("Unexpected payload type: {}", fmt::streamed(msg));

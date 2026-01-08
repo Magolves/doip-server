@@ -14,14 +14,11 @@ int main(int argc, char *argv[]) {
     auto server = std::make_unique<DoIPServer>(cfg);
     auto console = spdlog::stdout_color_mt("doip-udp-server");
 
-    // for discovery check we use relaxed announcement settings
-    server->setAnnounceInterval(500);  // Send announcements every 500ms for faster discovery
-    server->setAnnounceNum(10);       // Send 100 announcements = 50 seconds of announcements (enough for parallel test execution)
-    server->setVin("WVWZZZ1JZ3W386752");
-    server->setGid(123456);
-    server->setEid(654321);
+    // Set server properties
+    server->setVin("WVWZZZ1JZ3W386752"); // Some valid VIN
+    server->setGid(0x123456);
+    server->setEid(0x654321);
 
-    // Start announcement thread after sockets are bound
      // Set up TCP first to ensure transport creates/binds both TCP and UDP sockets
     if (!server->setupTcpSocket([]() { return std::make_unique<uds::UdsServerModel>(); })) {
         console->critical("Failed to set up TCP socket");

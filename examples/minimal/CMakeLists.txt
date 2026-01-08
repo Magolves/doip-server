@@ -18,6 +18,7 @@ foreach(demo_source ${DEMO_SOURCES})
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 
     # Disable switch-default warning for examples using spdlog
