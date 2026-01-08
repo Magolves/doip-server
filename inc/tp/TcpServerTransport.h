@@ -37,7 +37,6 @@ class TcpServerTransport : public IServerTransport {
     // IServerTransport interface
     bool setup(uint16_t port) override;
     std::unique_ptr<IConnectionTransport> acceptConnection() override;
-    //--ssize_t sendBroadcast(const DoIPMessage &msg, uint16_t port) override;
     void close() override;
     bool isActive() const override;
     std::string getIdentifier() const override;
@@ -51,7 +50,6 @@ class TcpServerTransport : public IServerTransport {
     std::shared_ptr<spdlog::logger> m_log;
 
     struct sockaddr_in m_serverAddress{};
-    //--struct sockaddr_in m_broadcastAddress{};
 
     /**
      * @brief Set up TCP server socket (bind + listen)

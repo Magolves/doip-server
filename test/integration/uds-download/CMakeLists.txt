@@ -48,7 +48,7 @@ add_custom_command(
 # Install packages
 add_custom_command(
     OUTPUT ${VENV_DIR}/installed
-    COMMAND ${VENV_DIR}/bin/pip install udsoncan doipclient
+    COMMAND ${VENV_DIR}/bin/pip3 install udsoncan doipclient
     DEPENDS ${VENV_DIR}
     COMMENT "Installing Python packages in venv"
     BYPRODUCTS ${VENV_DIR}/installed
@@ -82,8 +82,13 @@ add_custom_target(copy_script ALL DEPENDS ${DESTINATION_SCRIPT})
 
 message(STATUS "Adding integration tests for examples")
 
-add_test(
-    NAME uds-download-test
-    COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
+if (WITH_INTEGRATION_TEST)
+    add_test(
+        NAME uds-download-test
+        COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/run-test.sh
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    set_tests_properties(uds-download-test PROPERTIES
+        DEPENDS "setup_venv;copy_script"
+    )
+endif()

@@ -25,7 +25,6 @@ void TcpServerTransport::closeSocket() {
         if (m_log) m_log->info("Closing TCP server transport (destructor)");
 
             m_tcpServerSocket.close();
-            //m_udpSocket.close();
     }
 }
 
@@ -38,13 +37,6 @@ bool TcpServerTransport::setup(uint16_t port) {
         return false;
     }
 
-    // if (!setupUdpSocket()) {
-    //     m_log->error("Failed to setup UDP socket");
-    //     m_udpSocket.close();
-    //     return false;
-    // }
-
-    // configureBroadcast();
     m_isActive = true;
     m_log->info("TCP server transport ready on port {}", port);
     return true;
