@@ -15,7 +15,7 @@
 
 using namespace doip;
 
-const char* PID_FILE = "/tmp/doip-discover.pid";
+const char* PID_FILE = "/tmp/doip-download.pid";
 
 std::unique_ptr<DoIPServer> server;
 static std::atomic<bool> stopRequested{false};
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     cfg.loopback = true;                                            // For testing, use loopback announcements
     cfg.properties.logicalAddress = DoIPAddress(0x00E0);                       // Match client logical address used in tests
     cfg.daemonize = argc > 1 && std::string(argv[1]) == "--daemon"; // For testing, run as daemon
-    auto console = spdlog::stdout_color_mt("doip-server");
+    auto console = spdlog::stdout_color_mt("uds-server");
 
 
     Logger::setUseSyslog(cfg.daemonize);
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     // Configure logging
     Logger::setLevel(spdlog::level::debug);
 
-    console->info("Starting DoIP Discovery Server");
+    console->info("Starting DoIP UDS Download Server");
 
     server = std::make_unique<DoIPServer>(cfg);
 

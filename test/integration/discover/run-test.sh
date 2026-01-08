@@ -9,7 +9,6 @@ sleep 1
 CLIENT_EXIT=$?
 
 kill $SERVER_PID
-pkill DiscoverServer
 
 # Print logs for debugging
 echo "=== Server Log ==="

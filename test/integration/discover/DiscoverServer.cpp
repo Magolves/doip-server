@@ -99,7 +99,6 @@ int main(int argc, char *argv[]) {
     if (cfg.daemonize) {
         (void)std::remove(PID_FILE);
     }
-    // Cleanly shutdown loggers to avoid sanitizer leak reports
-    doip::Logger::shutdown();
+
     return 0;
 }
