@@ -9,6 +9,8 @@ sleep 1
 CLIENT_EXIT=$?
 
 kill $SERVER_PID
+pkill DiscoverServer
+
 
 # Return client's exit code
 exit $CLIENT_EXIT
