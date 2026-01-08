@@ -3,7 +3,7 @@
 source venv/bin/activate
 
 # Start server in background, log to server.log
-./DoIP_Uds_Server > server.log 2>&1 &
+./UdsServer > server.log 2>&1 &
 SERVER_PID=$!
 
 # Give the server a moment to start
