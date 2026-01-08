@@ -62,6 +62,6 @@ if (WITH_INTEGRATION_TEST)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
     set_tests_properties(uds-download-test PROPERTIES
-        DEPENDS "setup_venv;copy_uds_download_script"
+        DEPENDS "copy_uds_download_script"
     )
 endif()

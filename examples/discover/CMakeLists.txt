@@ -38,6 +38,6 @@ if (WITH_INTEGRATION_TEST)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         )
     set_tests_properties(Integration_UdpDiscover PROPERTIES
-        DEPENDS "setup_venv;copy_discover_script"
+        DEPENDS "copy_discover_script"
     )
 endif()

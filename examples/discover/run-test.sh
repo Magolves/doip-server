@@ -1,7 +1,4 @@
 #!/bin/bash
-# Activate virtual environment
-source venv/bin/activate
-
 # Start server in background, log to server.log
 ./DoIPUdpServer > server.log 2>&1 &
 SERVER_PID=$!

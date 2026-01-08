@@ -1,6 +1,4 @@
 #!/bin/bash
-# Activate virtual environment
-source venv/bin/activate
 
 # Start server in background, log to server.log
 ./UdsServer > server.log 2>&1 &
@@ -15,6 +13,7 @@ CLIENT_EXIT=$?
 
 # Kill server
 kill $SERVER_PID
+pkill UdsServer
 
 # Print logs for debugging
 echo "=== Server Log ==="
