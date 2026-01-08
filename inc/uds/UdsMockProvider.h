@@ -1,11 +1,8 @@
 #pragma once
 #include "util/ByteArray.h"
 #include "IDownstreamProvider.h"
-#include "ThreadSafeQueue.h"
 #include "uds/UdsMock.h"
 #include "uds/UdsDefaultModel.h"
-#include <atomic>
-#include <thread>
 
 namespace doip::uds {
 

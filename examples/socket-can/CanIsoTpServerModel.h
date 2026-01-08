@@ -10,7 +10,7 @@
 
 #include "DoIPDownstreamServerModel.h"
 #include "can/CanIsoTpProvider.h"
-#include "ThreadSafeQueue.h"
+
 
 using namespace doip;
 using namespace doip::can;

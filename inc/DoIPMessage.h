@@ -1,22 +1,26 @@
 #ifndef DOIPMESSAGE_IMPROVED_H
 #define DOIPMESSAGE_IMPROVED_H
 
-#include <iomanip>
-#include <iostream>
-#include <memory>
-#include <optional>
-#include <stdint.h>
 
-#include "AnsiColors.h"
-#include "util/ByteArray.h"
+#include "DoIPConfig.h"
 #include "DoIPAddress.h"
+#include "DoIPDiagnosticAck.h"
 #include "DoIPFurtherAction.h"
 #include "DoIPIdentifiers.h"
+#include "DoIPIdentifiers.h"
 #include "DoIPNegativeAck.h"
-#include "DoIPNegativeDiagnosticAck.h"
 #include "DoIPPayloadType.h"
 #include "DoIPRoutingActivationType.h"
 #include "DoIPSyncStatus.h"
+#include "util/AnsiColors.h"
+#include "util/ByteArray.h"
+#include "Vin.h"
+
+#include <iomanip>
+#include <iostream>
+#include <optional>
+#include <functional>
+#include <stdint.h>
 
 namespace doip {
 
@@ -46,20 +50,6 @@ constexpr uint8_t ISO_13400_2025 = 4;
 constexpr uint8_t PROTOCOL_VERSION = ISO_13400_2019;
 constexpr uint8_t PROTOCOL_VERSION_INV = static_cast<uint8_t>(~PROTOCOL_VERSION);
 
-/**
- * @brief Positive ack for diagnostic message (table 24)
- */
-constexpr uint8_t DIAGNOSTIC_MESSAGE_ACK = 0;
-
-/**
- * @brief Size of the DoIP header
- */
-constexpr size_t DOIP_HEADER_SIZE = 8;
-
-/**
- * @brief Size of the DoIP diagnostic message header
- */
-constexpr size_t DOIP_DIAG_HEADER_SIZE = DOIP_HEADER_SIZE + 4;
 
 class DoIPMessage;
 using OptDoIPMessage = std::optional<DoIPMessage>;
@@ -193,6 +183,18 @@ class DoIPMessage {
         return {m_data.data() + DOIP_DIAG_HEADER_SIZE, m_data.size() - DOIP_DIAG_HEADER_SIZE};
     }
 
+    std::optional<DoIPDiagnosticAck> getDiagnosticAck() const noexcept {
+        auto payloadRef = getPayload();
+        if (getPayloadType() == DoIPPayloadType::DiagnosticMessageNegativeAck && payloadRef.second >= 1) {
+            return static_cast<DoIPDiagnosticAck>(payloadRef.first[0]);
+        }
+
+        if (getPayloadType() == DoIPPayloadType::DiagnosticMessageAck && payloadRef.second >= 1) {
+            return DoIPDiagnosticAck::PositiveAck;
+        }
+        return std::nullopt;
+    }
+
     /**
      * @brief Gets the payload size in bytes (without header).
      *
@@ -323,10 +325,10 @@ class DoIPMessage {
      *
      * @return std::optional<DoIPAddress> The VIN if present, std::nullopt otherwise
      */
-    std::optional<DoIpVin> getVin() const {
+    std::optional<Vin> getVin() const {
         auto payloadRef = getPayload();
         if (getPayloadType() == DoIPPayloadType::VehicleIdentificationResponse && payloadRef.second >= 17) {
-            return DoIpVin(payloadRef.first, 17);
+            return Vin(payloadRef.first, 17);
         }
         return std::nullopt;
     }
@@ -336,10 +338,10 @@ class DoIPMessage {
      *
      * @return std::optional<DoIPAddress> The VIN if present, std::nullopt otherwise
      */
-    std::optional<DoIpEid> getEid() const {
+    std::optional<EntityId> getEid() const {
         auto payloadRef = getPayload();
         if (getPayloadType() == DoIPPayloadType::VehicleIdentificationResponse && payloadRef.second >= 25) {
-            return DoIpEid(payloadRef.first + 19, 6);
+            return EntityId(payloadRef.first + 19, 6);
         }
         return std::nullopt;
     }
@@ -349,10 +351,10 @@ class DoIPMessage {
      *
      * @return std::optional<DoIPAddress> The VIN if present, std::nullopt otherwise
      */
-    std::optional<DoIpGid> getGid() const {
+    std::optional<GroupId> getGid() const {
         auto payloadRef = getPayload();
         if (getPayloadType() == DoIPPayloadType::VehicleIdentificationResponse && payloadRef.second >= 31) {
-            return DoIpGid(payloadRef.first + 25, 6);
+            return GroupId(payloadRef.first + 25, 6);
         }
         return std::nullopt;
     }
@@ -466,8 +468,8 @@ class DoIPMessage {
         m_data.reserve(DOIP_HEADER_SIZE + payload.size());
 
         // Protocol version
-        m_data.emplace_back(PROTOCOL_VERSION);
-        m_data.emplace_back(PROTOCOL_VERSION_INV);
+        m_data.writeU8(PROTOCOL_VERSION);
+        m_data.writeU8(PROTOCOL_VERSION_INV);
 
         // Payload type (big-endian uint16_t)
         m_data.writeEnum(payloadType);
@@ -509,6 +511,8 @@ class DoIPMessage {
     }
 };
 
+using DoIPMessageHandler = std::function<void(const DoIPMessage&)>;
+
 /**
  * @brief Factory functions for creating specific DoIP message types.
  *
@@ -538,10 +542,10 @@ inline DoIPMessage makeVehicleIdentificationRequest() {
  * @return DoIPMessage the vehicle identification response message
  */
 inline DoIPMessage makeVehicleIdentificationResponse(
-    const DoIpVin &vin,
+    const Vin &vin,
     const DoIPAddress &logicalAddress,
-    const DoIpEid &entityType,
-    const DoIpGid &groupId,
+    const EntityId &entityType,
+    const GroupId &groupId,
     DoIPFurtherAction furtherAction = DoIPFurtherAction::NoFurtherAction,
     DoIPSyncStatus syncStatus = DoIPSyncStatus::GidVinSynchronized) {
 
@@ -627,7 +631,7 @@ inline DoIPMessage makeDiagnosticPositiveResponse(
 inline DoIPMessage makeDiagnosticNegativeResponse(
     const DoIPAddress &sa,
     const DoIPAddress &ta,
-    DoIPNegativeDiagnosticAck nack,
+    DoIPDiagnosticAck nack,
     const ByteArray &msg_payload) {
 
     ByteArray payload;
@@ -733,27 +737,26 @@ inline std::ostream &operator<<(std::ostream &os, const DoIPMessage &msg) {
             os << ansi::red << "|Diag NACK <invalid>";
             return os;
         }
-        os << ansi::red << "|Diag NACK " << static_cast<DoIPNegativeDiagnosticAck>(payload.first[0]);
+        os << ansi::red << "|Diag NACK " << static_cast<DoIPDiagnosticAck>(payload.first[0]);
     } else if (msg.getPayloadType() == DoIPPayloadType::AliveCheckRequest) {
         os << ansi::yellow << "|Alive Check?";
     } else if (msg.getPayloadType() == DoIPPayloadType::AliveCheckResponse) {
         auto sa = msg.getSourceAddress();
-        os << ansi::green << "|Alive Check " << sa.value() << " ✓";
+        os << ansi::green << "|Alive Check " << toHex4(sa.value_or(0)) << " ✓";
     } else if (msg.getPayloadType() == DoIPPayloadType::RoutingActivationRequest) {
         auto sa = msg.getSourceAddress();
-        os << ansi::yellow << "|Routing activation? " << sa.value();
+        os << ansi::yellow << "|Routing activation? " << toHex4(sa.value_or(0));
     } else if (msg.getPayloadType() == DoIPPayloadType::RoutingActivationResponse) {
         auto sa = msg.getSourceAddress();
-
-        os << ansi::green << "|Routing activation " << sa.value() << " ✓";
+        os << ansi::green << "|Routing activation " << toHex4(sa.value_or(0)) << " ✓";
     } else if (msg.getPayloadType() == DoIPPayloadType::DiagnosticMessage) {
         auto payload = msg.getDiagnosticMessagePayload();
         auto sa = msg.getSourceAddress();
         auto ta = msg.getTargetAddress();
         os << "|Diag ";
-        os << ansi::bold_magenta << sa.value();
+        os << ansi::bold_magenta << toHex4(sa.value_or(0));
         os << ansi::reset << " -> ";
-        os << ansi::bold_magenta << ta.value();
+        os << ansi::bold_magenta << toHex4(ta.value_or(0));
 
         os << ansi::reset << ": ";
         os << ansi::bold_blue;

@@ -4,12 +4,10 @@
 #include <arpa/inet.h>
 #include <atomic>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <optional>
-#include <string.h>
 #include <string>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -18,16 +16,12 @@
 #include <vector>
 
 #include "cli/ServerConfig.h"
-#include "util/ByteArray.h"
-#include "DoIPConfig.h"
 #include "DoIPFurtherAction.h"
-#include "DoIPIdentifiers.h"
-#include "DoIPNegativeAck.h"
+#include "Vin.h"
 #include "DoIPServerModel.h"
 #include "tp/IServerTransport.h"
 #include "DoIPDefaultConnection.h"
-#include "MacAddress.h"
-#include "Socket.h"
+#include "util/Socket.h"
 
 namespace doip {
 
@@ -36,8 +30,6 @@ class DoIPDefaultConnection;
 
 
 const ServerConfig DefaultServerConfig{};
-
-constexpr int DOIP_SERVER_TCP_PORT = 13400;
 
 /**
  * @brief Callback invoked when a new TCP connection is established
@@ -92,10 +84,22 @@ class DoIPServer {
     bool setupUdpSocket();
 
     /**
-     * @brief Check if the server is currently running
+     * @brief Check if the UDP server is currently running
      */
     [[nodiscard]]
-    bool isRunning() const noexcept { return m_udpRunning.load(); }
+    bool isUdpRunning() const noexcept { return m_udpRunning.load(); }
+
+    /**
+     * @brief Check if the TCP server is currently running
+     */
+    [[nodiscard]]
+    bool isTcpRunning() const noexcept { return m_tcpRunning.load(); }
+
+    /**
+     * @brief Check if UDP and/or TCP server is currently running
+     */
+    [[nodiscard]]
+    bool isRunning() const noexcept { return isTcpRunning() || isUdpRunning(); }
 
     /**
      * @brief Set the number of vehicle announcements to send.
@@ -133,7 +137,7 @@ class DoIPServer {
      * @return DoIPAddress Logical gateway address
      */
     DoIPAddress getLogicalGatewayAddress() const noexcept {
-        return m_config.logicalAddress;
+        return m_config.properties.logicalAddress;
     }
     /**
      * @brief Set the logical DoIP gateway address.
@@ -155,37 +159,38 @@ class DoIPServer {
      */
     void setVin(const std::string &VINString);
     /**
-     * @brief Set VIN from a `DoIpVin` instance.
+     * @brief Set VIN from a `Vin` instance.
      * @param vin VIN value.
      */
-    void setVin(const DoIpVin &vin);
+    void setVin(const Vin &vin);
     /**
      * @brief Get current VIN.
      * @return Reference to configured VIN.
      */
-    const DoIpVin &getVin() const { return m_config.vin; }
+    const Vin &getVin() const { return m_config.properties.vin; }
 
     /**
      * @brief Set EID value.
-     * @param nputEID EID as 64-bit value (lower 48 bits used).
+     * @param eid EID as 64-bit value (lower 48 bits used).
      */
-    void setEid(uint64_t nputEID);
+    void setEid(uint64_t eid);
+
     /**
      * @brief Get current EID.
      * @return Reference to configured EID.
      */
-    const DoIpEid &getEid() const { return m_config.eid; }
+    const EntityId &getEid() const { return m_config.properties.eid; }
 
     /**
      * @brief Set GID value.
-     * @param inputGID GID as 64-bit value (lower 48 bits used).
+     * @param gid GID as 64-bit value (lower 48 bits used).
      */
-    void setGid(uint64_t inputGID);
+    void setGid(uint64_t gid);
     /**
      * @brief Get current GID.
      * @return Reference to configured GID.
      */
-    const DoIpGid &getGid() const { return m_config.gid; }
+    const GroupId &getGid() const { return m_config.properties.gid; }
 
     /**
      * @brief Get current further action requirement status.
@@ -237,6 +242,11 @@ class DoIPServer {
     // Automatic mode state
     std::atomic<bool> m_udpRunning{false};
     std::atomic<bool> m_tcpRunning{false};
+    // migrated
+    Socket m_udpSocket{-1};
+    bool m_loopback;
+    struct sockaddr_in m_broadcastAddress{};
+
     std::vector<std::thread> m_workerThreads;
     std::mutex m_mutex;
 
@@ -250,6 +260,20 @@ class DoIPServer {
 
     void connectionHandlerThread(std::unique_ptr<DoIPDefaultConnection> connection);
 
+    ssize_t sendBroadcast(const DoIPMessage &msg, uint16_t port);
+
+    /**
+     * @brief Create a vehicle announcement message from the given server configuration.
+     *
+     * @param config Server configuration containing vehicle properties.
+     * @return DoIPMessage Vehicle announcement message.
+     */
+    DoIPMessage makeVehicleAnnouncementMessage(const ServerConfig& config);
+
+    /**
+     * @brief Configure broadcast/multicast settings
+     */
+    void configureBroadcast();
     void udpAnnouncementThread();
 };
 

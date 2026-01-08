@@ -1,7 +1,7 @@
 #include "DoIPConnection.h"
 #include "DoIPMessage.h"
 #include "DoIPPayloadType.h"
-#include "Logger.h"
+#include "util/Logger.h"
 #include "tp/TcpConnectionTransport.h"
 
 #include <iomanip>
@@ -63,7 +63,7 @@ DoIPDiagnosticAck DoIPConnection::notifyDiagnosticMessage(const DoIPMessage &msg
         return m_serverModel->onDiagnosticMessage(*this, msg);
     }
     // Default: ACK
-    return std::nullopt;
+    return DoIPDiagnosticAck::PositiveAck;
 }
 
 void DoIPConnection::notifyConnectionClosed(DoIPCloseReason reason) {

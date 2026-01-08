@@ -5,7 +5,7 @@
 
 #include "DoIPServerModel.h"
 #include "IDownstreamProvider.h"
-#include "ThreadSafeQueue.h"
+#include "util/ThreadSafeQueue.h"
 
 using namespace doip;
 using namespace std::chrono_literals;
@@ -34,10 +34,10 @@ class DoIPDownstreamServerModel : public DoIPServerModel {
             // auto payload = msg.getDiagnosticMessagePayload();
             // if (payload.second >= 3 && payload.first[0] == 0x22 && payload.first[1] == 0xF1 && payload.first[2] == 0x90) {
             //     m_log->info(" - Detected Read Data by Identifier for VIN (0xF190) -> send NACK");
-            //     return DoIPNegativeDiagnosticAck::UnknownTargetAddress;
+            //     return DoIPDiagnosticAck::UnknownTargetAddress;
             // }
 
-            return std::nullopt;
+            return DoIPDiagnosticAck::PositiveAck;
         };
 
         onDiagnosticNotification = [this](IConnectionContext &ctx, DoIPDiagnosticAck ack) noexcept {

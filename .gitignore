@@ -55,3 +55,6 @@ docs/
 inc/gen/DoIPConfig.h
 *.log
 test/reports/*
+.cache/*
+CMakeCache.txt
+CMakeFiles/cmake.check_cache

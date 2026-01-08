@@ -1,32 +1,61 @@
 #ifndef SERVERCONFIG_H
 #define SERVERCONFIG_H
 
-#include "DoIPIdentifiers.h"
 #include "DoIPAddress.h"
+#include "DoIPIdentifiers.h"
+#include "DoIPTimes.h"
+#include "Vin.h"
 
 namespace doip {
+
+struct ServerProperties {
+    /**
+     * @brief Vehicle Identification Number (VIN) consisting of 17 characters.
+     * See ISO 3779 for details.
+     */
+    Vin vin = Vin::Zero;
+    /**
+     * @brief Entity Identifier (EID) - 6-byte unique identifier for the vehicle.
+     */
+    EntityId eid = EntityId::Zero;
+    /**
+     * @brief Group Identifier (GID) - 6-byte identifier for vehicle group.
+     */
+    GroupId gid = GroupId::Zero;
+    /**
+     * @brief DoIP logical address of the server (gateway).
+     */
+    DoIPAddress logicalAddress = ZERO_ADDRESS;
+};
+
 /**
  * @brief Server configuration structure used to initialize a DoIP server.
  */
 struct ServerConfig {
-    // EID and GID as fixed identifiers (6 bytes). Default: zeros.
-    DoIpEid eid = DoIpEid::Zero;
-    DoIpGid gid = DoIpGid::Zero;
+    /**
+     * @brief Server properties (EID, GID, VIN, logical address).
+     */
+    ServerProperties properties;
 
-    // VIN as fixed identifier (17 bytes). Default: zeros.
-    DoIpVin vin = DoIpVin::Zero;
-
-    // Logical/server address (default 0x0028)
-    DoIPAddress logicalAddress = DoIPAddress(0x0028);
-
-    // Use loopback announcements instead of broadcast
+    /**
+     * @brief If true, use loopback interface for vehicle announcements.
+     */
     bool loopback = false;
 
-    // Run the server as a daemon by default
+    /**
+     * @brief If true, run the server as a daemon.
+     */
     bool daemonize = false;
 
+    /**
+     * @brief Number of vehicle announcements to send upon startup.
+     */
     int announceCount = 3;               // Default Value = 3
-    unsigned int announceInterval = 500; // Default Value = 500ms
+
+    /**
+     * @brief Interval between vehicle announcements in milliseconds.
+     */
+    unsigned int announceInterval = times::server::VehicleAnnouncementInterval.count();
 };
 
 } // namespace doip

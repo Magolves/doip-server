@@ -12,12 +12,11 @@ namespace doip {
 struct ServerConfig;
 
 /**
- * @brief Server-level transport abstraction for DoIP
+ * @brief Server-level TCP transport abstraction for DoIP
  *
  * This interface handles server-level operations:
- * - Setting up listener sockets (TCP, UDP)
+ * - Setting up TCP listener socket
  * - Accepting incoming connections
- * - Broadcasting UDP announcements
  * - Server lifecycle management
  *
  * Implementations: TcpServerTransport, MockServerTransport
@@ -47,18 +46,6 @@ class IServerTransport {
      * @return Unique pointer to connection transport, or nullptr if no connection available
      */
     virtual std::unique_ptr<IConnectionTransport> acceptConnection() = 0;
-
-    /**
-     * @brief Send a broadcast/announcement message (UDP)
-     *
-     * For TCP: Sends UDP broadcast on port 13400
-     * For Mock: Stores message for inspection
-     *
-     * @param msg The DoIP message to broadcast (typically vehicle announcement)
-     * @param port The destination port for broadcast
-     * @return Number of bytes sent, or -1 on error
-     */
-    virtual ssize_t sendBroadcast(const DoIPMessage &msg, uint16_t port) = 0;
 
     /**
      * @brief Close the server transport and cleanup resources

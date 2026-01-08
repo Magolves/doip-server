@@ -10,11 +10,11 @@ using namespace std;
 
 TEST_SUITE("VehicleIdentificationHandler") {
     struct VehicleIdentificationHandlerFixture {
-        DoIpVin matchingVIN = DoIpVin("MatchingVin_12345");
-        DoIpVin shortVIN = DoIpVin("shortVin");
-        DoIpVin shortVINPadded = DoIpVin("shortVin000000000");
-        DoIpEid EID = DoIpEid::Zero;
-        DoIpGid GID = DoIpGid::Zero;
+        Vin matchingVIN = Vin("MatchingVin_12345");
+        Vin shortVIN = Vin("shortVin");
+        Vin shortVINPadded = Vin("shortVin000000000");
+        EntityId EID = EntityId::Zero;
+        GroupId GID = GroupId::Zero;
         DoIPFurtherAction furtherActionRequired = DoIPFurtherAction::NoFurtherAction;
         DoIPFurtherAction far_cs = DoIPFurtherAction::RoutingActivationForCentralSecurity;
 
@@ -34,7 +34,7 @@ TEST_SUITE("VehicleIdentificationHandler") {
         DoIPMessage msg = message::makeVehicleIdentificationResponse(matchingVIN, ZERO_ADDRESS, EID, GID, furtherActionRequired);
         ByteArrayRef payload = msg.getPayload();
         ByteArray expected{
-            // VIN (17 bytes) - now uppercase due to DoIpVin normalization
+            // VIN (17 bytes) - now uppercase due to Vin normalization
             'M', 'A', 'T', 'C', 'H', 'I', 'N', 'G', 'V', 'I', 'N', '_', '1', '2', '3', '4', '5',
             // Logical Address (2 bytes)
             0x00, 0x00,
@@ -61,7 +61,7 @@ TEST_SUITE("VehicleIdentificationHandler") {
         DoIPMessage msg = message::makeVehicleIdentificationResponse(shortVIN, ZERO_ADDRESS, EID, GID, far_cs);
         ByteArrayRef payload = msg.getPayload();
         ByteArray expected{
-            // VIN (17 bytes) - now uppercase due to DoIpVin normalization
+            // VIN (17 bytes) - now uppercase due to Vin normalization
             'S', 'H', 'O', 'R', 'T', 'V', 'I', 'N', '0', '0', '0', '0', '0', '0', '0', '0', '0',
             // Logical Address (2 bytes)
             0x00, 0x00,

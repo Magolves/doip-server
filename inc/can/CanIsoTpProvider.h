@@ -6,13 +6,14 @@
 #include <linux/can/isotp.h>
 #include <net/if.h>
 #include <stdexcept>
+#include <optional>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include "IDownstreamProvider.h"
-#include "Logger.h"
-#include "Socket.h"
+#include "util/Logger.h"
+#include "util/Socket.h"
 
 namespace doip::can {
 

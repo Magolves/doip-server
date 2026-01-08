@@ -1,15 +1,13 @@
 #include <chrono>
-#include <iomanip>
 #include <iostream>
 #include <thread>
 
 #include "DoIPAddress.h"
 #include "DoIPServer.h"
-#include "Logger.h"
+#include "util/Logger.h"
 
 #include "CanIsoTpServerModel.h"
 #include "DoIPServer.h"
-#include "can/CanIsoTpProvider.h"
 #include "DoIPConnection.h"
 #include "cli/ServerConfigCLI.h"
 
@@ -72,7 +70,7 @@ int main(int argc, char *argv[]) {
     logger->info("Starting TCP listener threads");
 
     while (server->isRunning()) {
-        sleep(1);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     doipReceiver.at(0).join();

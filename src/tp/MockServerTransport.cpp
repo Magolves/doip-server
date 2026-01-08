@@ -25,16 +25,6 @@ std::unique_ptr<IConnectionTransport> MockServerTransport::acceptConnection() {
     return nullptr;
 }
 
-ssize_t MockServerTransport::sendBroadcast(const DoIPMessage &msg, uint16_t port) {
-    (void)port;
-    if (!m_isActive) {
-        return -1;
-    }
-
-    m_broadcastQueue.push(msg);
-    return static_cast<ssize_t>(msg.size());
-}
-
 void MockServerTransport::close() {
     m_isActive = false;
     clearQueues();
@@ -54,25 +44,9 @@ void MockServerTransport::injectConnection(std::unique_ptr<MockConnectionTranspo
     m_connectionQueue.push(std::move(connection));
 }
 
-std::optional<DoIPMessage> MockServerTransport::popBroadcast() {
-    DoIPMessage msg;
-    if (m_broadcastQueue.tryPop(msg)) {
-        return msg;
-    }
-    return std::nullopt;
-}
-
-bool MockServerTransport::hasBroadcasts() const {
-    return !m_broadcastQueue.empty();
-}
-
-size_t MockServerTransport::broadcastCount() const {
-    return m_broadcastQueue.size();
-}
-
 void MockServerTransport::clearQueues() {
     m_connectionQueue.clear();
-    m_broadcastQueue.clear();
 }
+
 
 } // namespace doip

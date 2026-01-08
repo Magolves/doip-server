@@ -7,10 +7,10 @@
 #include "DoIPCloseReason.h"
 #include "DoIPDownstreamResult.h"
 #include "DoIPMessage.h"
-#include "DoIPNegativeDiagnosticAck.h"
+#include "DoIPDiagnosticAck.h"
 #include "DoIPServerEvent.h"
 #include "DoIPServerState.h"
-#include "Logger.h"
+#include "util/Logger.h"
 
 namespace doip {
 
@@ -134,7 +134,7 @@ struct DefaultDoIPServerModel : public DoIPServerModel {
             (void)msg;
             //LOG_DOIP_DEBUG("Diagnostic message received on DefaultDoIPServerModel");
             // Default: always ACK
-            return std::nullopt;
+            return DoIPDiagnosticAck::PositiveAck;
         };
 
         onDiagnosticNotification = [](IConnectionContext &ctx, DoIPDiagnosticAck ack) noexcept {

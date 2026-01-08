@@ -67,7 +67,7 @@ ServerConfig ServerConfigCLI::parse_and_build(int argc, char **argv) {
     cfg.announceInterval = m_announceInterval;
 
     if (!m_vinStr.empty()) {
-        cfg.vin = DoIpVin(m_vinStr);
+        cfg.properties.vin = Vin(m_vinStr);
     }
 
     if (!m_eidHex.empty()) {
@@ -75,7 +75,7 @@ ServerConfig ServerConfigCLI::parse_and_build(int argc, char **argv) {
         if (!parseHexBytes12(m_eidHex, b)) {
             throw std::runtime_error("Invalid EID: must be 12 hex chars");
         }
-        cfg.eid = DoIpEid(b.data(), 6);
+        cfg.properties.eid = EntityId(b.data(), 6);
     }
 
     if (!m_gidHex.empty()) {
@@ -83,7 +83,7 @@ ServerConfig ServerConfigCLI::parse_and_build(int argc, char **argv) {
         if (!parseHexBytes12(m_gidHex, b)) {
             throw std::runtime_error("Invalid GID: must be 12 hex chars");
         }
-        cfg.gid = DoIpGid(b.data(), 6);
+        cfg.properties.gid = GroupId(b.data(), 6);
     }
 
     unsigned long la = 0;
@@ -111,7 +111,7 @@ ServerConfig ServerConfigCLI::parse_and_build(int argc, char **argv) {
             throw std::runtime_error("Invalid logical-address: partial parse");
         }
     }
-    cfg.logicalAddress = DoIPAddress(la & 0xFFFF);
+    cfg.properties.logicalAddress = DoIPAddress(la & 0xFFFF);
 
     return cfg;
 }

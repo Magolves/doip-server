@@ -73,6 +73,12 @@ inline DoIPAddress readAddressFrom(const uint8_t *data, size_t offset = 0) {
     return static_cast<uint16_t>(data[offset] << 8 | data[offset + 1]);
 }
 
+inline std::string toHex4 (const DoIPAddress &address) {
+    std::ostringstream os;
+    os << "0x" << std::hex << std::setw(4) << std::setfill('0') << static_cast<uint16_t>(address) << std::dec;
+    return os.str();
+}
+
 } // namespace doip
 
 #endif /* DOIPADDRESS_H */

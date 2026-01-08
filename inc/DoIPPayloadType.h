@@ -15,6 +15,7 @@ namespace doip {
  *
  * This enumeration contains all payload types used in the DoIP protocol.
  * The values correspond to the message types specified in ISO 13400-2.
+ * See table 17.
  */
 enum class DoIPPayloadType : uint16_t  {
     /**

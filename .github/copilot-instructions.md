@@ -138,7 +138,7 @@ cd build && ctest --output-on-failure --parallel 4
 
 **Protocol Implementation**:
 - `inc/DoIPMessage.h` - Message parsing/generation (4000+ lines)
-- `inc/DoIPIdentifiers.h` - Protocol constants and types
+- `inc/Vin.h` - Protocol constants and types
 - `inc/DoIP*.h` - Individual message type implementations
 
 **Testing Infrastructure**:

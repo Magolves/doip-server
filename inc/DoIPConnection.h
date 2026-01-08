@@ -5,7 +5,7 @@
 #include "DoIPConfig.h"
 #include "DoIPMessage.h"
 #include "DoIPNegativeAck.h"
-#include "DoIPNegativeDiagnosticAck.h"
+#include "DoIPDiagnosticAck.h"
 #include "DoIPServerModel.h"
 #include "DoIPDefaultConnection.h"
 #include <arpa/inet.h>
@@ -34,7 +34,7 @@ class DoIPConnection : public DoIPDefaultConnection {
     bool isSocketActive() { return m_isOpen; };
 
     void sendDiagnosticAck(const DoIPAddress &sourceAddress);
-    void sendDiagnosticNegativeAck(const DoIPAddress &sourceAddress, DoIPNegativeDiagnosticAck ackCode);
+    void sendDiagnosticNegativeAck(const DoIPAddress &sourceAddress, DoIPDiagnosticAck ackCode);
 
 
     // === IConnectionContext interface implementation ===

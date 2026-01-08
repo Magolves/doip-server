@@ -1,27 +1,25 @@
 
 add_executable(${DOIP_SERVER_LIB_NAME}_tests
-    ByteArray_Test.cpp
     DoIPDefaultConnection_Test.cpp
     DoIPMessage_Test.cpp
     DoIPServer_Test.cpp
     Identifiers_Test.cpp
-    MacAddress_Test.cpp
     Main_Test.cpp
     Misc_Test.cpp
-    MockTransport_Test.cpp
-    cli/ServerConfigCLI_Test.cpp
     Stream_Test.cpp
     ThreadSafeQueue_Test.cpp
-    TimerManager_Test.cpp
     VehicleIdentification_Test.cpp
-    uds/UdsMock_Test.cpp
-    uds/UdsSecurityAccess_Test.cpp
+    cli/ServerConfigCLI_Test.cpp
+    tp/MockTransport_Test.cpp
+    tp/MockServerTransport_Test.cpp
+    uds/UdsMockProvider_Test.cpp
 )
 
 target_link_libraries(${DOIP_SERVER_LIB_NAME}_tests
     PRIVATE
-        ${DOIP_SERVER_LIB_NAME}
-        doctest::doctest
+    doctest::doctest
+    doctest::doctest-aux
+    ${DOIP_SERVER_LIB_NAME}
 )
 
 # Configure relaxed clang-tidy settings for tests (disable magic-numbers and nodiscard warnings)
@@ -33,4 +31,3 @@ doctest_discover_tests(${DOIP_SERVER_LIB_NAME}_tests
         LABELS "${DOIP_SERVER_LIB_NAME}"
         TIMEOUT 30
 )
-

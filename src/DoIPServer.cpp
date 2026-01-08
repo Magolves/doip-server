@@ -2,14 +2,12 @@
 #include "DoIPConnection.h"
 #include "DoIPMessage.h"
 #include "DoIPServerModel.h"
-#include "MacAddress.h"
+#include "util/MacAddress.h"
 #include "tp/TcpServerTransport.h"
-#include <algorithm> // for std::remove_if
 #include <cerrno>    // for errno
 #include <cstdio>
 #include <cstring> // for strerror
 #include <fcntl.h>
-#include <fstream> // for PID file writing
 #include <pthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -29,7 +27,8 @@ DoIPServer::DoIPServer(const ServerConfig &config)
       m_doipLog(Logger::get("server")),
       m_udpLog(Logger::getUdp()),
       m_tcpLog(Logger::getTcp()),
-      m_transport(std::make_unique<TcpServerTransport>(config.loopback)) {
+      m_transport(std::make_unique<TcpServerTransport>(config.loopback)),
+      m_loopback(config.loopback) {
 
     setLoopbackMode(m_config.loopback);
 }
@@ -83,14 +82,14 @@ void DoIPServer::connectionHandlerThread(std::unique_ptr<DoIPDefaultConnection> 
  * Set up a tcp socket, so the socket is ready to accept a connection
  */
 bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFactory) {
-    m_doipLog->debug("Setting up TCP transport on port {}", DOIP_SERVER_TCP_PORT);
+    m_doipLog->debug("Setting up TCP transport on port {}", DOIP_TCP_DEFAULT_PORT);
 
     if (!m_transport) {
         m_doipLog->error("Transport not initialized");
         return false;
     }
 
-    if (!m_transport->setup(DOIP_SERVER_TCP_PORT)) {
+    if (!m_transport->setup(DOIP_TCP_DEFAULT_PORT)) {
         m_doipLog->error("Failed to setup transport");
         return false;
     }
@@ -102,7 +101,7 @@ bool DoIPServer::setupTcpSocket(std::function<UniqueServerModelPtr()> modelFacto
         tcpListenerThread(std::move(factory));
     });
 
-    m_tcpLog->info("TCP transport ready and listening on port {}", DOIP_SERVER_TCP_PORT);
+    m_tcpLog->info("TCP transport ready and listening on port {}", DOIP_TCP_DEFAULT_PORT);
     return true;
 }
 
@@ -116,7 +115,49 @@ void DoIPServer::closeTcpSocket() {
 }
 
 bool DoIPServer::setupUdpSocket() {
-    // UDP is already setup in TcpServerTransport
+    m_udpLog->debug("Setting up UDP socket for broadcasts");
+
+    int tmpUdpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (tmpUdpSocket < 0) {
+        m_udpLog->error("Failed to create UDP socket: {}", strerror(errno));
+        return false;
+    }
+
+    auto port = DOIP_UDP_DISCOVERY_PORT;
+
+    // Set socket timeout
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+    setsockopt(tmpUdpSocket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+    // Enable SO_REUSEADDR
+    int reuse = 1;
+    setsockopt(tmpUdpSocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
+    // Enable SO_BROADCAST to receive broadcast packets
+    int broadcast = 1;
+    if (setsockopt(tmpUdpSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
+        m_udpLog->warn("Failed to enable SO_BROADCAST for receive socket: {}", strerror(errno));
+    }
+
+    // Bind to discovery port
+    struct sockaddr_in udp_addr;
+    memset(&udp_addr, 0, sizeof(udp_addr));
+    udp_addr.sin_family = AF_INET;
+    udp_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    udp_addr.sin_port = htons(port);
+
+    if (bind(tmpUdpSocket, reinterpret_cast<struct sockaddr *>(&udp_addr), sizeof(udp_addr)) < 0) {
+        m_udpLog->error("Failed to bind UDP socket to port {}: {}", port, strerror(errno));
+        ::close(tmpUdpSocket);
+        tmpUdpSocket = -1;
+        return false;
+    }
+
+    m_udpSocket.reset(tmpUdpSocket);
+
+    m_udpLog->info("UDP socket bound to port {}", port);
     m_udpRunning.store(true);
     m_workerThreads.emplace_back([this]() {
         udpAnnouncementThread();
@@ -127,44 +168,42 @@ bool DoIPServer::setupUdpSocket() {
 
 void DoIPServer::closeUdpSocket() {
     m_udpRunning.store(false);
-    // Transport handles UDP socket cleanup
 }
-
 
 bool DoIPServer::setDefaultEid() {
     MacAddress mac = {0};
     if (!getFirstMacAddress(mac)) {
         m_doipLog->error("Failed to get MAC address, using default EID");
-        m_config.eid = DoIpEid::Zero;
+        m_config.properties.eid = EntityId::Zero;
         return false;
     }
     // Set EID based on MAC address (last 6 bytes)
-    m_config.eid = DoIpEid(mac.data(), m_config.eid.ID_LENGTH);
+    m_config.properties.eid = EntityId(mac.data(), m_config.properties.eid.ID_LENGTH);
     return true;
 }
 
 void DoIPServer::setVin(const std::string &VINString) {
 
-    m_config.vin = DoIpVin(VINString);
+    m_config.properties.vin = Vin(VINString);
 }
 
-void DoIPServer::setVin(const DoIpVin &vin) {
+void DoIPServer::setVin(const Vin &vin) {
     if (!isValidVin(vin)) {
         m_doipLog->warn("Invalid VIN provided {}", fmt::streamed(vin));
     }
-    m_config.vin = vin;
+    m_config.properties.vin = vin;
 }
 
 void DoIPServer::setLogicalGatewayAddress(DoIPAddress logicalAddress) {
-    m_config.logicalAddress = logicalAddress;
+    m_config.properties.logicalAddress = logicalAddress;
 }
 
-void DoIPServer::setEid(const uint64_t inputEID) {
-    m_config.eid = DoIpEid(inputEID);
+void DoIPServer::setEid(const uint64_t eid) {
+    m_config.properties.eid = EntityId(eid);
 }
 
-void DoIPServer::setGid(const uint64_t inputGID) {
-    m_config.gid = DoIpGid(inputGID);
+void DoIPServer::setGid(const uint64_t gid) {
+    m_config.properties.gid = GroupId(gid);
 }
 
 void DoIPServer::setFurtherActionRequired(DoIPFurtherAction furtherActionRequired) {
@@ -188,10 +227,6 @@ void DoIPServer::setLoopbackMode(bool useLoopback) {
     }
 }
 
-
-
-// new version starts here
-
 void DoIPServer::udpAnnouncementThread() {
     m_doipLog->info("Announcement thread started");
 
@@ -202,10 +237,8 @@ void DoIPServer::udpAnnouncementThread() {
 
     // Send announcements with configured interval and count
     for (int i = 0; i < m_config.announceCount && m_udpRunning; i++) {
-        DoIPMessage msg = message::makeVehicleIdentificationResponse(
-            m_config.vin, m_config.logicalAddress, m_config.eid, m_config.gid);
-
-        ssize_t sentBytes = m_transport->sendBroadcast(msg, DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
+        DoIPMessage msg = makeVehicleAnnouncementMessage(m_config);
+        ssize_t sentBytes = sendBroadcast(msg, DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
 
         m_doipLog->info("TX {}", fmt::streamed(msg));
         if (sentBytes > 0) {
@@ -214,8 +247,55 @@ void DoIPServer::udpAnnouncementThread() {
             m_udpLog->error("Failed to send announcement");
         }
 
+        // TODO: receive and log any UDP responses from clients
+
         usleep(m_config.announceInterval * 1000);
     }
+
+    m_udpLog->info("Listening for vehicle requests...");
+    while(m_udpRunning.load()) {
+        std::array<uint8_t, DOIP_MAXIMUM_MTU> receive;
+        struct sockaddr_in clientAddr;
+        socklen_t clientAddrLen = sizeof(clientAddr);
+
+        ssize_t result = recvfrom(m_udpSocket.get(), receive.data(), DOIP_MAXIMUM_MTU, 0,
+                                   reinterpret_cast<struct sockaddr*>(&clientAddr), &clientAddrLen);
+
+        if (result <= 0) {
+            if (result < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+                m_udpLog->warn("Receive error: {} ({})", strerror(errno), errno);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+
+        const auto& optMsg = DoIPMessage::tryParse(receive.data(), static_cast<size_t>(result));
+        if (!optMsg.has_value()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            m_udpLog->error("Received invalid message");
+            continue;
+        }
+
+        const auto& msg = optMsg.value();
+        m_udpLog->info("RX {} from {}:{}", fmt::streamed(msg),
+                       inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
+
+        if (msg.getPayloadType() == DoIPPayloadType::VehicleIdentificationRequest) {
+            const auto& rsp = makeVehicleAnnouncementMessage(m_config);
+            m_udpLog->info("TX {}", fmt::streamed(rsp));
+            ssize_t rc = sendto(m_udpSocket.get(), rsp.data(), rsp.size(), 0,
+                                reinterpret_cast<struct sockaddr*>(&clientAddr), clientAddrLen);
+            if (rc < 0) {
+                m_udpLog->error("Failed to send Vehicle Identification Response: {}", strerror(errno));
+            } else {
+                m_udpLog->info("Sent Vehicle Identification Response: {} bytes to {}:{}",
+                               rc, inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
+            }
+        } else {
+            m_udpLog->warn("Unexpected payload type: {}", fmt::streamed(msg));
+        }
+    }
+
 
     m_doipLog->info("Announcement thread stopped");
 }
@@ -232,6 +312,10 @@ std::unique_ptr<DoIPConnection> DoIPServer::waitForTcpConnection(std::function<U
     }
 
     auto model = modelFactory ? modelFactory() : std::make_unique<DefaultDoIPServerModel>();
+    // Ensure server model uses configured logical address
+    if (model) {
+        model->serverAddress = m_config.properties.logicalAddress;
+    }
     m_tcpLog->info("Accepted new TCP connection, model {} (factory {})",
                    model->getModelName(),
                    modelFactory ? "provided" : "default");
@@ -262,4 +346,66 @@ void DoIPServer::tcpListenerThread(std::function<UniqueServerModelPtr()> modelFa
     }
 
     m_doipLog->info("TCP listener thread stopped");
+}
+
+// remigrated from TcpServerTransport.cpp
+
+
+
+void DoIPServer::configureBroadcast() {
+    if (m_loopback) {
+        m_udpLog->debug("Configuring for loopback mode");
+        m_broadcastAddress.sin_family = AF_INET;
+        m_broadcastAddress.sin_addr.s_addr = inet_addr("127.0.0.1");
+        m_broadcastAddress.sin_port = htons(DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
+    } else {
+        m_udpLog->debug("Configuring for broadcast mode");
+
+        // Enable broadcast
+        int broadcast = 1;
+        if (setsockopt(m_udpSocket.get(), SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
+            m_udpLog->warn("Failed to enable broadcast: {}", strerror(errno));
+        }
+
+        m_broadcastAddress.sin_family = AF_INET;
+        m_broadcastAddress.sin_addr.s_addr = inet_addr("255.255.255.255");
+        m_broadcastAddress.sin_port = htons(DOIP_UDP_TEST_EQUIPMENT_REQUEST_PORT);
+    }
+}
+
+ssize_t DoIPServer::sendBroadcast(const DoIPMessage &msg, uint16_t port) {
+    if (m_udpSocket.get() < 0) {
+        m_udpLog->error("UDP socket not initialized, cannot send broadcast");
+        return -1;
+    }
+
+    // Override port if specified
+    struct sockaddr_in dest_addr = m_broadcastAddress;
+    if (port != 0) {
+        dest_addr.sin_port = htons(port);
+    }
+
+    ssize_t sent = sendto(
+        m_udpSocket.get(),
+        msg.data(),
+        msg.size(),
+        0,
+        reinterpret_cast<struct sockaddr *>(&dest_addr),
+        sizeof(dest_addr));
+
+    if (sent < 0) {
+        m_udpLog->error("Failed to send broadcast: {}", strerror(errno));
+        return -1;
+    }
+
+    m_udpLog->debug("Sent {} bytes via UDP broadcast", sent);
+    return sent;
+}
+
+DoIPMessage DoIPServer::makeVehicleAnnouncementMessage(const ServerConfig& config) {
+    return message::makeVehicleIdentificationResponse(
+        config.properties.vin,
+        config.properties.logicalAddress,
+        config.properties.eid,
+        config.properties.gid);
 }
