@@ -44,4 +44,9 @@ void MockServerTransport::injectConnection(std::unique_ptr<MockConnectionTranspo
     m_connectionQueue.push(std::move(connection));
 }
 
+void MockServerTransport::clearQueues() {
+    m_connectionQueue.clear();
+}
+
+
 } // namespace doip
