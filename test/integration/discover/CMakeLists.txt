@@ -61,8 +61,8 @@ if (WITH_INTEGRATION_TEST)
     sleep 5
 
     # First check if server process exists
-    if ! pgrep -f Discover_Server >/dev/null 2>&1; then
-      echo 'ERROR: Discover_Server process not running!' >&2
+    if ! pgrep -f DiscoverServer >/dev/null 2>&1; then
+      echo 'ERROR: DiscoverServer process not running!' >&2
       exit 1
     fi
 
@@ -86,14 +86,14 @@ if (WITH_INTEGRATION_TEST)
 
       if [ \$i -eq 50 ]; then
         echo \"Still waiting... (UDP check: \$udp_check, TCP check: \$tcp_check)\"
-        pgrep -f Discover_Server >/dev/null 2>&1 || echo 'WARNING: Server process died!'
+        pgrep -f DiscoverServer >/dev/null 2>&1 || echo 'WARNING: Server process died!'
       fi
 
       sleep 0.1
     done
 
     echo 'ERROR: Server not ready after 15 seconds (UDP: '\$udp_check', TCP: '\$tcp_check')' >&2
-    pgrep -f Discover_Server >/dev/null 2>&1 || echo 'Server process is NOT running' >&2
+    pgrep -f DiscoverServer >/dev/null 2>&1 || echo 'Server process is NOT running' >&2
     exit 1
     "
     )
@@ -120,7 +120,7 @@ if (WITH_INTEGRATION_TEST)
 
     # Teardown fixture: stop server and wait for ports to be released
     add_test(NAME Integration_StopDiscoverServer
-        COMMAND bash -c "if [ -f /tmp/doip-discover.pid ]; then kill $(cat /tmp/doip-discover.pid) 2>/dev/null; rm -f /tmp/doip-discover.pid; else pkill -f Discover_Server 2>/dev/null || true; fi; for i in $(seq 1 50); do if command -v ss >/dev/null 2>&1; then ss -tlpn 2>/dev/null | grep -q ':13400' || exit 0; else netstat -an 2>/dev/null | grep -q '\\.13400.*LISTEN' || exit 0; fi; sleep 0.1; done; echo 'Warning: Port 13400 still in use' >&2; exit 0"
+        COMMAND bash -c "if [ -f /tmp/doip-discover.pid ]; then kill $(cat /tmp/doip-discover.pid) 2>/dev/null; rm -f /tmp/doip-discover.pid; else pkill -f DiscoverServer 2>/dev/null || true; fi; for i in $(seq 1 50); do if command -v ss >/dev/null 2>&1; then ss -tlpn 2>/dev/null | grep -q ':13400' || exit 0; else netstat -an 2>/dev/null | grep -q '\\.13400.*LISTEN' || exit 0; fi; sleep 0.1; done; echo 'Warning: Port 13400 still in use' >&2; exit 0"
     )
     set_tests_properties(Integration_StopDiscoverServer PROPERTIES
         FIXTURES_CLEANUP demo_server
