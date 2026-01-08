@@ -1,8 +1,8 @@
 #include "uds/UdsDiagnosticTroubleCode.h"
 
-#include <sstream>
-#include <iomanip>
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
 
 namespace doip::uds {
 
@@ -30,14 +30,14 @@ DiagnosticTroubleCode::Severity DiagnosticTroubleCode::getSeverity() const noexc
     uint8_t severityBits = (high >> 6) & 0x03;
 
     switch (severityBits) {
-        case 0x01:
-            return Severity::Warning;
-        case 0x02:
-            return Severity::Error;
-        case 0x03:
-            return Severity::Critical;
-        default:
-            return Severity::Informational;
+    case 0x01:
+        return Severity::Warning;
+    case 0x02:
+        return Severity::Error;
+    case 0x03:
+        return Severity::Critical;
+    default:
+        return Severity::Informational;
     }
 }
 
@@ -45,73 +45,71 @@ std::array<uint8_t, 4> DiagnosticTroubleCode::serialize() const noexcept {
     return {getHighByte(), getMiddleByte(), getLowByte(), m_statusBits};
 }
 
-bool DiagnosticTroubleCode::deserialize(const std::array<uint8_t, 4>& data) noexcept {
+bool DiagnosticTroubleCode::deserialize(const std::array<uint8_t, 4> &data) noexcept {
     m_code = (static_cast<uint32_t>(data[0]) << 16) | (static_cast<uint32_t>(data[1]) << 8) |
              static_cast<uint32_t>(data[2]);
     m_statusBits = data[3];
     return true;
 }
 
-bool DiagnosticTroubleCode::deserialize(const std::vector<uint8_t>& data,
+bool DiagnosticTroubleCode::deserialize(const std::vector<uint8_t> &data,
                                         size_t offset) noexcept {
     if (data.size() < offset + 4) {
         return false;
     }
 
     std::array<uint8_t, 4> arr = {data[offset], data[offset + 1], data[offset + 2],
-                                   data[offset + 3]};
+                                  data[offset + 3]};
     return deserialize(arr);
 }
 
 std::string DiagnosticTroubleCode::getStatusDescription() const noexcept {
     std::ostringstream oss;
-    bool first = true;
+    std::vector<std::string> tags;
 
     if (hasStatusBit(STATUS_TEST_FAILED)) {
-        if (!first) oss << ", ";
-        oss << "testFailed";
-        first = false;
+        tags.emplace_back("testFailed");
     }
+
     if (hasStatusBit(STATUS_TEST_FAILED_THIS_CYCLE)) {
-        if (!first) oss << ", ";
-        oss << "testFailedThisOperationCycle";
-        first = false;
+        tags.emplace_back("testFailedThisOperationCycle");
     }
+
     if (hasStatusBit(STATUS_PENDING_DTC)) {
-        if (!first) oss << ", ";
-        oss << "pendingDTC";
-        first = false;
+        tags.emplace_back("pendingDTC");
     }
+
     if (hasStatusBit(STATUS_CONFIRMED_DTC)) {
-        if (!first) oss << ", ";
-        oss << "confirmedDTC";
-        first = false;
+        tags.emplace_back("confirmedDTC");
     }
+
     if (hasStatusBit(STATUS_TEST_NOT_COMPLETED_SINCE_CLEAR)) {
-        if (!first) oss << ", ";
-        oss << "testNotCompletedSinceClear";
-        first = false;
+        tags.emplace_back("testNotCompletedSinceClear");
     }
+
     if (hasStatusBit(STATUS_TEST_FAILED_SINCE_CLEAR)) {
-        if (!first) oss << ", ";
-        oss << "testFailedSinceClear";
-        first = false;
+        tags.emplace_back("testFailedSinceClear");
     }
+
     if (hasStatusBit(STATUS_TEST_NOT_COMPLETED_THIS_CYCLE)) {
-        if (!first) oss << ", ";
-        oss << "testNotCompletedThisOperationCycle";
-        first = false;
+        tags.emplace_back("testNotCompletedThisOperationCycle");
     }
+
     if (hasStatusBit(STATUS_WARNING_INDICATOR)) {
+        tags.emplace_back("warningIndicatorRequested");
+    }
+
+    bool first = true;
+    for (const auto &tag : tags) {
         if (!first) oss << ", ";
-        oss << "warningIndicatorRequested";
+        oss << tag;
         first = false;
     }
 
     return oss.str();
 }
 
-std::ostream& operator<<(std::ostream& os, const DiagnosticTroubleCode& dtc) {
+std::ostream &operator<<(std::ostream &os, const DiagnosticTroubleCode &dtc) {
     os << "DTC(0x" << std::hex << std::setfill('0') << std::setw(6) << dtc.getCode()
        << ", status=0x" << std::setw(2) << static_cast<int>(dtc.getStatusBits()) << std::dec
        << ")";
@@ -120,7 +118,7 @@ std::ostream& operator<<(std::ostream& os, const DiagnosticTroubleCode& dtc) {
 
 // DiagnosticTroubleCodeStore implementation
 
-bool DiagnosticTroubleCodeStore::addDTC(const DiagnosticTroubleCode& dtc) noexcept {
+bool DiagnosticTroubleCodeStore::addDTC(const DiagnosticTroubleCode &dtc) noexcept {
     if (hasDTC(dtc.getCode())) {
         return false;
     }
@@ -131,9 +129,9 @@ bool DiagnosticTroubleCodeStore::addDTC(const DiagnosticTroubleCode& dtc) noexce
 
 bool DiagnosticTroubleCodeStore::removeDTC(uint32_t code) noexcept {
     auto it = std::find_if(m_dtcs.begin(), m_dtcs.end(),
-                          [code](const DiagnosticTroubleCode& dtc) {
-                              return dtc.getCode() == code;
-                          });
+                           [code](const DiagnosticTroubleCode &dtc) {
+                               return dtc.getCode() == code;
+                           });
 
     if (it != m_dtcs.end()) {
         m_dtcs.erase(it);
@@ -143,23 +141,23 @@ bool DiagnosticTroubleCodeStore::removeDTC(uint32_t code) noexcept {
 }
 
 bool DiagnosticTroubleCodeStore::hasDTC(uint32_t code) const noexcept {
-    return std::any_of(m_dtcs.begin(), m_dtcs.end(), [code](const DiagnosticTroubleCode& dtc) {
+    return std::any_of(m_dtcs.begin(), m_dtcs.end(), [code](const DiagnosticTroubleCode &dtc) {
         return dtc.getCode() == code;
     });
 }
 
-DiagnosticTroubleCode* DiagnosticTroubleCodeStore::findDTC(uint32_t code) noexcept {
+DiagnosticTroubleCode *DiagnosticTroubleCodeStore::findDTC(uint32_t code) noexcept {
     auto it =
-        std::find_if(m_dtcs.begin(), m_dtcs.end(), [code](const DiagnosticTroubleCode& dtc) {
+        std::find_if(m_dtcs.begin(), m_dtcs.end(), [code](const DiagnosticTroubleCode &dtc) {
             return dtc.getCode() == code;
         });
 
     return it != m_dtcs.end() ? &(*it) : nullptr;
 }
 
-const DiagnosticTroubleCode* DiagnosticTroubleCodeStore::findDTC(uint32_t code) const noexcept {
+const DiagnosticTroubleCode *DiagnosticTroubleCodeStore::findDTC(uint32_t code) const noexcept {
     auto it =
-        std::find_if(m_dtcs.begin(), m_dtcs.end(), [code](const DiagnosticTroubleCode& dtc) {
+        std::find_if(m_dtcs.begin(), m_dtcs.end(), [code](const DiagnosticTroubleCode &dtc) {
             return dtc.getCode() == code;
         });
 
@@ -169,32 +167,20 @@ const DiagnosticTroubleCode* DiagnosticTroubleCodeStore::findDTC(uint32_t code) 
 std::vector<DiagnosticTroubleCode> DiagnosticTroubleCodeStore::getConfirmedDTCs()
     const noexcept {
     std::vector<DiagnosticTroubleCode> confirmed;
-    for (const auto& dtc : m_dtcs) {
-        if (dtc.isConfirmed()) {
-            confirmed.push_back(dtc);
-        }
-    }
+    std::copy_if(m_dtcs.begin(), m_dtcs.end(), std::back_inserter(confirmed), [](const DiagnosticTroubleCode& dtc) { return dtc.isConfirmed(); });
     return confirmed;
 }
 
 std::vector<DiagnosticTroubleCode> DiagnosticTroubleCodeStore::getPendingDTCs()
     const noexcept {
     std::vector<DiagnosticTroubleCode> pending;
-    for (const auto& dtc : m_dtcs) {
-        if (dtc.isPending()) {
-            pending.push_back(dtc);
-        }
-    }
+    std::copy_if(m_dtcs.begin(), m_dtcs.end(), std::back_inserter(pending), [](const DiagnosticTroubleCode& dtc) { return dtc.isPending(); });
     return pending;
 }
 
 std::vector<DiagnosticTroubleCode> DiagnosticTroubleCodeStore::getActiveDTCs() const noexcept {
     std::vector<DiagnosticTroubleCode> active;
-    for (const auto& dtc : m_dtcs) {
-        if (dtc.hasActiveFailure()) {
-            active.push_back(dtc);
-        }
-    }
+    std::copy_if(m_dtcs.begin(), m_dtcs.end(), std::back_inserter(active), [](const DiagnosticTroubleCode& dtc) { return dtc.hasActiveFailure(); });
     return active;
 }
 
@@ -202,7 +188,7 @@ std::vector<uint8_t> DiagnosticTroubleCodeStore::serialize() const noexcept {
     std::vector<uint8_t> result;
     result.reserve(m_dtcs.size() * 4);
 
-    for (const auto& dtc : m_dtcs) {
+    for (const auto &dtc : m_dtcs) {
         auto serialized = dtc.serialize();
         result.insert(result.end(), serialized.begin(), serialized.end());
     }
@@ -210,14 +196,14 @@ std::vector<uint8_t> DiagnosticTroubleCodeStore::serialize() const noexcept {
     return result;
 }
 
-DiagnosticTroubleCode* DiagnosticTroubleCodeStore::getDTCAt(size_t index) noexcept {
+DiagnosticTroubleCode *DiagnosticTroubleCodeStore::getDTCAt(size_t index) noexcept {
     if (index >= m_dtcs.size()) {
         return nullptr;
     }
     return &m_dtcs[index];
 }
 
-const DiagnosticTroubleCode* DiagnosticTroubleCodeStore::getDTCAt(size_t index) const noexcept {
+const DiagnosticTroubleCode *DiagnosticTroubleCodeStore::getDTCAt(size_t index) const noexcept {
     if (index >= m_dtcs.size()) {
         return nullptr;
     }

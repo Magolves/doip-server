@@ -89,7 +89,7 @@ TEST_SUITE("DoIPMessage") {
         DoIPMessage msg = message::makeDiagnosticNegativeResponse(
             DoIPAddress(0xcafe),
             DoIPAddress(0xbabe),
-            DoIPNegativeDiagnosticAck::TargetBusy,
+            DoIPDiagnosticAck::TargetBusy,
             {0xde, 0xad, 0xbe, 0xef});
 
         ByteArray expected{

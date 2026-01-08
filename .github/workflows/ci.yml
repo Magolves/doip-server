@@ -89,6 +89,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }} \
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -DWITH_UNIT_TEST=ON \
+          -DWITH_INTEGRATION_TEST=OFF \
           -DWARNINGS_AS_ERRORS=ON
 
     - name: Configure CMake (Windows)
@@ -97,7 +98,7 @@ jobs:
         cmake -B build -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DWITH_UNIT_TEST=ON -DWARNINGS_AS_ERRORS=OFF
 
     - name: Build
-      run: cmake --build build --config ${{ matrix.config.build_type }} --parallel 4
+      run: cmake --build build --config ${{ matrix.config.build_type }} --parallel 6
 
     - name: Run tests
       working-directory: build
@@ -172,6 +173,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=g++-11 \
           -DCMAKE_BUILD_TYPE=Debug \
           -DWITH_UNIT_TEST=ON \
+          -DWITH_INTEGRATION_TEST=OFF \
           -DENABLE_SANITIZERS=ON \
           -DWARNINGS_AS_ERRORS=ON
 
@@ -260,6 +262,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=g++-11 \
           -DCMAKE_BUILD_TYPE=Debug \
           -DWITH_UNIT_TEST=ON \
+          -DWITH_INTEGRATION_TEST=ON \
           -DCMAKE_CXX_FLAGS="--coverage" \
           -DCMAKE_C_FLAGS="--coverage" \
           -DWARNINGS_AS_ERRORS=OFF

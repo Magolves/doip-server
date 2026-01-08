@@ -24,7 +24,7 @@ TEST_CASE("parses valid arguments into ServerConfig") {
     CHECK(cfg.loopback == true);
     CHECK(cfg.announceCount == 5);
     CHECK(cfg.announceInterval == 250);
-    CHECK(cfg.logicalAddress == 0x28);
+    CHECK(cfg.properties.logicalAddress == 0x28);
 }
 
 TEST_CASE("invalid EID raises error") {

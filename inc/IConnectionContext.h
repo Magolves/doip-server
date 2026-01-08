@@ -5,7 +5,7 @@
 #include "DoIPCloseReason.h"
 #include "DoIPDownstreamResult.h"
 #include "DoIPMessage.h"
-#include "DoIPNegativeDiagnosticAck.h"
+#include "DoIPDiagnosticAck.h"
 
 #include <cstdint>
 
@@ -40,7 +40,7 @@ class IConnectionContext {
     [[nodiscard]] virtual ssize_t sendProtocolMessage(const DoIPMessage &msg) = 0;
 
     [[nodiscard]] virtual std::optional<DoIPMessage> receiveProtocolMessage() = 0;
-    
+
     /**
      * @brief Close the TCP connection
      *
@@ -98,7 +98,7 @@ class IConnectionContext {
      * This forwards the diagnostic message to the application layer for processing.
      * The application returns either:
      * - std::nullopt: Send positive ACK
-     * - DoIPNegativeDiagnosticAck value: Send negative ACK with this code
+     * - DoIPDiagnosticAck value: Send negative ACK with this code
      *
      * @param msg The diagnostic message received
      * @return std::nullopt for ACK, or NACK code

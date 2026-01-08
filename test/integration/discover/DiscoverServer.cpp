@@ -1,12 +1,8 @@
-#include "DoIPAddress.h"
-#include "DoIPServer.h"
-#include "ExampleDoIPServerModel.h"
-
 #include <csignal>
 #include <fstream>
 #include <iostream>
 
-
+#include "DoIPServer.h"
 #include "util/Logger.h"
 
 #include "DoIPServer.h"
@@ -32,6 +28,11 @@ int main(int argc, char *argv[]) {
     ServerConfig cfg;
     cfg.loopback = true;                                            // For testing, use loopback announcements
     cfg.daemonize = argc > 1 && std::string(argv[1]) == "--daemon"; // For testing, run as daemon
+    cfg.properties.logicalAddress = DoIPAddress(0x029);            // Logical address for discovery server
+    cfg.properties.eid = EntityId(0x123456789ABC);                  // Fixed EID for testing
+    cfg.properties.vin = Vin("TESTV0N1234567890");                     // Fixed VIN for testing (I is not allowed!)
+    cfg.properties.gid = GroupId(0x000000000001);                  // Fixed GID for testing
+
     auto console = spdlog::stdout_color_mt("doip-server");
 
 
@@ -54,6 +55,7 @@ int main(int argc, char *argv[]) {
     std::signal(SIGINT, handle_signal);
     std::signal(SIGTERM, handle_signal);
 
+
     // Configure logging
     Logger::setLevel(spdlog::level::debug);
 
@@ -61,8 +63,18 @@ int main(int argc, char *argv[]) {
 
     server = std::make_unique<DoIPServer>(cfg);
 
+    server->setFurtherActionRequired(DoIPFurtherAction::NoFurtherAction);
+    // for discovery check we use relaxed announcement settings
+    server->setAnnounceInterval(500);  // Send announcements every 500ms for faster discovery
+    server->setAnnounceNum(100);       // Send 100 announcements = 50 seconds of announcements (enough for parallel test execution)
+
+    server->setDefaultEid();
+    console->info("VIN: {}", server->getVin().toString()); // just to log VIN validity
+    console->info("EID: {}", server->getEid().toString()); // just to log EID validity
+    console->info("GID: {}", server->getGid().toString());
+
     // Set up TCP first to ensure transport creates/binds both TCP and UDP sockets
-    if (!server->setupTcpSocket([]() { return std::make_unique<ExampleDoIPServerModel>(); })) {
+    if (!server->setupTcpSocket()) {
         console->critical("Failed to set up TCP socket");
         return 1;
     }
@@ -76,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     console->info("DoIP Server is running. Waiting for connections...");
 
-    while (server->isRunning()) {
+    while (server->isUdpRunning()) {
         if (stopRequested.load()) {
             server->stop();
             break;
@@ -87,7 +99,6 @@ int main(int argc, char *argv[]) {
     if (cfg.daemonize) {
         (void)std::remove(PID_FILE);
     }
-    // Cleanly shutdown loggers to avoid sanitizer leak reports
-    doip::Logger::shutdown();
+
     return 0;
 }

@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     logger->info("Starting TCP listener threads");
 
     while (server->isRunning()) {
-        sleep(1);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     doipReceiver.at(0).join();

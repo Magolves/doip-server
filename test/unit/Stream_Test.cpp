@@ -6,7 +6,7 @@
 #include "DoIPCloseReason.h"
 #include "DoIPDownstreamResult.h"
 #include "DoIPFurtherAction.h"
-#include "DoIPNegativeDiagnosticAck.h"
+#include "DoIPDiagnosticAck.h"
 #include "DoIPPayloadType.h"
 #include "DoIPServerState.h"
 #include "DoIPDefaultConnection.h"
@@ -53,7 +53,7 @@ TEST_SUITE("Overloaded Stream Operator Tests") {
     }
 
     // Template test case for various enum types -> basically shots in the dark, assuming sequential types with less than 30 entries
-    TEST_CASE_TEMPLATE("Stream Operator with Various Types", T, DoIPCloseReason, DoIPDownstreamResult, DoIPFurtherAction, DoIPNegativeDiagnosticAck, DoIPServerState, ConnectionTimers) {
+    TEST_CASE_TEMPLATE("Stream Operator with Various Types", T, DoIPCloseReason, DoIPDownstreamResult, DoIPFurtherAction, DoIPDiagnosticAck, DoIPServerState, ConnectionTimers) {
         for (uint8_t i = 0; i < 30; ++i) {
             std::stringstream ss;
             T value = static_cast<T>(i);

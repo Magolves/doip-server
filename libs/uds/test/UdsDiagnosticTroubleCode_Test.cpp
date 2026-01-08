@@ -295,7 +295,7 @@ TEST_SUITE("DiagnosticTroubleCodeStore") {
         DiagnosticTroubleCode dtc(0x123456, 0xAB);
         store.addDTC(dtc);
 
-        DiagnosticTroubleCode *found = store.findDTC(0x123456);
+        const DiagnosticTroubleCode *found = store.findDTC(0x123456);
         CHECK(found != nullptr);
         CHECK(found->getCode() == 0x123456);
         CHECK(found->getStatusBits() == 0xAB);
@@ -362,15 +362,15 @@ TEST_SUITE("DiagnosticTroubleCodeStore") {
         store.addDTC(DiagnosticTroubleCode(0x111111, 0xAA));
         store.addDTC(DiagnosticTroubleCode(0x222222, 0xBB));
 
-        DiagnosticTroubleCode *dtc0 = store.getDTCAt(0);
+        const DiagnosticTroubleCode *dtc0 = store.getDTCAt(0);
         CHECK(dtc0 != nullptr);
         CHECK(dtc0->getCode() == 0x111111);
 
-        DiagnosticTroubleCode *dtc1 = store.getDTCAt(1);
+        const DiagnosticTroubleCode *dtc1 = store.getDTCAt(1);
         CHECK(dtc1 != nullptr);
         CHECK(dtc1->getCode() == 0x222222);
 
-        DiagnosticTroubleCode *dtc_invalid = store.getDTCAt(999);
+        const DiagnosticTroubleCode *dtc_invalid = store.getDTCAt(999);
         CHECK(dtc_invalid == nullptr);
     }
 
