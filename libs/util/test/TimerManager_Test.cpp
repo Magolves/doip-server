@@ -195,28 +195,30 @@ TEST_SUITE("TimerManager") {
                 executionCount++;
             };
 
-            // Use periodic timer to ensure it keeps running after re-enable
-            auto timerId = manager.addTimer(TimerTestId::TimerOne, 30ms, callback, true);  // Shorter interval
+            // Use periodic timer with very short interval for faster testing
+            auto timerId = manager.addTimer(TimerTestId::TimerOne, 20ms, callback, true);
             REQUIRE(timerId.has_value());
 
             // Disable and verify it doesn't execute
             bool disabled = manager.disableTimer(timerId.value());
             REQUIRE(disabled);
-            std::this_thread::sleep_for(150ms);  // Wait 5x the period
+            std::this_thread::sleep_for(100ms);  // Wait 5x the period
             REQUIRE(executionCount == 0);  // Use REQUIRE to fail fast if this doesn't work
 
             // Re-enable - this should restart the timer with a new expiry time
             bool enabled = manager.enableTimer(timerId.value());
             REQUIRE(enabled);
 
-            // Add a small delay to let the timer thread process the enable
-            std::this_thread::sleep_for(10ms);
-
-            // Now wait for the timer to fire multiple times
-            std::this_thread::sleep_for(100ms);  // ~3 periods
+            // Wait with timeout for at least one execution
+            const int maxWaitMs = 200;  // Increased timeout for CI
+            int waited = 0;
+            while (executionCount == 0 && waited < maxWaitMs) {
+                std::this_thread::sleep_for(10ms);
+                waited += 10;
+            }
 
             // Debug: print the actual count
-            INFO("Execution count after re-enable: " << executionCount.load());
+            INFO("Execution count after re-enable: " << executionCount.load() << " (waited " << waited << "ms)");
             CHECK(executionCount >= 1); // Should have executed at least once
 
             // Clean up

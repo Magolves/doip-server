@@ -1,8 +1,9 @@
 
 add_executable(${UTIL_LIB_NAME}-tests
-    Main_Test.cpp
-    MacAddress_Test.cpp
     ByteArray_Test.cpp
+    MacAddress_Test.cpp
+    Main_Test.cpp
+    TimerManager_Test.cpp
 )
 
 target_link_libraries(${UTIL_LIB_NAME}-tests

@@ -8,7 +8,6 @@ add_executable(${DOIP_SERVER_LIB_NAME}_tests
     Misc_Test.cpp
     Stream_Test.cpp
     ThreadSafeQueue_Test.cpp
-    TimerManager_Test.cpp
     VehicleIdentification_Test.cpp
     cli/ServerConfigCLI_Test.cpp
     tp/MockTransport_Test.cpp

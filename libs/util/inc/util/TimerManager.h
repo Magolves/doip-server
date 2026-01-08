@@ -139,6 +139,8 @@ class TimerManager {
             return false;
         }
         it->second.enabled = false;
+        m_timers_changed = true;  // Wake up timer thread
+        m_cv.notify_one();
         return true;
     }
 
