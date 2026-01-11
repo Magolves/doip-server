@@ -4,6 +4,7 @@
 #include <array>
 #include <vector>
 #include <ostream>
+#include <optional>
 
 namespace doip::uds {
 
@@ -75,21 +76,21 @@ public:
     [[nodiscard]] uint32_t getCode() const noexcept { return m_code & 0xFFFFFF; }
 
     /**
-     * @brief Get high byte of DTC code
+     * @brief Get high byte of DTC code (DTCHB)
      */
     [[nodiscard]] uint8_t getHighByte() const noexcept {
         return static_cast<uint8_t>((m_code >> 16) & 0xFF);
     }
 
     /**
-     * @brief Get middle byte of DTC code
+     * @brief Get middle byte of DTC code (DTCMB)
      */
     [[nodiscard]] uint8_t getMiddleByte() const noexcept {
         return static_cast<uint8_t>((m_code >> 8) & 0xFF);
     }
 
     /**
-     * @brief Get low byte of DTC code
+     * @brief Get low byte of DTC code (DTCLB)
      */
     [[nodiscard]] uint8_t getLowByte() const noexcept {
         return static_cast<uint8_t>(m_code & 0xFF);
@@ -260,16 +261,14 @@ public:
     [[nodiscard]] bool hasDTC(uint32_t code) const noexcept;
 
     /**
-     * @brief Find a DTC by code
-     * @param code DTC code to find
-     * @return Pointer to DTC or nullptr if not found
-     */
-    [[nodiscard]] DiagnosticTroubleCode* findDTC(uint32_t code) noexcept;
-
-    /**
      * @brief Find a DTC by code (const version)
      */
-    [[nodiscard]] const DiagnosticTroubleCode* findDTC(uint32_t code) const noexcept;
+    [[nodiscard]] std::optional<DiagnosticTroubleCode> findDTC(uint32_t code) const noexcept;
+
+    /**
+     * @brief Find a DTC by status (const version)
+     */
+    [[nodiscard]] std::vector<DiagnosticTroubleCode> findDTCByStatus(uint8_t code) const noexcept;
 
     /**
      * @brief Get all confirmed DTCs

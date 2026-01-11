@@ -161,23 +161,23 @@ bool DiagnosticTroubleCodeStore::hasDTC(uint32_t code) const noexcept {
     });
 }
 
-DiagnosticTroubleCode *DiagnosticTroubleCodeStore::findDTC(uint32_t code) noexcept {
+std::optional<DiagnosticTroubleCode> DiagnosticTroubleCodeStore::findDTC(uint32_t code) const noexcept {
     auto it =
         std::find_if(m_dtcs.begin(), m_dtcs.end(), [code](const DiagnosticTroubleCode &dtc) {
             return dtc.getCode() == code;
         });
 
-    return it != m_dtcs.end() ? &(*it) : nullptr;
+    return it != m_dtcs.end() ? std::optional<DiagnosticTroubleCode>(*it) : std::nullopt;
 }
 
-const DiagnosticTroubleCode *DiagnosticTroubleCodeStore::findDTC(uint32_t code) const noexcept {
-    auto it =
-        std::find_if(m_dtcs.begin(), m_dtcs.end(), [code](const DiagnosticTroubleCode &dtc) {
-            return dtc.getCode() == code;
-        });
-
-    return it != m_dtcs.end() ? &(*it) : nullptr;
+std::vector<DiagnosticTroubleCode> DiagnosticTroubleCodeStore::findDTCByStatus(uint8_t status) const noexcept {
+    std::vector<DiagnosticTroubleCode> results;
+    std::copy_if(m_dtcs.begin(), m_dtcs.end(), std::back_inserter(results), [status](const DiagnosticTroubleCode &dtc) {
+        return dtc.getStatusBits() == status;
+    });
+    return results;
 }
+
 
 std::vector<DiagnosticTroubleCode> DiagnosticTroubleCodeStore::getConfirmedDTCs()
     const noexcept {

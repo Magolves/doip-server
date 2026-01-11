@@ -5,12 +5,13 @@
 namespace doip::uds {
 
 /**
- * ReadDTCInformation (SID 0x19) subfunctions per ISO 14229-1.
+ * ReadDTCInformation (SID 0x19) subfunctions per ISO 14229-1, section 12.3.
  * Availability may vary by ECU/configuration; values are standard IDs.
+ *
  */
 enum class ReadDTCInformationSubFunction : uint8_t {
-    ReportNumberOfDTCByStatusMask                 = 0x01,
-    ReportDTCByStatusMask                         = 0x02,
+    ReportNumberOfDTCByStatusMask                 = 0x01, // LEV_RNOTCBSM
+    ReportDTCByStatusMask                         = 0x02, // LEV_RTCBSM
     ReportDTCSnapshotRecordByDTCNumber            = 0x03,
     ReportDTCSnapshotRecordByRecordNumber         = 0x04,
     ReportDTCSnapshotIdentification               = 0x05,

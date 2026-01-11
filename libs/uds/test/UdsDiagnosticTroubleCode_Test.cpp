@@ -290,20 +290,44 @@ TEST_SUITE("DiagnosticTroubleCodeStore") {
         CHECK(store.count() == 0);
     }
 
+    TEST_CASE("findDTC by status") {
+        DiagnosticTroubleCodeStore store;
+        store.addDTC(DiagnosticTroubleCode(0x123450, 0xAB));
+        store.addDTC(DiagnosticTroubleCode(0x123451, 0xCD));
+        store.addDTC(DiagnosticTroubleCode(0x654322, 0xEF));
+        store.addDTC(DiagnosticTroubleCode(0x654323, 0xAF));
+        store.addDTC(DiagnosticTroubleCode(0x654324, 0xEF));
+
+        std::vector<DiagnosticTroubleCode> found = store.findDTCByStatus(0xAB);
+        CHECK(found.size() == 1);
+        CHECK(found[0].getCode() == 0x123450);
+        CHECK(found[0].getStatusBits() == 0xAB);
+
+        found = store.findDTCByStatus(0xEF);
+        CHECK(found.size() == 2);
+        CHECK(found[0].getCode() == 0x654322);
+        CHECK(found[0].getStatusBits() == 0xEF);
+        CHECK(found[1].getCode() == 0x654324);
+        CHECK(found[1].getStatusBits() == 0xEF);
+
+        found = store.findDTCByStatus(0x00);
+        CHECK(found.size() == 0);
+    }
+
     TEST_CASE("findDTC returns pointer to DTC") {
         DiagnosticTroubleCodeStore store;
         DiagnosticTroubleCode dtc(0x123456, 0xAB);
         store.addDTC(dtc);
 
-        const DiagnosticTroubleCode *found = store.findDTC(0x123456);
-        CHECK(found != nullptr);
+        std::optional<DiagnosticTroubleCode> found = store.findDTC(0x123456);
+        CHECK(found.has_value());
         CHECK(found->getCode() == 0x123456);
         CHECK(found->getStatusBits() == 0xAB);
     }
 
     TEST_CASE("findDTC returns nullptr for non-existent DTC") {
         DiagnosticTroubleCodeStore store;
-        CHECK(store.findDTC(0x123456) == nullptr);
+        CHECK(store.findDTC(0x123456) == std::nullopt);
     }
 
     TEST_CASE("getConfirmedDTCs returns only confirmed DTCs") {
