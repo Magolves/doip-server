@@ -9,6 +9,7 @@
 #include "uds/services/UdsTesterPresent.h"
 #include "uds/services/UdsTransferData.h"
 #include "uds/services/UdsWriteDataByIdentifier.h"
+#include "uds/services/UdsReadDTCInformation.h"
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/fmt/ostr.h> // For fmt::streamed() support
 
@@ -27,6 +28,7 @@ void UdsMock::registerDefaultServices() {
     registerService<TesterPresentHandler>(UdsService::TesterPresent);
     registerService<TransferDataHandler>(UdsService::TransferData);
     registerService<WriteDataByIdentifierHandler>(UdsService::WriteDataByIdentifier);
+    registerService<ReadDTCInformationHandler>(UdsService::ReadDTCInformation);
 }
 
 ByteArray UdsMock::handleDiagnosticRequest(const ByteArray &request) const {

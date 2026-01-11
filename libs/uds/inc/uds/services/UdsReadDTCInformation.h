@@ -33,7 +33,7 @@ class ReadDTCInformationHandler : public UdsServiceHandler {
             return makeNegativeResponse(UdsResponseCode::SubFunctionNotSupported, request);
         }
 
-        if (model->getCurrentSession() == DiagnosticSessionControlType::DefaultSession) {
+        if (!model->isSecurityLevelUnlocked(1)) {
             return makeNegativeResponse(UdsResponseCode::ServiceNotSupportedInActiveSession, request);
         }
 

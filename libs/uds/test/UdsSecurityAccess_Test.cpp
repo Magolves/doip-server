@@ -1,5 +1,5 @@
 #include <doctest/doctest.h>
-#include "uds/UdsSecureModel.h"
+#include "uds/UdsDefaultModel.h"
 #include "uds/services/UdsSecurityAccess.h"
 #include "uds/UdsServices.h"
 
@@ -12,7 +12,9 @@ TEST_SUITE("SecurityAccess") {
         UniqueUdsModelPtr model;
         SecurityAccessHandler handler;
 
-        SecurityAccessFixture() : model(std::make_unique<UdsSecureModel>()) {}
+        SecurityAccessFixture() : model(std::make_unique<UdsDefaultModel>()) {
+
+        }
     };
 
     TEST_CASE_FIXTURE(SecurityAccessFixture, "RequestSeed Level 1 - Programming") {

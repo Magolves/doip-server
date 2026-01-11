@@ -3,7 +3,16 @@ set(UDS_SOURCES
     src/UdsMock.cpp
     src/UdsDiagnosticTroubleCode.cpp
     src/services/UdsSecurityAccess.cpp
+    src/services/UdsReadDTCInformation.cpp
 )
+
+# Configure configuration header
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc/uds/gen/UdsConfig.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc/uds/gen/UdsConfig.h
+    @ONLY
+)
+
 
 # Create the library
 add_library(${UDS_LIB_NAME}

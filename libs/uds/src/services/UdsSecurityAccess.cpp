@@ -22,9 +22,11 @@ ByteArray SecurityAccessHandler::handle(const ByteArray& request, const UniqueUd
 
     if (subFunction % 2 == 1) {
         // Odd: requestSeed
+        std::cout << "Handling requestSeed for security level " << static_cast<int>(subFunction) << "\n";
         return handleRequestSeed(request, model, subFunction);
     } else {
         // Even: sendKey
+        std::cout << "Handling sendKey for security level " << static_cast<int>(subFunction) << "\n";
         return handleSendKey(request, model, subFunction);
     }
 }
@@ -43,6 +45,8 @@ ByteArray SecurityAccessHandler::handleRequestSeed(
 
     ByteArray seed;
     UdsResponseCode result = model->requestSeed(securityLevel, seed);
+
+    std::cout << "Handling requestSeed for security level " << static_cast<int>(securityLevel) << " returned  " << result << "\n";
 
     if (result != UdsResponseCode::PositiveResponse) {
         return makeNegativeResponse(result, request);
@@ -71,6 +75,8 @@ ByteArray SecurityAccessHandler::handleSendKey(
     ByteArray key(request, 2, request.size() - 2);
 
     UdsResponseCode result = model->sendKey(securityLevel, key);
+
+    std::cout << "Handling sendKey for security level " << static_cast<int>(securityLevel) << " returned  " << result << "\n";
 
     if (result != UdsResponseCode::PositiveResponse) {
         return makeNegativeResponse(result, request);

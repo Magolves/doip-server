@@ -1,0 +1,39 @@
+#pragma once
+
+#include <cstdint>
+#include <unistd.h>
+
+namespace doip::uds {
+
+constexpr const char* UDS_VERSION = "@PROJECT_VERSION@";
+constexpr const char* UDS_VERSION_MAJOR = "@PROJECT_VERSION_MAJOR@";
+constexpr const char* UDS_VERSION_MINOR = "@PROJECT_VERSION_MINOR@";
+constexpr const char* UDS_VERSION_PATCH = "@PROJECT_VERSION_PATCH@";
+
+constexpr const char* UDS_BUILD_DATE = "@BUILD_DATE@";
+constexpr const char* UDS_BUILD_TYPE = "@CMAKE_BUILD_TYPE@";
+
+/**
+ * @brief Constants for UDS Security Access seed/key algorithm.
+ */
+#ifndef UDS_CONFIG_SEED_CONSTANT_1
+static constexpr uint32_t UDS_CONFIG_SEED_CONSTANT_1 = 0xA5A5A5A5;
+#endif
+
+#ifndef UDS_CONFIG_SEED_OFFSET_1
+static constexpr uint32_t UDS_CONFIG_SEED_OFFSET_1 = 0x12345678;
+#endif
+
+#ifndef UDS_CONFIG_SEED_MASK_2
+static constexpr uint32_t UDS_CONFIG_SEED_MASK_2 = 0x5A5A5A5A;
+#endif
+
+#ifndef UDS_CONFIG_SEED_MULTIPLIER
+static constexpr uint32_t UDS_CONFIG_SEED_MULTIPLIER = 0x9D2C5680;
+#endif
+
+#ifndef UDS_CONFIG_SEED_OFFSET_2
+static constexpr uint32_t UDS_CONFIG_SEED_OFFSET_2 = 0x87654321;
+#endif
+
+} // namespace doip::uds

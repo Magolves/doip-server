@@ -75,6 +75,7 @@ TEST_SUITE("DiagnosticTroubleCode-UdsReadDTCInformationSubFunction") {
         }
 
     }
+    
 }
 
 } // namespace doip::uds

@@ -5,6 +5,7 @@
 #include "uds/UdsMock.h"
 #include "uds/IUdsModel.h"
 #include "uds/UdsDefaultModel.h"
+#include "uds/services/UdsReadDTCInformation.h"
 
 using namespace doip;
 using namespace doip::uds;
@@ -98,6 +99,55 @@ TEST_SUITE("UdsMock") {
         request = {0x22, 0x01};
         response = udsMock.handleDiagnosticRequest(request);
         expectedResponse = {0x7f, 0x22, 0x13};
+
+        INFO(response);
+        CHECK_BYTE_ARRAY_EQ(response, expectedResponse);
+    }
+
+    TEST_CASE_FIXTURE(UdsFixture, "UdsMock read DTC information handler") {
+        udsMock.registerDefaultServices();
+
+        auto model = dynamic_cast<UdsTestModel*>(udsMock.getModel().get());
+        REQUIRE(model != nullptr);
+
+        ByteArray seedReq = {0x27, 0x01};
+        ByteArray seedRsp = udsMock.handleDiagnosticRequest(seedReq);
+
+        CHECK(seedRsp.size() == 6);
+        CHECK(seedRsp[0] == 0x67);
+        CHECK(seedRsp[1] == 0x01);
+
+        // Extract seed
+        ByteArray seed(seedRsp.data() + 2, seedRsp.size() - 2);
+        uint32_t seedValue = seed.readU32(0);
+
+        // Calculate expected key (Level 1 algorithm)
+        uint32_t expectedKey = (seedValue ^ 0xA5A5A5A5) + 0x12345678;
+
+        // Send key
+        ByteArray keyReq = {0x27, 0x02};
+        keyReq.writeU32(expectedKey);
+        ByteArray keyRsp = udsMock.handleDiagnosticRequest(keyReq);
+
+        // Check positive response
+        CHECK(keyRsp.size() == 2);
+        CHECK(keyRsp[0] == 0x67);
+        CHECK(keyRsp[1] == 0x02);
+
+        // Verify level is unlocked
+        CHECK(model->isSecurityLevelUnlocked(1));
+
+        // Add some DTCs to the model
+        model->getDTCStore().addDTC(DiagnosticTroubleCode(0x123456, 0x01));
+        model->getDTCStore().addDTC(DiagnosticTroubleCode(0x234567, 0x02));
+        model->getDTCStore().addDTC(DiagnosticTroubleCode(0x123458, 0x01));
+
+        // Create a Read DTC Information request for sub-function 0x01 (Report DTCs)
+        ByteArray request = {0x19, 0x01};
+        ByteArray response = udsMock.handleDiagnosticRequest(request);
+
+        // Expected positive response: 0x59, 0x01, followed by DTCs
+        ByteArray expectedResponse = {0x59, 0x01, 0xff, DTC_FORMAT_IDENTIFIER, 0x02};
 
         INFO(response);
         CHECK_BYTE_ARRAY_EQ(response, expectedResponse);

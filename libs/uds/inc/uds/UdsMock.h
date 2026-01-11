@@ -54,6 +54,10 @@ class UdsMock {
 
     void registerDefaultServices();
 
+    UniqueUdsModelPtr &getModel() {
+        return m_model;
+    }
+
   private:
     std::unordered_map<uint8_t, UniqueUdsServiceHandlerPtr> m_handlers;
     UniqueUdsModelPtr m_model{nullptr};
