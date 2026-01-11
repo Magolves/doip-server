@@ -243,6 +243,18 @@ public:
     [[nodiscard]] size_t count() const noexcept { return m_dtcs.size(); }
 
     /**
+     * @brief Count DTCs matching specific code bits
+     */
+    [[nodiscard]] size_t countByCodeBits(uint8_t codeMask) const noexcept;
+
+    /**
+     * @brief Count DTCs matching specific status bits
+     */
+    [[nodiscard]] size_t countByStatusBits(uint8_t statusMask) const noexcept;
+
+
+
+    /**
      * @brief Check if a DTC exists
      */
     [[nodiscard]] bool hasDTC(uint32_t code) const noexcept;

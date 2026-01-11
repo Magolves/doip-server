@@ -397,3 +397,4 @@ TEST_SUITE("DiagnosticTroubleCodeStore") {
         CHECK(all[2].getCode() == 0x333333);
     }
 }
+

@@ -101,7 +101,8 @@ std::string DiagnosticTroubleCode::getStatusDescription() const noexcept {
 
     bool first = true;
     for (const auto &tag : tags) {
-        if (!first) oss << ", ";
+        if (!first)
+            oss << ", ";
         oss << tag;
         first = false;
     }
@@ -140,6 +141,20 @@ bool DiagnosticTroubleCodeStore::removeDTC(uint32_t code) noexcept {
     return false;
 }
 
+size_t DiagnosticTroubleCodeStore::countByCodeBits(uint8_t codeMask) const noexcept {
+    return static_cast<size_t>(std::count_if(m_dtcs.begin(), m_dtcs.end(),
+                                             [codeMask](const DiagnosticTroubleCode &dtc) {
+                                                 return (dtc.getCode() & codeMask) != 0;
+                                             }));
+}
+
+size_t DiagnosticTroubleCodeStore::countByStatusBits(uint8_t statusMask) const noexcept {
+    return static_cast<size_t>(std::count_if(m_dtcs.begin(), m_dtcs.end(),
+                                             [statusMask](const DiagnosticTroubleCode &dtc) {
+                                                 return (dtc.getStatusBits() & statusMask) != 0;
+                                             }));
+}
+
 bool DiagnosticTroubleCodeStore::hasDTC(uint32_t code) const noexcept {
     return std::any_of(m_dtcs.begin(), m_dtcs.end(), [code](const DiagnosticTroubleCode &dtc) {
         return dtc.getCode() == code;
@@ -167,20 +182,20 @@ const DiagnosticTroubleCode *DiagnosticTroubleCodeStore::findDTC(uint32_t code) 
 std::vector<DiagnosticTroubleCode> DiagnosticTroubleCodeStore::getConfirmedDTCs()
     const noexcept {
     std::vector<DiagnosticTroubleCode> confirmed;
-    std::copy_if(m_dtcs.begin(), m_dtcs.end(), std::back_inserter(confirmed), [](const DiagnosticTroubleCode& dtc) { return dtc.isConfirmed(); });
+    std::copy_if(m_dtcs.begin(), m_dtcs.end(), std::back_inserter(confirmed), [](const DiagnosticTroubleCode &dtc) { return dtc.isConfirmed(); });
     return confirmed;
 }
 
 std::vector<DiagnosticTroubleCode> DiagnosticTroubleCodeStore::getPendingDTCs()
     const noexcept {
     std::vector<DiagnosticTroubleCode> pending;
-    std::copy_if(m_dtcs.begin(), m_dtcs.end(), std::back_inserter(pending), [](const DiagnosticTroubleCode& dtc) { return dtc.isPending(); });
+    std::copy_if(m_dtcs.begin(), m_dtcs.end(), std::back_inserter(pending), [](const DiagnosticTroubleCode &dtc) { return dtc.isPending(); });
     return pending;
 }
 
 std::vector<DiagnosticTroubleCode> DiagnosticTroubleCodeStore::getActiveDTCs() const noexcept {
     std::vector<DiagnosticTroubleCode> active;
-    std::copy_if(m_dtcs.begin(), m_dtcs.end(), std::back_inserter(active), [](const DiagnosticTroubleCode& dtc) { return dtc.hasActiveFailure(); });
+    std::copy_if(m_dtcs.begin(), m_dtcs.end(), std::back_inserter(active), [](const DiagnosticTroubleCode &dtc) { return dtc.hasActiveFailure(); });
     return active;
 }
 

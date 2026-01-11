@@ -5,6 +5,7 @@ add_executable(${UDS_LIB_NAME}-tests
     Vin_Test.cpp
     UdsMock_Test.cpp
     UdsSecurityAccess_Test.cpp
+    UdsReadDTCInformation_Test.cpp
 )
 
 target_link_libraries(${UDS_LIB_NAME}-tests

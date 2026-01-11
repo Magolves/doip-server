@@ -64,6 +64,7 @@ class UdsDefaultModel : public IUdsModel {
     private:
         UdsTransferInfo m_transferInfo{};
 
+
         Vin m_vin{"WVWZZZ1JZ4W012345"}; // Volkswagen (fictional model)
 
         bool populateDidData(uds_did did, ByteArray &data) const {

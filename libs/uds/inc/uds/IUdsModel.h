@@ -4,6 +4,7 @@
 #include "uds/UdsResponseCode.h"
 #include "uds/UdsTypes.h"
 #include "util/ByteArray.h"
+#include "uds/UdsDiagnosticTroubleCode.h"
 
 #include <chrono>
 #include <functional>
@@ -262,6 +263,10 @@ class IUdsModel {
         return 4; // Default: 4-byte seed
     }
 
+    virtual DiagnosticTroubleCodeStore& getDTCStore()  {
+        return m_dtcStore;
+    }
+
   protected:
     // Methods to be implemented by derived classes
 
@@ -348,6 +353,7 @@ class IUdsModel {
 
   private:
     DiagnosticSessionControlType m_currentSession = DiagnosticSessionControlType::DefaultSession;
+    DiagnosticTroubleCodeStore m_dtcStore{};
     UdsModelEventHandler m_eventHandler;
     uint16_t m_p2_ms = 2000;
     uint16_t m_p2star_10ms = 400;
