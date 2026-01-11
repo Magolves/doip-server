@@ -719,69 +719,101 @@ inline DoIPMessage makeRoutingActivationResponse(
 } // namespace message
 
 /**
+ * @brief Print message header with protocol version and payload size.
+ *
+ * @param os Output stream
+ * @param msg DoIPMessage to print header for
+ */
+inline void printDoIPMessageHeader(std::ostream &os, const DoIPMessage &msg) {
+    os << ansi::dim << "V" << std::hex << std::nouppercase << std::setw(2) << std::setfill('0')
+       << static_cast<unsigned int>(PROTOCOL_VERSION) << std::dec << ansi::reset;
+    os << "|L" << msg.getPayloadSize() << "| ";
+}
+
+/**
+ * @brief Print a byte payload in hex format.
+ *
+ * @param os Output stream
+ * @param data Pointer to byte data
+ * @param size Number of bytes to print
+ * @param color ANSI color code for the output (default: bold_blue)
+ */
+inline void printBytePayload(std::ostream &os, const uint8_t *data, size_t size,
+                             const std::string &color = ansi::bold_blue) {
+    os << color;
+    for (size_t i = 0; i < size; ++i) {
+        if (i > 0)
+            os << '.';
+        os << std::hex << std::nouppercase << std::setw(2) << std::setfill('0')
+           << static_cast<unsigned int>(data[i]);
+    }
+    os << ansi::reset << std::dec;
+}
+
+/**
+ * @brief Print a DoIP address in hex format.
+ *
+ * @param os Output stream
+ * @param address Optional DoIP address to print
+ * @param color Optional ANSI color code for the address (empty string = no coloring)
+ */
+inline void printAddress(std::ostream &os, const std::optional<DoIPAddress> &address,
+                         const std::string &color = "") {
+    if (!color.empty())
+        os << color;
+    os << toHex4(address.value_or(0));
+    if (!color.empty())
+        os << ansi::reset;
+}
+
+/**
  * @brief Stream operator for DoIPMessage
  *
  * Prints the protocol version, payload type, payload size, and payload data.
+ * Addresses are rendered as hex with lowercase characters.
  *
  * @param os Output stream
  * @param msg DoIPMessage to print
  * @return std::ostream& Reference to the output stream
  */
 inline std::ostream &operator<<(std::ostream &os, const DoIPMessage &msg) {
-    os << ansi::dim << "V" << std::hex << std::uppercase << std::setw(2) << std::setfill('0')
-       << static_cast<unsigned int>(PROTOCOL_VERSION) << std::dec << ansi::reset;
+    printDoIPMessageHeader(os, msg);
 
     if (msg.getPayloadType() == DoIPPayloadType::DiagnosticMessageNegativeAck) {
         auto payload = msg.getDiagnosticMessagePayload();
         if (payload.first == nullptr || payload.second < 1) {
-            os << ansi::red << "|Diag NACK <invalid>";
+            os << ansi::red << "Diag NACK <invalid>";
             return os;
         }
-        os << ansi::red << "|Diag NACK " << static_cast<DoIPDiagnosticAck>(payload.first[0]);
+        os << ansi::red << "Diag NACK " << static_cast<DoIPDiagnosticAck>(payload.first[0]);
     } else if (msg.getPayloadType() == DoIPPayloadType::AliveCheckRequest) {
-        os << ansi::yellow << "|Alive Check?";
+        os << ansi::yellow << "Alive Check?";
     } else if (msg.getPayloadType() == DoIPPayloadType::AliveCheckResponse) {
-        auto sa = msg.getSourceAddress();
-        os << ansi::green << "|Alive Check " << toHex4(sa.value_or(0)) << " ✓";
+        os << ansi::green << "Alive Check ";
+        printAddress(os, msg.getSourceAddress(), ansi::green);
+        os << " ✓";
     } else if (msg.getPayloadType() == DoIPPayloadType::RoutingActivationRequest) {
-        auto sa = msg.getSourceAddress();
-        os << ansi::yellow << "|Routing activation? " << toHex4(sa.value_or(0));
+        os << ansi::yellow << "Routing activation? ";
+        printAddress(os, msg.getSourceAddress(), ansi::yellow);
     } else if (msg.getPayloadType() == DoIPPayloadType::RoutingActivationResponse) {
-        auto sa = msg.getSourceAddress();
-        os << ansi::green << "|Routing activation " << toHex4(sa.value_or(0)) << " ✓";
+        os << ansi::green << "Routing activation ";
+        printAddress(os, msg.getSourceAddress(), ansi::green);
+        os << " ✓";
     } else if (msg.getPayloadType() == DoIPPayloadType::DiagnosticMessage) {
         auto payload = msg.getDiagnosticMessagePayload();
-        auto sa = msg.getSourceAddress();
-        auto ta = msg.getTargetAddress();
-        os << "|Diag ";
-        os << ansi::bold_magenta << toHex4(sa.value_or(0));
+        os << "Diag ";
+        printAddress(os, msg.getSourceAddress(), ansi::bold_magenta);
         os << ansi::reset << " -> ";
-        os << ansi::bold_magenta << toHex4(ta.value_or(0));
-
+        printAddress(os, msg.getTargetAddress(), ansi::bold_magenta);
         os << ansi::reset << ": ";
-        os << ansi::bold_blue;
-        for (size_t i = 0; i < payload.second; ++i) {
-            if (i > 0)
-                os << '.';
-            os << std::hex << std::uppercase << std::setw(2) << std::setfill('0')
-               << static_cast<unsigned int>(payload.first[i]);
-        }
+        printBytePayload(os, payload.first, payload.second, ansi::bold_blue);
     } else {
-        os << "|" << ansi::cyan << msg.getPayloadType() << ansi::reset;
+        os << ansi::cyan << msg.getPayloadType() << ansi::reset;
         auto payload = msg.getPayload();
-        os << "|L" << msg.getPayloadSize()
-           << "| Payload: ";
-
-        os << ansi::bold_white;
-        for (size_t i = 0; i < payload.second; ++i) {
-            if (i > 0)
-                os << '.';
-            os << std::hex << std::uppercase << std::setw(2) << std::setfill('0')
-               << static_cast<unsigned int>(payload.first[i]);
-        }
+        os << ": ";
+        printBytePayload(os, payload.first, payload.second, ansi::bold_white);
     }
     os << ansi::reset;
-    os << std::dec;
 
     return os;
 }
