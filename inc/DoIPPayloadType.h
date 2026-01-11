@@ -1,6 +1,8 @@
 #ifndef DOIPPAYLOADTYPE_H
 #define DOIPPAYLOADTYPE_H
 
+#include "DoIPAddress.h"
+
 #include <stdint.h>
 #include <iostream>
 #include <iomanip>
@@ -190,63 +192,62 @@ inline std::ostream& operator<<(std::ostream& os, DoIPPayloadType type) {
 
     switch (type) {
         case DoIPPayloadType::NegativeAck:
-            name = "NegativeAck";
+            name = "NAck";
             break;
         case DoIPPayloadType::VehicleIdentificationRequest:
-            name = "VehicleIdentificationRequest";
+            name = "VehIdReq";
             break;
         case DoIPPayloadType::VehicleIdentificationRequestWithEid:
-            name = "VehicleIdentificationRequestWithEid";
+            name = "VehIdReqEid";
             break;
         case DoIPPayloadType::VehicleIdentificationRequestWithVin:
-            name = "VehicleIdentificationRequestWithVin";
+            name = "VehIdReqVin";
             break;
         case DoIPPayloadType::VehicleIdentificationResponse:
-            name = "VehicleIdentificationResponse";
+            name = "VehIdRsp";
             break;
         case DoIPPayloadType::RoutingActivationRequest:
-            name = "RoutingActivationRequest";
+            name = "RtgActReq";
             break;
         case DoIPPayloadType::RoutingActivationResponse:
-            name = "RoutingActivationResponse";
+            name = "RtgActRsp";
             break;
         case DoIPPayloadType::AliveCheckRequest:
-            name = "AliveCheckRequest";
+            name = "AlvChkReq";
             break;
         case DoIPPayloadType::AliveCheckResponse:
-            name = "AliveCheckResponse";
+            name = "AlvChkRsp";
             break;
         case DoIPPayloadType::EntityStatusRequest:
-            name = "EntityStatusRequest";
+            name = "EtyStsReq";
             break;
         case DoIPPayloadType::EntityStatusResponse:
-            name = "EntityStatusResponse";
+            name = "EtyStsRsp";
             break;
         case DoIPPayloadType::DiagnosticPowerModeRequest:
-            name = "DiagnosticPowerModeRequest";
+            name = "DiagPwrReq";
             break;
         case DoIPPayloadType::DiagnosticPowerModeResponse:
-            name = "DiagnosticPowerModeResponse";
+            name = "DiagPwrRsp";
             break;
         case DoIPPayloadType::DiagnosticMessage:
-            name = "DiagnosticMessage";
+            name = "DiagMsg";
             break;
         case DoIPPayloadType::DiagnosticMessageAck:
-            name = "DiagnosticMessageAck";
+            name = "DiagMsgAck";
             break;
         case DoIPPayloadType::DiagnosticMessageNegativeAck:
-            name = "DiagnosticMessageNegativeAck";
+            name = "DiagMsgNAck";
             break;
         case DoIPPayloadType::PeriodicDiagnosticMessage:
-            name = "PeriodicDiagnosticMessage";
+            name = "PerDiagMsg";
             break;
         default:
             name = "Unknown";
             break;
     }
 
-    os << name << " (0x" << std::hex << std::uppercase << std::setw(4) << std::setfill('0')
-       << static_cast<uint16_t>(type) << std::dec << ")";
+    os << name << " (" << toHex4(type) << ")";
 
     return os;
 }
