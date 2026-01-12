@@ -13,28 +13,12 @@ class SeedProvider : public ISecurityAccessProvider {
     public:
     virtual ~SeedProvider() = default;
 
+    virtual std::string_view  getName() const noexcept override {return "Seed";}
+
     /**
      * @brief Generate a random 4-byte seed
      */
-    UdsResponseCode generateSeed(uint8_t securityLevel, ByteArray &seed) override {
-        // Check if already unlocked
-        if (isSecurityLevelUnlocked(securityLevel)) {
-            // ISO 14229: Return all zeros if already unlocked
-            seed.clear();
-            seed.resize(getSeedLength(securityLevel), 0x00);
-            return UdsResponseCode::PositiveResponse;
-        }
-
-        // Check attempt counter
-        if (getSecurityAccessAttempts(securityLevel) >= getMaxSecurityAttempts()) {
-            return UdsResponseCode::ExceededNumberOfAttempts;
-        }
-
-        // Check delay timer
-        if (!isSecurityAccessDelayExpired(securityLevel)) {
-            return UdsResponseCode::RequiredTimeDelayNotExpired;
-        }
-
+    UdsResponseCode generateSeedImpl(uint8_t securityLevel, ByteArray &seed) override {
         // Generate 4 random bytes
         seed.clear();
         std::uniform_int_distribution<uint32_t> dist(0x00000001, 0xFFFFFFFE);
@@ -47,6 +31,7 @@ class SeedProvider : public ISecurityAccessProvider {
         seed.writeU32(randomSeed);
 
         // Mark as pending
+        std::cout << "Store seed " << seed << " for level " << +securityLevel << '\n';
         storePendingSeed(securityLevel, seed);
 
         return UdsResponseCode::PositiveResponse;
@@ -66,18 +51,29 @@ class SeedProvider : public ISecurityAccessProvider {
      * - OEM-specific proprietary algorithms
      * - Hardware Security Module (HSM)
      */
-    bool verifyKey(uint8_t level, const ByteArray &key) override {
+    bool verifyKeyImpl(uint8_t level, const ByteArray &key) override {
         // Key must be 4 bytes for our algorithm
-        if (key.size() != 4) {
+        if (key.size() != getSeedLength(level)) {
+            std::cout << "Wrong key size " << +key.size() << "\n";
             return false;
         }
 
-        const ByteArray *pendingSeed = getPendingSeed(level);
-        if (!pendingSeed || pendingSeed->size() != 4) {
+
+        auto optPendingSeed = getPendingSeed(level);
+        if (!optPendingSeed) {
+            std::cout << "No seed for " << ++level << "\n";
             return false;
         }
 
-        uint32_t seedValue = pendingSeed->readU32(0);
+        auto pendingSeed = optPendingSeed.value();
+        if (pendingSeed.size() != getSeedLength(level)) {
+            std::cout << "Wrong seed size " << +pendingSeed.size() << "\n";
+            return false;
+        }
+
+        std::cout << "Get seed " << pendingSeed << " for level " << +level << '\n';
+
+        uint32_t seedValue = pendingSeed.readU32(0);
         uint32_t keyValue = key.readU32(0);
         uint32_t expectedKey = 0;
 
@@ -85,16 +81,19 @@ class SeedProvider : public ISecurityAccessProvider {
         case 1: // Programming session
             // Simple XOR with constant and addition
             expectedKey = (seedValue ^ UDS_SEED_CONSTANT_1) + UDS_SEED_OFFSET_1;
+            std::cout << "L1 " << expectedKey << " - " << key << "\n";
             break;
 
         case 3: // Extended diagnostic
             // Bit rotation and mask
             expectedKey = rotateLeft(seedValue, 5) ^ UDS_SEED_MASK_2;
+            std::cout << "L3 " << expectedKey << " - " << key << "\n";
             break;
 
         case 5: // Custom security level
             // More complex transformation
             expectedKey = ((seedValue * UDS_SEED_MULTIPLIER) ^ seedValue) + UDS_SEED_OFFSET_2;
+            std::cout << "L4 " << expectedKey << " - " << key << "\n";
             break;
 
         default:
@@ -112,14 +111,6 @@ class SeedProvider : public ISecurityAccessProvider {
     virtual void onKeyFailed(uint8_t securityLevel) override {
         ISecurityAccessProvider::onKeyFailed(securityLevel);
         clearPendingSeed(securityLevel);
-    }
-
-    /**
-     * @brief Get expected seed length for a security level (typically 4 bytes)
-     */
-    virtual size_t getSeedLength(uint8_t level) const {
-        (void)level;
-        return 4; // Default: 4-byte seed
     }
 
   protected:

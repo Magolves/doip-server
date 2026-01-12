@@ -124,7 +124,7 @@ class IUdsModel {
     /**
      * @brief Request seed for security access (sub-function: requestSeed)
      *
-     * @param securityLevel Security level requested (odd: requestSeed, even: sendKey)
+     * @param securityLevel Security level requested (odd: requestSeed, even: verifyKey)
      * @param seed [out] Generated seed/challenge to be sent to tester
      * @return UdsResponseCode indicating success or specific error condition
      *
@@ -139,15 +139,16 @@ class IUdsModel {
     }
 
     /**
-     * @brief Verify key for security access (sub-function: sendKey)
+     * @brief Verify key for security access (sub-function: verifyKey)
      *
      * @param securityLevel Security level to unlock (must be even: 0x02, 0x04, etc.)
      * @param key Key sent by tester to verify against expected response
      * @return UdsResponseCode indicating success or specific error condition
      */
-    virtual UdsResponseCode sendKey(uint8_t securityLevel, const ByteArray &key) {
-        uint8_t seedLevel = securityLevel - 1; // sendKey uses even, seed uses odd
-        return m_securityProvider->sendKey(seedLevel, key);
+    virtual UdsResponseCode verifyKey(uint8_t securityLevel, const ByteArray &key) {
+        uint8_t seedLevel = securityLevel - 1; // verifyKey uses even, seed uses odd
+        std::cout << "verifyKey for security level " << +static_cast<int>(seedLevel) << "...\n";
+        return m_securityProvider->verifyKey(seedLevel, key);
 
         // // Check if seed was requested first
         // if (!hasPendingSeed(seedLevel)) {
@@ -160,7 +161,7 @@ class IUdsModel {
         // }
 
         // // Verify key (must be overridden by derived class)
-        // bool valid = verifyKey(seedLevel, key);
+        // bool valid = verifyKeyImpl(seedLevel, key);
 
         // if (valid) {
         //     unlockSecurityLevel(seedLevel);
@@ -187,6 +188,10 @@ class IUdsModel {
 
         //     return UdsResponseCode::InvalidKey;
         // }
+    }
+
+    size_t getStoredSeedCount() const {
+        return m_securityProvider->getStoredSeedCount();
     }
 
     virtual UdsResponseCode requestDownload(uint32_t memoryAddress, uint32_t memorySize, const ByteArray &transferParameters) {

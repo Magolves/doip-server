@@ -19,7 +19,7 @@ protected:
     ByteArray handleRequestSeed(const ByteArray& request, const UniqueUdsModelPtr& model, uint8_t securityLevel);
 
     /**
-     * @brief Handle sendKey sub-function (even security levels: 0x02, 0x04, 0x06, ...)
+     * @brief Handle verifyKey sub-function (even security levels: 0x02, 0x04, 0x06, ...)
      */
     ByteArray handleSendKey(const ByteArray& request, const UniqueUdsModelPtr& model, uint8_t securityLevel);
 };

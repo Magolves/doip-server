@@ -143,11 +143,11 @@ TEST_SUITE("UdsMock") {
         model->getDTCStore().addDTC(DiagnosticTroubleCode(0x123458, 0x01));
 
         // Create a Read DTC Information request for sub-function 0x01 (Report DTCs)
-        ByteArray request = {0x19, 0x01};
+        ByteArray request = {0x19, 0x01, 0x01};
         ByteArray response = udsMock.handleDiagnosticRequest(request);
 
         // Expected positive response: 0x59, 0x01, followed by DTCs
-        ByteArray expectedResponse = {0x59, 0x01, 0xff, DTC_FORMAT_IDENTIFIER, 0x02};
+        ByteArray expectedResponse = {0x59, 0x01, 0xff, DTC_FORMAT_IDENTIFIER, 0x00, 0x02};
 
         INFO(response);
         CHECK_BYTE_ARRAY_EQ(response, expectedResponse);

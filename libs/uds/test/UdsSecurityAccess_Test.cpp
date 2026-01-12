@@ -42,6 +42,8 @@ TEST_SUITE("SecurityAccess") {
         ByteArray seedReq = {0x27, 0x01};
         ByteArray seedRsp = handler.handle(seedReq, model);
 
+        CHECK(model->getStoredSeedCount() == 1);
+
         // Extract seed and calculate key
         ByteArray seed(seedRsp.data() + 2, seedRsp.size() - 2);
         uint32_t seedValue = seed.readU32(0);
@@ -69,6 +71,8 @@ TEST_SUITE("SecurityAccess") {
         ByteArray seedReq = {0x27, 0x01};
         ByteArray seedRsp = handler.handle(seedReq, model);
 
+        CHECK(model->getStoredSeedCount() == 1);
+
         // Extract seed
         ByteArray seed(seedRsp.data() + 2, seedRsp.size() - 2);
         uint32_t seedValue = seed.readU32(0);
@@ -94,6 +98,8 @@ TEST_SUITE("SecurityAccess") {
         // Request seed
         ByteArray seedReq = {0x27, 0x01};
         handler.handle(seedReq, model);
+
+        CHECK(model->getStoredSeedCount() == 1);
 
         // Send wrong key
         ByteArray keyReq = {0x27, 0x02, 0x12, 0x34, 0x56, 0x78};

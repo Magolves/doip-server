@@ -46,7 +46,7 @@ struct UdsServiceDescriptor {
 
 constexpr std::array<UdsServiceDescriptor, 22> UDS_SERVICE_DESCRIPTORS = {{{UdsService::DiagnosticSessionControl, 2, 2, 6, 6},
                                                                            {UdsService::ECUReset, 2, 2, 2, 2},
-                                                                           {UdsService::SecurityAccess, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
+                                                                           {UdsService::SecurityAccess, 2, MAX_UDS_MESSAGE_LENGTH, 2, MAX_UDS_MESSAGE_LENGTH},
                                                                            {UdsService::CommunicationControl, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
                                                                            {UdsService::TesterPresent, 2, 2, 2, 2},
                                                                            {UdsService::AccessTimingParameters, 2, MAX_UDS_MESSAGE_LENGTH, 3, MAX_UDS_MESSAGE_LENGTH},
